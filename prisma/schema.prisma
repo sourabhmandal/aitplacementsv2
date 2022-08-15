@@ -1,0 +1,41 @@
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String  @id @default(uuid())
+  name               String
+  email              String  @unique
+  registrationNumber Int     @unique
+  year               Int
+  branch             String
+  password           String
+  emailVerified      Boolean
+
+  @@map("users")
+}
+
+
+model Admin {
+  id                 String  @id @default(uuid())
+  name               String
+  email              String  @unique
+  password           String
+  emailVerified      Boolean
+
+  @@map("admins")
+}
+
+model VerificationToken {
+  id         String   @id @default(uuid())
+  identifier String
+  email      String
+  expires    DateTime
+
+  @@map("verification_tokens")
+}
