@@ -1,4 +1,5 @@
 import { ColorScheme, MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
 import { NotificationsProvider } from "@mantine/notifications";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import { loggerLink } from "@trpc/client/links/loggerLink";
@@ -34,11 +35,13 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
             primaryColor: "orange",
           }}
         >
-          <NotificationsProvider limit={3}>
-            <AppContainer theme={theme} setTheme={setTheme}>
-              <Component {...pageProps} />
-            </AppContainer>
-          </NotificationsProvider>
+          <ModalsProvider>
+            <NotificationsProvider limit={3}>
+              <AppContainer theme={theme} setTheme={setTheme}>
+                <Component {...pageProps} />
+              </AppContainer>
+            </NotificationsProvider>
+          </ModalsProvider>
         </MantineProvider>
       </SessionProvider>
     </>

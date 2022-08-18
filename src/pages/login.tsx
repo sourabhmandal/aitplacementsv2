@@ -13,14 +13,24 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { NextPage } from "next";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Login: NextPage = (props: PaperProps) => {
   const router = useRouter();
   const [buttonLoading, setButtonLoading] = useState<boolean>(false);
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+
+    return () => {};
+  }, [status, router]);
+
   const { values, onSubmit, errors, setFieldValue } = useForm({
     initialValues: {
       email: "",
@@ -52,7 +62,7 @@ const Login: NextPage = (props: PaperProps) => {
       });
     } else {
       console.log(res);
-      router.push("/user");
+      router.push("/dashboard");
     }
     setButtonLoading(false);
   };
@@ -120,6 +130,6 @@ const Login: NextPage = (props: PaperProps) => {
       </Paper>
     </Container>
   );
-};
+};;
 
 export default Login;

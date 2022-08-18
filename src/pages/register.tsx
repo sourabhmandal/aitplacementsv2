@@ -16,13 +16,26 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { NextPage } from "next";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 import { CreateUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 
 const Register: NextPage = (props: PaperProps) => {
   const router = useRouter();
+
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+
+    return () => {};
+  }, [status, router]);
+
   const { isLoading, mutate } = trpc.useMutation(["auth.register-user"], {
     onError: (err) => {
       showNotification({
