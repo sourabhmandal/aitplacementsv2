@@ -1,22 +1,18 @@
-import { Button, Group, Text, TextInput } from "@mantine/core";
+import { Button, createStyles, Group, Text, TextInput } from "@mantine/core";
 import { closeAllModals, openConfirmModal, openModal } from "@mantine/modals";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import RichTextEditor from "../components/RichText";
 
 function CreateNotice() {
-  const modules = useMemo(
-    () => ({
-      history: { delay: 2500, userOnly: true },
-      syntax: true,
-    }),
-    []
-  );
-  const [rteValue, setrteValue] = useState("<p>works</p>");
+  const [rteValue, setrteValue] = useState<string>();
+  const rteStyle = useRteStyle();
   const openPublishDialog = () =>
     openConfirmModal({
       title: "This is modal at second layer",
       labels: { confirm: "Publish", cancel: "Back" },
       closeOnConfirm: false,
+      size: 900,
+      centered: true,
       children: (
         <Text size="sm">
           When this modal is closed modals state will revert to first modal
@@ -33,19 +29,21 @@ function CreateNotice() {
         fullWidth
         onClick={() =>
           openModal({
-            fullScreen: true,
+            centered: true,
             title: "Add a Notice",
+            size: 900,
+            closeOnClickOutside: false,
             children: (
               <form onSubmit={openPublishDialog}>
-                <TextInput mb={10} placeholder="Notice Title" />
+                <TextInput mb={20} placeholder="Notice Title" />
                 <RichTextEditor
-                  modules={modules}
+                  classNames={rteStyle.classes}
+                  placeholder="Write your notice body here"
                   controls={[
                     [
                       "bold",
                       "italic",
                       "underline",
-                      "codeBlock",
                       "blockquote",
                       "link",
                       "image",
@@ -77,3 +75,9 @@ function CreateNotice() {
 }
 
 export default CreateNotice;
+
+const useRteStyle = createStyles({
+  root: {
+    height: 400,
+  },
+});
