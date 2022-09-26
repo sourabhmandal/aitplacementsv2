@@ -2,13 +2,24 @@ import { Carousel } from "@mantine/carousel";
 import { createStyles } from "@mantine/core";
 import Autoplay from "embla-carousel-autoplay";
 import type { NextPage } from "next";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useRef } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useRef } from "react";
 import Ait1Image from "../../assets/ait1.jpg";
 
 const Home: NextPage = () => {
   const autoplay = useRef(Autoplay({ delay: 2000 }));
   const carouselStyle = useCarouselStyle();
+  const router = useRouter();
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status == "authenticated") router.push("/dashboard");
+
+    return () => {};
+  }, [status, router]);
+
   return (
     <Carousel
       withIndicators

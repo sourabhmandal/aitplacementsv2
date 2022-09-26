@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "branch" DROP NOT NULL,
+ALTER COLUMN "year" DROP NOT NULL;

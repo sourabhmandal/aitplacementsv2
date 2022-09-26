@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "pformat": "prisma format",
-    "pmigdev": "prisma migrate dev"
+    "pfmt": "prisma format",
+    "pmigdev": "prisma migrate dev",
+    "pgen": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@emotion/react": "^11.10.0",
@@ -33,6 +34,7 @@
     "dayjs": "^1.11.5",
     "embla-carousel-autoplay": "^7.0.0",
     "embla-carousel-react": "^7.0.0",
+    "lodash": "^4.17.21",
     "next": "12.2.5",
     "next-auth": "^4.10.3",
     "react": "18.2.0",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^12.2.5",
+    "@types/lodash": "^4.14.184",
     "@types/node": "18.7.3",
     "@types/react": "18.0.17",
     "@types/react-dom": "18.0.6",

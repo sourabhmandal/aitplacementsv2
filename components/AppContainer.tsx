@@ -83,7 +83,7 @@ const AppContainer: React.FunctionComponent<Props> = ({
               color="red"
               icon={<IconArrowBarLeft size={14} />}
               onClick={async () => {
-                const data = await signOut({
+                await signOut({
                   callbackUrl: "/login",
                   redirect: false,
                 });

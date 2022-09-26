@@ -12,12 +12,12 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
+import _ from "lodash";
 import { NextPage } from "next";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-
 const Login: NextPage = (props: PaperProps) => {
   const router = useRouter();
   const [buttonLoading, setButtonLoading] = useState<boolean>(false);
@@ -115,7 +115,7 @@ const Login: NextPage = (props: PaperProps) => {
             type="submit"
             my="xl"
             fullWidth
-            onClick={() => setButtonLoading(true)}
+            onClick={() => (_.isEmpty(errors) ? setButtonLoading(false) : null)}
           >
             {buttonLoading ? <Loader size={"sm"} color="yellow" /> : "LOGIN"}
           </Button>

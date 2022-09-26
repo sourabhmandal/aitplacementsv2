@@ -1,22 +1,57 @@
 import {
   Badge,
+  Center,
   Container,
   createStyles,
   Divider,
   Group,
   List,
+  Pagination,
+  Space,
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import { IconCircleCheck, IconCircleDashed } from "@tabler/icons";
+import { showNotification } from "@mantine/notifications";
+import { IconCircleCheck } from "@tabler/icons";
 import { NextPage } from "next";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
+import NoticeDetailModal from "../../components/NoticeDetailModal";
+import { trpc } from "../utils/trpc";
 
 const Dashboard: NextPage = () => {
   const router = useRouter();
   const noticeListStyle = useNoticeListStyle();
+  const [pageNos, setpageNos] = useState(1);
+  const [totalPages, settotalPages] = useState(1);
+  const [noticeId, setnoticeId] = useState<string>("");
+  const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+
+  const publishedNoticeMutation = trpc.useQuery(
+    ["notice.published-notice-list", { pageNos }],
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+      onSuccess(data) {
+        console.log(`notice loaded for page nos. ${pageNos}`);
+        console.log(data);
+      },
+    }
+  );
+
+  useEffect(() => {
+    const noticeNos: number = publishedNoticeMutation.data?.totalNotice!;
+    const pages = Math.ceil(noticeNos / 10);
+    settotalPages(pages);
+    console.log("TOTAL PAGE NOS :: ", totalPages);
+  }, [publishedNoticeMutation, totalPages]);
 
   const { status, data } = useSession({
     required: true,
@@ -44,51 +79,50 @@ const Dashboard: NextPage = () => {
         center
         listStyleType="none"
       >
-        <List.Item
-          onClick={() => {
-            alert("hello");
-          }}
-        >
-          <Group spacing="xs">
-            <ThemeIcon color="teal" size={16} radius="xl">
-              <IconCircleCheck size={10} />
-            </ThemeIcon>
-            <Text size="xs" color="dimmed" weight="bold">
-              {new Date().toDateString()}
-            </Text>
-          </Group>
+        <NoticeDetailModal
+          noticeId={noticeId}
+          openNoticeDialog={openNoticeDialog}
+          setOpenNoticeDialog={setOpenNoticeDialog}
+        />
+        {publishedNoticeMutation.data?.notices.map((el, idx) => {
+          return (
+            <List.Item
+              onClick={() => {
+                setnoticeId(el.id);
+                setOpenNoticeDialog(true);
+                console.log(el.id);
+              }}
+              key={idx}
+            >
+              <Group spacing="xs">
+                <ThemeIcon color="teal" size={16} radius="xl">
+                  <IconCircleCheck size={10} />
+                </ThemeIcon>
+                <Text size="xs" color="dimmed" weight="bold">
+                  {el.updatedAt.toDateString()}
+                </Text>
+              </Group>
 
-          <Text py="xs">Clone or download repository from GitHub</Text>
+              <Text py="xs">{el.title}</Text>
 
-          <Group spacing={5} align="left" classNames={noticeListStyle}>
-            <Badge>Test badge</Badge>
-            <Badge>Test badge</Badge>
-            <Badge>Test badge</Badge>
-          </Group>
-        </List.Item>
-        <List.Item
-          onClick={() => {
-            alert("hello");
-          }}
-        >
-          <Group spacing="xs">
-            <ThemeIcon color="blue" size={16} radius="xl">
-              <IconCircleDashed size={10} />
-            </ThemeIcon>
-            <Text size="xs" color="dimmed" weight="bold">
-              {new Date().toDateString()}
-            </Text>
-          </Group>
-
-          <Text py="xs">Clone or download repository from GitHub</Text>
-
-          <Group spacing={5} align="left" classNames={noticeListStyle}>
-            <Badge>Test badge</Badge>
-            <Badge>Test badge</Badge>
-            <Badge>Test badge</Badge>
-          </Group>
-        </List.Item>
+              <Group spacing={5} align="left" classNames={noticeListStyle}>
+                {el.tags.map((tag, idx) => (
+                  <Badge key={idx}>{tag}</Badge>
+                ))}
+              </Group>
+            </List.Item>
+          );
+        })}
       </List>
+      <Space h="md" />
+      <Center>
+        <Pagination
+          total={totalPages}
+          color="orange"
+          page={pageNos}
+          onChange={setpageNos}
+        />
+      </Center>
     </Container>
   );
 };

@@ -22,7 +22,7 @@ export const authRouter = createRouter().mutation("register-user", {
           email: email,
           branch: branch,
           registrationNumber: regno,
-          year: year,
+          year: parseInt(year),
           password: password,
           emailVerified: false,
         },

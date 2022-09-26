@@ -6,12 +6,13 @@ export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: createContext,
   onError({ error }) {
+    // "BAD_REQUEST" | "INTERNAL_SERVER_ERROR" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_SUPPORTED" | "TIMEOUT" | "CONFLICT" | "PRECONDITION_FAILED"
     if (error.code === "INTERNAL_SERVER_ERROR") {
-      console.log(
-        `ERROR ${error.code} :: (${error.name}) ${error.message}, CAUSE : ${error.cause}`
-      );
+      console.log(`ERROR ${error.code} :: (${error.name}) ${error.message}`);
+    } else if (error.code === "PARSE_ERROR") {
+      console.log(`ERROR ${error.code} :: (${error.name}) ${error.message}`);
     } else {
-      console.error(error);
+      console.log(`ERROR ${error.code} :: (${error.name}) ${error.message}`);
     }
   },
 });

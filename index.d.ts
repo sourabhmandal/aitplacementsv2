@@ -1,13 +1,3 @@
-type RegisterRequestType = {
-  name: string;
-  regno: number;
-  year: string;
-  branch: string;
-  email: string;
-  setpassword?: string;
-  password: string;
-};
-
 type APIErrorResponse = {
   ok: boolean;
   status: number;
@@ -23,3 +13,15 @@ type APISuccessResponse = {
 
 type APIResponse = APIErrorResponse & APISuccessResponse;
 type AvailableBranch = "COMP" | "IT" | "ENTC" | "MECH" | "MECH-ME";
+type AvailableYear = "3" | "4";
+
+type CreateNoticeForm = {
+  title: string;
+  body: string;
+  isDraft: boolean;
+};
+
+type MultiSelectItem = {
+  value: string;
+  label: string;
+};

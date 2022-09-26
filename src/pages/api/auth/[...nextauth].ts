@@ -35,7 +35,6 @@ export default NextAuth({
         const user: User | null = await prisma.user.findFirst({
           where: { email: credentials?.email, password: credentials?.password },
         });
-
         // Return null if user data could not be retrieved
         return user;
       },

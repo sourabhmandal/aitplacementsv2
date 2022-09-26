@@ -1,13 +1,13 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { Prisma } from "@prisma/client";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { CreateUserInput } from "../../schema/user.schema";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<APIResponse>
 ) {
-  console.log("WRONG REGISTER API");
-  const { name, regno, year, branch, email, password }: RegisterRequestType =
+  const { name, regno, year, branch, email, password }: CreateUserInput =
     JSON.parse(req.body);
 
   try {

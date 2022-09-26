@@ -7,6 +7,7 @@ import {
   Paper,
   PaperProps,
   PasswordInput,
+  Radio,
   Select,
   SelectItem,
   Stack,
@@ -19,7 +20,7 @@ import { NextPage } from "next";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CreateUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 
@@ -27,6 +28,7 @@ const Register: NextPage = (props: PaperProps) => {
   const router = useRouter();
 
   const { status } = useSession();
+  const [userType, setUserType] = useState<string>("student");
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -65,18 +67,19 @@ const Register: NextPage = (props: PaperProps) => {
     { value: "MECH", label: "Mechanical" },
     { value: "MECH-ME", label: "Mechnical (Masters)" },
   ];
-  const { values, errors, setFieldValue, onSubmit } = useForm({
+  const { values, errors, setFieldValue, onSubmit } = useForm<CreateUserInput>({
     initialValues: {
       name: "",
       regno: 0,
       year: "3",
       branch: "COMP",
       email: "",
-      setpassword: "",
       password: "",
     },
 
     validate: {
+      name: (val) =>
+        /^[a-zA-Z]+$/i.test(val) ? null : "Name cannot have numbers",
       email: (val) =>
         /^\S+@aitpune.edu.in/.test(val)
           ? null
@@ -91,30 +94,16 @@ const Register: NextPage = (props: PaperProps) => {
         if (val.length < 6) {
           error = "Password should include at least 6 characters";
         }
-        if (val !== values.setpassword) {
-          error = "Password dont match";
-        }
-        console.log(error);
-        return error;
-      },
-      setpassword: (val) => {
-        let error = null;
-        if (val.length < 6) {
-          error = "Password should include at least 6 characters";
-        }
-        if (val !== values.password) {
-          error = "Password dont match";
-        }
         return error;
       },
     },
   });
 
-  const handleFormSubmit = async (data: RegisterRequestType) => {
+  const handleFormSubmit = async (data: CreateUserInput) => {
     const reqData: CreateUserInput = {
       name: data.name,
       email: data.email,
-      year: parseInt(data.year),
+      year: data.year,
       branch: data.branch as AvailableBranch,
       password: data.password,
       regno: data.regno,
@@ -138,7 +127,9 @@ const Register: NextPage = (props: PaperProps) => {
           Welcome to Ait Placements
         </Text>
 
-        <form onSubmit={onSubmit((data) => handleFormSubmit(data))}>
+        <form
+          onSubmit={onSubmit((data: CreateUserInput) => handleFormSubmit(data))}
+        >
           <Stack>
             <TextInput
               required
@@ -166,6 +157,8 @@ const Register: NextPage = (props: PaperProps) => {
               //@ts-ignore
               type="number"
               required
+              max={99000}
+              min={15000}
               label="Registration Number"
               placeholder="18255"
               value={values.regno}
@@ -175,15 +168,15 @@ const Register: NextPage = (props: PaperProps) => {
             <Select
               label="Year"
               placeholder="Current year"
-              value={values.year}
-              onChange={(val) => setFieldValue("branch", val || "")}
+              value={values.year.toString()}
+              onChange={(val: AvailableYear) => setFieldValue("year", val)}
               data={yearList}
             />
             <Select
               label="Branch"
               placeholder="Current Branch"
               value={values.branch}
-              onChange={(val) => setFieldValue("branch", val || "")}
+              onChange={(val: AvailableBranch) => setFieldValue("branch", val)}
               data={branchList}
             />
 
@@ -198,16 +191,16 @@ const Register: NextPage = (props: PaperProps) => {
               error={errors.password}
             />
 
-            <PasswordInput
+            <Radio.Group
+              label="Register as an student/admin?"
+              description="Your request will be subject to review by existing admins, please select carefully"
               required
-              label="Confirm Password"
-              placeholder="Your password"
-              value={values.setpassword}
-              onChange={(event) =>
-                setFieldValue("setpassword", event.currentTarget.value)
-              }
-              error={errors.setpassword}
-            />
+              value={userType}
+              onChange={setUserType}
+            >
+              <Radio value="student" label="Student" />
+              <Radio value="admin" label="Admin" />
+            </Radio.Group>
           </Stack>
           <Button
             type="submit"

@@ -8,27 +8,18 @@ generator client {
 }
 
 model User {
-  id                 String  @id @default(uuid())
+  id                 String   @id @default(uuid())
   name               String
-  email              String  @unique
-  registrationNumber Int     @unique
-  year               Int
-  branch             String
+  email              String   @unique
+  emailVerified      Boolean  @default(false)
+  registrationNumber Int      @default(0)
+  year               Int?
+  branch             String?
   password           String
-  emailVerified      Boolean
+  isAdmin            Boolean  @default(false)
+  Notice             Notice[]
 
   @@map("users")
-}
-
-model Admin {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password      String
-  emailVerified Boolean
-  Notice        Notice[]
-
-  @@map("admins")
 }
 
 model VerificationToken {
@@ -42,21 +33,13 @@ model VerificationToken {
 
 model Notice {
   id          String   @id @default(uuid())
-  admin       Admin    @relation(fields: [adminEmail], references: [email])
+  admin       User     @relation(fields: [adminEmail], references: [email])
   adminEmail  String
-  tags        Tag[]
+  tags        String[]
   isPublished Boolean  @default(false)
   title       String
   body        String
   attachments String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
-}
-
-model Tag {
-  id       String  @id @default(uuid())
-  tagName  String
-  tagColor String
-  Notice   Notice? @relation(fields: [noticeId], references: [id])
-  noticeId String?
 }

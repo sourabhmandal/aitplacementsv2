@@ -4,7 +4,7 @@ export const createUserSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   regno: z.number(),
-  year: z.number(),
+  year: z.enum(["3", "4"]),
   branch: z.enum(["COMP", "IT", "ENTC", "MECH", "MECH-ME"]),
   password: z.string(),
 });
