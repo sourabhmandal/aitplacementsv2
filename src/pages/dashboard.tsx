@@ -29,7 +29,7 @@ const Dashboard: NextPage = () => {
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
 
-  const publishedNoticeMutation = trpc.useQuery(
+  const publishedNoticeQuery = trpc.useQuery(
     ["notice.published-notice-list", { pageNos }],
     {
       onError: (err) => {
@@ -47,11 +47,11 @@ const Dashboard: NextPage = () => {
   );
 
   useEffect(() => {
-    const noticeNos: number = publishedNoticeMutation.data?.totalNotice!;
-    const pages = Math.ceil(noticeNos / 10);
+    const noticeNos: number = publishedNoticeQuery.data?.totalNotice!;
+    let pages = Math.ceil(noticeNos / 10);
+    if (pages == 0) pages += 1;
     settotalPages(pages);
-    console.log("TOTAL PAGE NOS :: ", totalPages);
-  }, [publishedNoticeMutation, totalPages]);
+  }, [publishedNoticeQuery, totalPages]);
 
   const { status, data } = useSession({
     required: true,
@@ -79,12 +79,16 @@ const Dashboard: NextPage = () => {
         center
         listStyleType="none"
       >
-        <NoticeDetailModal
-          noticeId={noticeId}
-          openNoticeDialog={openNoticeDialog}
-          setOpenNoticeDialog={setOpenNoticeDialog}
-        />
-        {publishedNoticeMutation.data?.notices.map((el, idx) => {
+        {noticeId === "" ? (
+          <></>
+        ) : (
+          <NoticeDetailModal
+            noticeId={noticeId}
+            openNoticeDialog={openNoticeDialog}
+            setOpenNoticeDialog={setOpenNoticeDialog}
+          />
+        )}
+        {publishedNoticeQuery.data?.notices.map((el, idx) => {
           return (
             <List.Item
               onClick={() => {

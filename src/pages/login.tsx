@@ -6,6 +6,7 @@ import {
   Paper,
   PaperProps,
   PasswordInput,
+  Radio,
   Stack,
   Text,
   TextInput,
@@ -35,6 +36,7 @@ const Login: NextPage = (props: PaperProps) => {
     initialValues: {
       email: "",
       password: "",
+      role: "student",
     },
 
     validate: {
@@ -49,6 +51,7 @@ const Login: NextPage = (props: PaperProps) => {
   const handleFormSubmit = async (data: {
     email: string;
     password: string;
+    role: string;
   }) => {
     const res = await signIn("credentials", {
       ...data,
@@ -57,7 +60,7 @@ const Login: NextPage = (props: PaperProps) => {
     if (!res?.ok) {
       showNotification({
         title: "Error Occured",
-        message: "User not found",
+        message: "either user not registered or unverified",
         color: "red",
       });
     } else {
@@ -90,9 +93,7 @@ const Login: NextPage = (props: PaperProps) => {
               label="Email"
               placeholder="hello@mantine.dev"
               value={values.email}
-              onChange={(event) =>
-                setFieldValue("email", event.currentTarget.value)
-              }
+              onChange={(event) => setFieldValue("email", event.target.value)}
               error={errors.email && "Invalid email"}
             />
 
@@ -102,7 +103,7 @@ const Login: NextPage = (props: PaperProps) => {
               placeholder="Your password"
               value={values.password}
               onChange={(event) =>
-                setFieldValue("password", event.currentTarget.value)
+                setFieldValue("password", event.target.value)
               }
               error={
                 errors.password &&
@@ -110,6 +111,19 @@ const Login: NextPage = (props: PaperProps) => {
               }
             />
           </Stack>
+
+          <Radio.Group
+            label="Login as an student/admin?"
+            required
+            mt={"lg"}
+            value={values.role}
+            onChange={(e: string) => {
+              setFieldValue("role", e);
+            }}
+          >
+            <Radio value="student" label="Student" />
+            <Radio value="admin" label="Admin" />
+          </Radio.Group>
           <Button
             color="orange"
             type="submit"

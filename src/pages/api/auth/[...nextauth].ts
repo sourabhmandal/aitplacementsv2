@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { Admin, Student } from "@prisma/client";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "../../../utils/prisma";
@@ -23,20 +23,26 @@ export default NextAuth({
           placeholder: "sourabh@aitpune.edu.in",
         },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" },
       },
       async authorize(credentials, req) {
-        // You need to provide your own logic here that takes the credentials
-        // submitted and returns either a object representing a user or value
-        // that is false/null if the credentials are invalid.
-        // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
-        // You can also use the `req` object to obtain additional parameters
-        // (i.e., the request IP address)
-
-        const user: User | null = await prisma.user.findFirst({
-          where: { email: credentials?.email, password: credentials?.password },
-        });
-        // Return null if user data could not be retrieved
-        return user;
+        if (credentials?.role == "admin") {
+          const user: Admin | null = await prisma.admin.findFirst({
+            where: {
+              email: credentials?.email,
+              password: credentials?.password,
+            },
+          });
+          return user;
+        } else {
+          const user: Student | null = await prisma.student.findFirst({
+            where: {
+              email: credentials?.email,
+              password: credentials?.password,
+            },
+          });
+          return user;
+        }
       },
     }),
   ],
@@ -55,6 +61,9 @@ export default NextAuth({
     },
     //----------------------------------------------------------------
     async signIn({ user, account, profile, email, credentials }) {
+      if (!user?.emailVerified) {
+        return false;
+      }
       return true;
     },
     async redirect({ url, baseUrl }) {

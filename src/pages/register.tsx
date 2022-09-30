@@ -7,7 +7,6 @@ import {
   Paper,
   PaperProps,
   PasswordInput,
-  Radio,
   Select,
   SelectItem,
   Stack,
@@ -20,7 +19,7 @@ import { NextPage } from "next";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { CreateUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 
@@ -28,7 +27,6 @@ const Register: NextPage = (props: PaperProps) => {
   const router = useRouter();
 
   const { status } = useSession();
-  const [userType, setUserType] = useState<string>("student");
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -38,7 +36,7 @@ const Register: NextPage = (props: PaperProps) => {
     return () => {};
   }, [status, router]);
 
-  const { isLoading, mutate } = trpc.useMutation(["auth.register-user"], {
+  const { isLoading, mutate } = trpc.useMutation(["user.register-user"], {
     onError: (err) => {
       showNotification({
         title: "Error Occured",
@@ -79,7 +77,7 @@ const Register: NextPage = (props: PaperProps) => {
 
     validate: {
       name: (val) =>
-        /^[a-zA-Z]+$/i.test(val) ? null : "Name cannot have numbers",
+        /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
       email: (val) =>
         /^\S+@aitpune.edu.in/.test(val)
           ? null
@@ -134,7 +132,7 @@ const Register: NextPage = (props: PaperProps) => {
             <TextInput
               required
               label="Full Name"
-              placeholder="sourabh mandal"
+              placeholder="john doe"
               value={values.name}
               onChange={(event) =>
                 setFieldValue("name", event.currentTarget.value)
@@ -145,7 +143,7 @@ const Register: NextPage = (props: PaperProps) => {
               required
               type={"email"}
               label="College Email"
-              placeholder="hello@aitpune.edu.in"
+              placeholder="john@aitpune.edu.in"
               value={values.email}
               onChange={(event) =>
                 setFieldValue("email", event.currentTarget.value)
@@ -190,17 +188,6 @@ const Register: NextPage = (props: PaperProps) => {
               }
               error={errors.password}
             />
-
-            <Radio.Group
-              label="Register as an student/admin?"
-              description="Your request will be subject to review by existing admins, please select carefully"
-              required
-              value={userType}
-              onChange={setUserType}
-            >
-              <Radio value="student" label="Student" />
-              <Radio value="admin" label="Admin" />
-            </Radio.Group>
           </Stack>
           <Button
             type="submit"

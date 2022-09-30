@@ -15,17 +15,15 @@ import RichTextEditor from "@mantine/rte";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { trpc } from "../src/utils/trpc";
+import { DropFileUpload } from "./DropFileUpload";
 
 function CreateNotice() {
-  const tags: MultiSelectItem[] = [
-    { value: "react", label: "React" },
-    { value: "ng", label: "Angular" },
-    { value: "svelte", label: "Svelte" },
-    { value: "vue", label: "Vue" },
-    { value: "riot", label: "Riot" },
-    { value: "next", label: "Next.js" },
-    { value: "blitz", label: "Blitz.js" },
-  ];
+  const [tags, setTags] = useState<MultiSelectItem[]>([
+    { value: "COMP", label: "COMP" },
+    { value: "IT", label: "IT" },
+    { value: "ENTC", label: "ENTC" },
+    { value: "MECH", label: "MECH" },
+  ]);
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const matches = useMediaQuery("(min-width: 600px)");
@@ -107,7 +105,7 @@ function CreateNotice() {
             required
             label="Notice Title"
             mb={10}
-            placeholder="your@email.com"
+            placeholder="Set a notice title"
             onChange={(e) => {
               form.setFieldValue("title", e.target.value);
             }}
@@ -124,8 +122,13 @@ function CreateNotice() {
             mb={40}
             getCreateLabel={(query) => `+ Create ${query}`}
             onCreate={(query: string) => {
+              setTags((current: any) => [...current, query]);
               setSelectedTags((current: any) => [...current, query]);
               return query;
+            }}
+            onChange={(values: string[]) => {
+              setSelectedTags(values);
+              return values;
             }}
             maxDropdownHeight={160}
           />
@@ -144,6 +147,7 @@ function CreateNotice() {
               form.setFieldValue("body", data);
             }}
           />
+          <DropFileUpload />
 
           <Grid align="center" justify="space-between">
             <Grid.Col span={4}>

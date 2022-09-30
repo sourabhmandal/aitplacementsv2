@@ -12,14 +12,19 @@ import {
   Header,
   Menu,
   Text,
+  Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
 import {
   IconArrowBarLeft,
   IconBrandGithub,
+  IconDashboard,
   IconMoon,
+  IconPhoneCall,
   IconSun,
-  IconUser,
+  IconUserCircle,
+  IconUsers,
 } from "@tabler/icons";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
@@ -33,13 +38,25 @@ const AppContainer: React.FunctionComponent<Props> = ({
   setTheme,
   theme,
 }) => {
-  const signedOutlinks: HeaderSimple[] = [
+  const topBarLinks: HeaderSimple[] = [
     { link: "/", label: "Home" },
     { link: "/login", label: "Login" },
     { link: "/register", label: "Register" },
   ];
 
+  const footerLinks: HeaderSimple[] = [
+    { link: "/support", label: "Support" },
+    { link: "/about", label: "About" },
+  ];
+
   const { status, data } = useSession();
+
+  const showCommingSoon = () =>
+    showNotification({
+      title: "Comming Soon",
+      message: "this feature is not available yet",
+      color: "lime",
+    });
 
   const [opened, { toggle }] = useDisclosure(false);
   const headerStyle = useHeaderStyles();
@@ -48,7 +65,7 @@ const AppContainer: React.FunctionComponent<Props> = ({
   const router = useRouter();
   const itemsHeader =
     status == "unauthenticated" || status == "loading" ? (
-      signedOutlinks.map((l) => (
+      topBarLinks.map((l) => (
         <Link key={l.link} href={l.link}>
           <Button
             color="orange"
@@ -76,7 +93,36 @@ const AppContainer: React.FunctionComponent<Props> = ({
 
           <Menu.Dropdown>
             <Menu.Label>Application</Menu.Label>
-            <Menu.Item icon={<IconUser size={14} />}>Profile</Menu.Item>
+            <Link href="/dashboard">
+              <Menu.Item icon={<IconDashboard size={14} />}>
+                Dashboard
+              </Menu.Item>
+            </Link>
+            <Menu.Item
+              onClick={showCommingSoon}
+              icon={<IconUserCircle size={14} />}
+            >
+              Profile
+            </Menu.Item>
+            <Link href="/users">
+              <Menu.Item icon={<IconUsers size={14} />}>Users</Menu.Item>
+            </Link>
+            <Menu.Label>Help</Menu.Label>
+            <Menu.Item
+              onClick={showCommingSoon}
+              icon={<IconPhoneCall size={14} />}
+            >
+              Support
+            </Menu.Item>
+            <Link
+              target="_blank"
+              rel="noopener noreferrer"
+              href={"https://github.com/aitoss/aitplacements-v2"}
+            >
+              <Menu.Item icon={<IconBrandGithub size={14} />}>
+                Contribute
+              </Menu.Item>
+            </Link>
             <Menu.Divider></Menu.Divider>
             <Menu.Label>Danger</Menu.Label>
             <Menu.Item
@@ -95,7 +141,7 @@ const AppContainer: React.FunctionComponent<Props> = ({
         </Menu>
       </Box>
     );
-  const itemsFooter = signedOutlinks.map((link) => (
+  const itemsFooter = footerLinks.map((link) => (
     <Anchor<"a">
       color="orange"
       key={link.label}
@@ -114,7 +160,10 @@ const AppContainer: React.FunctionComponent<Props> = ({
       header={
         <Header height={60} mb={120}>
           <Container className={headerStyle.classes.header}>
-            <Image src={Logo} alt="ait logo image" width={40} height={35} />
+            <Group>
+              <Image src={Logo} alt="ait logo image" width={40} height={35} />
+              <Title order={5}>AIT Placements</Title>
+            </Group>
             <Group spacing={5} className={headerStyle.classes.links}>
               {itemsHeader}
               <ActionIcon

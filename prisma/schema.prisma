@@ -7,25 +7,39 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id                 String   @id @default(uuid())
+model Student {
+  id                 String  @id @default(uuid())
   name               String
-  email              String   @unique
-  emailVerified      Boolean  @default(false)
-  registrationNumber Int      @default(0)
-  year               Int?
-  branch             String?
+  email              String  @unique
+  emailVerified      Boolean @default(false)
+  registrationNumber Int     @default(0)
   password           String
-  isAdmin            Boolean  @default(false)
-  Notice             Notice[]
+    year               Int?
+  branch             String?
+  phoneNo            String?
 
-  @@map("users")
+  @@map("students")
+}
+
+model Admin {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  role Role @default(ADMIN)
+  password      String
+  designation   String?
+  phoneNo       String?
+  Notice        Notice[]
+
+  @@map("admins")
 }
 
 model VerificationToken {
   id         String   @id @default(uuid())
-  identifier String
+  identifier String   @unique @default(uuid())
   email      String
+  role       Role   @default(STUDENT)
   expires    DateTime
 
   @@map("verification_tokens")
@@ -33,7 +47,7 @@ model VerificationToken {
 
 model Notice {
   id          String   @id @default(uuid())
-  admin       User     @relation(fields: [adminEmail], references: [email])
+  admin       Admin    @relation(fields: [adminEmail], references: [email])
   adminEmail  String
   tags        String[]
   isPublished Boolean  @default(false)
@@ -42,4 +56,13 @@ model Notice {
   attachments String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+
+  @@map("notice")
+}
+
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STUDENT
 }

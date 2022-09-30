@@ -1,9 +1,13 @@
 import { createRouter } from "../createRouter";
-import { authRouter } from "./auth.router";
+import { adminRouter } from "./admin.router";
 import { noticeRouter } from "./notice.router";
+import { userRouter } from "./user.router";
+import { verifyRouter } from "./verify.router";
 
 export const appRouter = createRouter()
-  .merge("auth.", authRouter)
-  .merge("notice.", noticeRouter);
+  .merge("user.", userRouter)
+  .merge("admin.", adminRouter)
+  .merge("notice.", noticeRouter)
+  .merge("verify.", verifyRouter);
 
 export type AppRouter = typeof appRouter;
