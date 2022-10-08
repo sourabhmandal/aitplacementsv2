@@ -10,7 +10,7 @@ import {
   createUserOutputSchema,
   StudentListOutput,
   studentListOutput,
-} from "../../schema/user.schema";
+} from "../../../../schema/user.schema";
 import { createRouter } from "../createRouter";
 import { NodemailerInstance } from "../nodemailer_instance";
 

@@ -4,12 +4,14 @@ import {
   createNoticeInput,
   createNoticeOutput,
   getNoticeDetailInput,
+  GetNoticeDetailOutput,
   getNoticeDetailOutput,
   getNoticeListInput,
   getNoticeListOutput,
-} from "../../schema/notice.schema";
+} from "../../../../schema/notice.schema";
 import { createRouter } from "../createRouter";
 import { prismaError } from "../errors/prisma.errors";
+import { S3Instance } from "../s3_instance";
 
 export const noticeRouter = createRouter()
   .mutation("create-notice", {
@@ -17,22 +19,38 @@ export const noticeRouter = createRouter()
     output: createNoticeOutput,
     async resolve({ ctx, input }) {
       const { adminEmail, attachments, body, isPublished, tags, title } = input;
-      console.log(tags);
+
+      console.log(adminEmail);
       try {
-        const dbResp: Notice = await ctx.prisma.notice.create({
+        const dbRespNotice: Notice = await ctx.prisma.notice.create({
           data: {
             body: body,
             title: title,
-            adminEmail: adminEmail,
-            attachments: attachments,
             isPublished: isPublished,
             tags: tags,
+            attachments: {
+              create: attachments.map((atth) => ({
+                fileid: atth.fileid,
+                filename: atth.filename,
+                filetype: atth.filetype,
+              })),
+            },
+            admin: {
+              connect: {
+                email: adminEmail,
+              },
+            },
+          },
+          include: {
+            admin: true,
+            attachments: true,
           },
         });
+
         return {
-          adminEmail: dbResp.adminEmail,
-          isPublished: dbResp.isPublished,
-          title: dbResp.title,
+          adminEmail: dbRespNotice.adminEmail,
+          isPublished: dbRespNotice.isPublished,
+          title: dbRespNotice.title,
         };
       } catch (e) {
         console.log(e);
@@ -52,31 +70,63 @@ export const noticeRouter = createRouter()
   .query("notice-detail", {
     input: getNoticeDetailInput,
     output: getNoticeDetailOutput,
-    async resolve({ ctx, input }) {
-      let result = {
-        id: "",
-        tags: new Array<string>(0),
-        isPublished: true,
-        title: "",
-        body: "",
-        attachments: new Array<string>(0),
-      };
+    async resolve({ ctx, input }): Promise<GetNoticeDetailOutput> {
       const { id } = input;
+      let atthUrls: { url: string; name: string; type: string }[] = new Array<{
+        url: string;
+        name: string;
+        type: string;
+      }>(0);
       try {
-        const dbResp: Notice | null = await ctx.prisma.notice.findUnique({
+        const dbRespNotice = await ctx.prisma.notice.findUnique({
           where: {
             id: id,
           },
+          include: {
+            admin: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+            attachments: {
+              select: {
+                id: true,
+                fileid: true,
+                filename: true,
+                filetype: true,
+              },
+            },
+          },
         });
+        if (dbRespNotice?.attachments && dbRespNotice.attachments.length > 0) {
+          for (let file of dbRespNotice.attachments) {
+            const url = await S3Instance.GetS3().getSignedUrlPromise(
+              "getObject",
+              {
+                Bucket: process.env.REACT_APP_AWS_BUCKET_ID,
+                Key: `${file.fileid}`,
+              }
+            );
 
-        result.id = dbResp?.id!;
-        result.body = dbResp?.body!;
-        result.title = dbResp?.title!;
-        result.tags = dbResp?.tags!;
-        result.attachments = dbResp?.attachments!;
-        result.isPublished = dbResp?.isPublished!;
+            atthUrls.push({
+              url: url,
+              name: file.filename,
+              type: file.filetype,
+            });
+          }
+        }
 
-        return result;
+        if (dbRespNotice) {
+          return {
+            id: dbRespNotice.id,
+            title: dbRespNotice.title,
+            tags: dbRespNotice.tags,
+            body: dbRespNotice.body,
+            isPublished: dbRespNotice.isPublished,
+            attachments: atthUrls,
+          };
+        }
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
@@ -85,7 +135,14 @@ export const noticeRouter = createRouter()
       }
 
       // default response
-      return result;
+      return {
+        id: "",
+        tags: new Array<string>(0),
+        isPublished: true,
+        title: "",
+        body: "",
+        attachments: atthUrls,
+      };
     },
   })
   .query("published-notice-list", {

@@ -15,7 +15,6 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
 import {
   IconArrowBarLeft,
   IconBrandGithub,
@@ -32,6 +31,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Dispatch, SetStateAction } from "react";
 import Logo from "../assets/logo.gif";
+import { showCommingSoon } from "./constants";
 
 const AppContainer: React.FunctionComponent<Props> = ({
   children,
@@ -50,13 +50,6 @@ const AppContainer: React.FunctionComponent<Props> = ({
   ];
 
   const { status, data } = useSession();
-
-  const showCommingSoon = () =>
-    showNotification({
-      title: "Comming Soon",
-      message: "this feature is not available yet",
-      color: "lime",
-    });
 
   const [opened, { toggle }] = useDisclosure(false);
   const headerStyle = useHeaderStyles();

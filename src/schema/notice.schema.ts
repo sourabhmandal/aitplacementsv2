@@ -1,6 +1,7 @@
 import z from "zod";
 
 export const createNoticeInput = z.object({
+  id: z.string().uuid(),
   adminEmail: z.string().email(),
   tags: z.array(z.string()),
   isPublished: z.boolean(),
@@ -9,8 +10,15 @@ export const createNoticeInput = z.object({
     .max(80, "Maximum title lenght should be 80 charachters long")
     .min(1, "Notice title cannot be empty"),
   body: z.string().min(1, "Notice body cannot be empty"),
-  attachments: z.array(z.string()),
+  attachments: z.array(
+    z.object({
+      fileid: z.string(),
+      filename: z.string(),
+      filetype: z.string(),
+    })
+  ),
 });
+export type CreateNoticeInput = z.TypeOf<typeof createNoticeInput>;
 
 export const createNoticeOutput = z.object({
   title: z.string(),
@@ -63,5 +71,18 @@ export const getNoticeDetailOutput = z.object({
   isPublished: z.boolean(),
   title: z.string(),
   body: z.string(),
-  attachments: z.array(z.string()),
+  attachments: z.array(
+    z.object({
+      url: z.string(),
+      name: z.string(),
+      type: z.string(),
+    })
+  ),
 });
+
+export type GetNoticeDetailOutput = z.TypeOf<typeof getNoticeDetailOutput>;
+
+export const createPresignedUrlInput = z.object({
+  filepath: z.string(),
+});
+

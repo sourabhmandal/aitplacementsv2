@@ -14,7 +14,7 @@ model Student {
   emailVerified      Boolean @default(false)
   registrationNumber Int     @default(0)
   password           String
-    year               Int?
+  year               Int?
   branch             String?
   phoneNo            String?
 
@@ -26,7 +26,7 @@ model Admin {
   name          String
   email         String   @unique
   emailVerified Boolean  @default(false)
-  role Role @default(ADMIN)
+  role          Role     @default(ADMIN)
   password      String
   designation   String?
   phoneNo       String?
@@ -39,27 +39,37 @@ model VerificationToken {
   id         String   @id @default(uuid())
   identifier String   @unique @default(uuid())
   email      String
-  role       Role   @default(STUDENT)
+  role       Role     @default(STUDENT)
   expires    DateTime
 
   @@map("verification_tokens")
 }
 
 model Notice {
-  id          String   @id @default(uuid())
-  admin       Admin    @relation(fields: [adminEmail], references: [email])
+  id          String        @id @default(uuid())
+  admin       Admin         @relation(fields: [adminEmail], references: [email])
   adminEmail  String
   tags        String[]
-  isPublished Boolean  @default(false)
+  isPublished Boolean       @default(false)
   title       String
   body        String
-  attachments String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  attachments Attachments[]
 
   @@map("notice")
 }
 
+model Attachments {
+  id       String @id @default(uuid())
+  notice   Notice @relation(fields: [noticeid], references: [id])
+  noticeid String
+  filename String
+  filetype String
+  fileid   String
+
+  @@map("attachments")
+}
 
 enum Role {
   SUPER_ADMIN

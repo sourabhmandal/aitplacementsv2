@@ -25,3 +25,9 @@ type MultiSelectItem = {
   value: string;
   label: string;
 };
+
+type SavedFileOctokit = {
+  filepath: string;
+  sha: string;
+  downloadUrl: string;
+};

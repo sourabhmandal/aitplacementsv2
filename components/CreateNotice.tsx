@@ -1,21 +1,36 @@
 import {
+  ActionIcon,
   Button,
+  Card,
   createStyles,
   Grid,
   Group,
+  Image,
   Modal,
   MultiSelect,
+  SimpleGrid,
+  Space,
   Switch,
+  Text,
   TextInput,
+  useMantineTheme,
 } from "@mantine/core";
+import {
+  Dropzone,
+  FileWithPath,
+  IMAGE_MIME_TYPE,
+  MIME_TYPES,
+} from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { useMediaQuery } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import RichTextEditor from "@mantine/rte";
+import { IconFileUpload, IconX } from "@tabler/icons";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { v4 } from "uuid";
+import { CreateNoticeInput } from "../src/schema/notice.schema";
 import { trpc } from "../src/utils/trpc";
-import { DropFileUpload } from "./DropFileUpload";
 
 function CreateNotice() {
   const [tags, setTags] = useState<MultiSelectItem[]>([
@@ -24,17 +39,25 @@ function CreateNotice() {
     { value: "ENTC", label: "ENTC" },
     { value: "MECH", label: "MECH" },
   ]);
-
+  const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const matches = useMediaQuery("(min-width: 600px)");
+  const { data } = useSession();
 
-  const form = useForm<CreateNoticeForm>({
+  const { mutateAsync: createPresignedUrl } = trpc.useMutation([
+    "attachment.create-presigned-url",
+  ]);
+
+  const form = useForm<CreateNoticeInput>({
     initialValues: {
+      id: v4(),
+      tags: [],
+      adminEmail: data?.user?.email!,
+      isPublished: true,
       title: "",
       body: "",
-      isDraft: false,
+      attachments: [],
     },
-
     validate: {
       title: (val: string) =>
         val.length > 80
@@ -43,15 +66,19 @@ function CreateNotice() {
       body: (val: string) => (val == "" ? "Notice body cannot be empty" : null),
     },
   });
-  const { isLoading, mutate } = trpc.useMutation(["notice.create-notice"], {
-    onError: (err) => {
+  const mutateCreateNotice = trpc.useMutation(["notice.create-notice"], {
+    onError: (err: any) => {
       showNotification({
         title: "Error Occured",
         message: err.message,
         color: "red",
       });
     },
-    onSuccess(data) {
+    onSuccess(data: {
+      adminEmail: string;
+      isPublished: boolean;
+      title: string;
+    }) {
       showNotification({
         title: "Success",
         message: `Notice "${data.title}" created by admin ${data.adminEmail}`,
@@ -59,28 +86,122 @@ function CreateNotice() {
       });
     },
   });
-  const { data } = useSession();
   const rteStyle = useRteStyle();
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+  const theme = useMantineTheme();
 
-  const savePost = (formdata: CreateNoticeForm) => {
-    mutate({
-      adminEmail: data?.user?.email || "",
-      title: formdata.title,
-      body: formdata.body,
-      isPublished: !formdata.isDraft,
-      tags: selectedTags,
-      attachments: [],
-    });
-    resetForm();
-    setOpenNoticeDialog(false);
+  useEffect(() => {
+    const len: number = acceptedFileList.length;
+    const targetFile: FileWithPath = acceptedFileList[len - 1];
+    if (len == 0) return;
+    (async () => {
+      const filepath = `${form.values.id}/${Date.now()}-${targetFile.name}`;
+      const { url, fields } = (await createPresignedUrl({
+        filepath: filepath,
+      })) as any;
+
+      const data = {
+        ...fields,
+        "Content-Type": targetFile.type,
+        file: targetFile,
+      };
+
+      const formData = new FormData();
+      for (const name in data) {
+        formData.append(name, data[name]);
+      }
+
+      try {
+        fetch(url, {
+          method: "POST",
+          body: formData,
+        });
+
+        form.setFieldValue("attachments", [
+          ...form.values.attachments,
+          {
+            fileid: filepath,
+            filename: targetFile.name,
+            filetype: targetFile.type,
+          },
+        ]);
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+    return () => {};
+  }, [acceptedFileList, form.values.id]);
+
+  const savePost = async (formdata: CreateNoticeInput) => {
+    formdata.tags = selectedTags;
+
+    // add unique ids list as attachments
+    mutateCreateNotice.mutate(formdata);
+
+    // resetForm();
+    // setOpenNoticeDialog(false);
   };
 
   function resetForm() {
     form.setFieldValue("body", "");
-    form.setFieldValue("isDraft", false);
+    form.setFieldValue("isPublished", false);
     form.setFieldValue("title", "");
   }
+
+  const PreviewsImage = acceptedFileList.map((file, index) => {
+    if (IMAGE_MIME_TYPE.find((f) => f == file.type) == undefined) {
+      return (
+        <Card
+          p={4}
+          key={file.name}
+          sx={{
+            border: "1px solid #ccc",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <IconFileUpload
+            color={
+              theme.colors[theme.primaryColor][
+                theme.colorScheme === "dark" ? 4 : 6
+              ]
+            }
+          />
+          <div style={{ marginLeft: 6 }}>
+            <Text size="sm">{file.name}</Text>
+            <Text color="dimmed" size="xs">
+              {file.type}
+            </Text>
+          </div>
+          <ActionIcon
+            variant="light"
+            onClick={() => {
+              // remove from files
+              let revisedFiles = acceptedFileList.filter(
+                (filterfile) => file.name != filterfile.name
+              );
+              setacceptedFileList(revisedFiles);
+            }}
+          >
+            <IconX />
+          </ActionIcon>
+        </Card>
+      );
+    }
+    const imageUrl = URL.createObjectURL(file);
+    return (
+      <Image
+        key={index}
+        src={imageUrl}
+        alt={file.name}
+        height={100}
+        width={100}
+        imageProps={{ onLoad: () => URL.revokeObjectURL(imageUrl) }}
+        caption={<Text size="sm">{file.name}</Text>}
+      />
+    );
+  });
 
   return (
     <Group position="center">
@@ -94,13 +215,16 @@ function CreateNotice() {
         onClose={() => {
           resetForm();
           setOpenNoticeDialog(false);
+          setacceptedFileList([]);
         }}
         size="xl"
         radius="md"
         title="Publish a notice"
         withCloseButton
       >
-        <form onSubmit={form.onSubmit((data) => savePost(data))}>
+        <form
+          onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
+        >
           <TextInput
             required
             label="Notice Title"
@@ -147,16 +271,68 @@ function CreateNotice() {
               form.setFieldValue("body", data);
             }}
           />
-          <DropFileUpload />
+          <Dropzone
+            multiple={false}
+            useFsAccessApi={false}
+            onDrop={(files) => {
+              setacceptedFileList((prev) => [...prev, ...files]);
+            }}
+            onReject={() =>
+              showNotification({
+                message: `file type not accepted`,
+                title: "Unsupported file",
+                color: "red",
+              })
+            }
+            maxSize={20 * 1024 ** 2} // 20 mb
+            accept={[
+              MIME_TYPES.csv,
+              MIME_TYPES.doc,
+              MIME_TYPES.docx,
+              MIME_TYPES.gif,
+              MIME_TYPES.jpeg,
+              MIME_TYPES.mp4,
+              MIME_TYPES.pdf,
+              MIME_TYPES.png,
+              MIME_TYPES.ppt,
+              MIME_TYPES.pptx,
+              MIME_TYPES.svg,
+              MIME_TYPES.webp,
+              MIME_TYPES.xls,
+              MIME_TYPES.xlsx,
+              MIME_TYPES.zip,
+            ]}
+          >
+            <Group
+              position="center"
+              spacing="xl"
+              style={{ minHeight: 120, pointerEvents: "none" }}
+            >
+              <div>
+                <Text size="xl" inline>
+                  Drag files here or click to select files
+                </Text>
+                <Text size="sm" color="dimmed" inline mt={7}>
+                  Attach as many files as you like, each file should not exceed
+                  20mb
+                </Text>
+              </div>
+            </Group>
+          </Dropzone>
+          <SimpleGrid cols={3} mt={8}>
+            {PreviewsImage}
+          </SimpleGrid>
+          <Space h="xl" />
+          <Space h="xl" />
 
           <Grid align="center" justify="space-between">
             <Grid.Col span={4}>
               <Switch
                 label="Save as draft"
-                checked={form.values.isDraft}
-                onChange={(event) =>
-                  form.setFieldValue("isDraft", event.currentTarget.checked)
-                }
+                onChange={(event) => {
+                  console.log(event.target.checked);
+                  form.setFieldValue("isPublished", !event.target.checked);
+                }}
               />
             </Grid.Col>
             <Grid.Col span={2}>

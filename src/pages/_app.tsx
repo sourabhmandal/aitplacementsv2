@@ -10,8 +10,8 @@ import Head from "next/head";
 import { useState } from "react";
 import superjson from "superjson";
 import AppContainer from "../../components/AppContainer";
-import { AppRouter } from "../server/routes/app.router";
 import { HOSTED_VERCEL_URL, LOCALHOST_URL } from "../utils/constants";
+import { AppRouter } from "./api/server/routes/app.router";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>("light");

@@ -40,8 +40,8 @@ const Dashboard: NextPage = () => {
         });
       },
       onSuccess(data) {
-        console.log(`notice loaded for page nos. ${pageNos}`);
-        console.log(data);
+        console.debug(`notice loaded for page nos. ${pageNos}`);
+        console.debug(data);
       },
     }
   );

@@ -5,7 +5,7 @@ import {
   adminListOutput,
   inviteAdminInput,
   inviteAdminOutput,
-} from "../../schema/admin.schema";
+} from "../../../../schema/admin.schema";
 import { createRouter } from "../createRouter";
 import { NodemailerInstance } from "../nodemailer_instance";
 

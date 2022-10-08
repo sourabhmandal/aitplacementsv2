@@ -2,7 +2,7 @@ import { Student, VerificationToken } from "@prisma/client";
 import {
   verifyEmailInputSchema,
   verifyEmailOutputSchema,
-} from "../../schema/verify.schema";
+} from "../../../../schema/verify.schema";
 import { createRouter } from "../createRouter";
 
 export const verifyRouter = createRouter().mutation("verify-email", {
