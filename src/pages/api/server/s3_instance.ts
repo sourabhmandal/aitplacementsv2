@@ -1,4 +1,9 @@
 import aws from "aws-sdk";
+import {
+  REACT_APP_AWS_ACCESS_KEY,
+  REACT_APP_AWS_REGION,
+  REACT_APP_AWS_SECRET_ACCESS_KEY,
+} from "../../../constants";
 
 class AwsLibInstance {
   private s3_instance: aws.S3;
@@ -6,10 +11,10 @@ class AwsLibInstance {
   constructor() {
     this.s3_instance = new aws.S3({
       credentials: {
-        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY!,
-        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: REACT_APP_AWS_ACCESS_KEY!,
+        secretAccessKey: REACT_APP_AWS_SECRET_ACCESS_KEY!,
       },
-      region: process.env.REACT_APP_AWS_REGION,
+      region: REACT_APP_AWS_REGION,
     });
   }
 

@@ -7,55 +7,53 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Student {
+model User {
+  id             String          @id @default(uuid())
+  name           String?
+  email          String          @unique
+  phoneNo        String?
+  role           Role            @default(STUDENT)
+  userStatus     UserStatus      @default(INACTIVE)
+  StudentDetails StudentDetails?
+  AdminDetails   AdminDetails?
+  Notice         Notice[]
+
+  @@map("users")
+}
+
+model StudentDetails {
   id                 String  @id @default(uuid())
-  name               String
-  email              String  @unique
-  emailVerified      Boolean @default(false)
+  basicDetails       User    @relation(fields: [basicDetailsFk], references: [id])
+  basicDetailsFk     String  @unique
   registrationNumber Int     @default(0)
-  password           String
   year               Int?
   branch             String?
-  phoneNo            String?
 
-  @@map("students")
+  @@map("student_detail")
 }
 
-model Admin {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  role          Role     @default(ADMIN)
-  password      String
-  designation   String?
-  phoneNo       String?
-  Notice        Notice[]
+model AdminDetails {
+  id             String   @id @default(uuid())
+  basicDetails   User     @relation(fields: [basicDetailsFk], references: [id])
+  basicDetailsFk String   @unique
+  Notice         Notice[]
 
-  @@map("admins")
-}
-
-model VerificationToken {
-  id         String   @id @default(uuid())
-  identifier String   @unique @default(uuid())
-  email      String
-  role       Role     @default(STUDENT)
-  expires    DateTime
-
-  @@map("verification_tokens")
+  @@map("admin_detail")
 }
 
 model Notice {
-  id          String        @id @default(uuid())
-  admin       Admin         @relation(fields: [adminEmail], references: [email])
-  adminEmail  String
-  tags        String[]
-  isPublished Boolean       @default(false)
-  title       String
-  body        String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  attachments Attachments[]
+  id             String        @id @default(uuid())
+  admin          User          @relation(fields: [adminEmailFk], references: [email])
+  adminEmailFk   String
+  tags           String[]
+  isPublished    Boolean       @default(false)
+  title          String
+  body           String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now())
+  attachments    Attachments[]
+  AdminDetails   AdminDetails? @relation(fields: [adminDetailsId], references: [id])
+  adminDetailsId String?
 
   @@map("notice")
 }
@@ -75,4 +73,10 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   STUDENT
+}
+
+enum UserStatus {
+  INACTIVE
+  ACTIVE
+  INVITED
 }

@@ -1,142 +1,209 @@
-import { Admin, Student, VerificationToken } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 import {
-  PrismaClientKnownRequestError,
-  PrismaClientValidationError,
-} from "@prisma/client/runtime";
-import * as trpc from "@trpc/server";
-import { randomUUID } from "crypto";
+  inviteUserInput,
+  inviteUserOutput,
+} from "../../../../schema/admin.schema";
+import { ROLES, USER_STATUS } from "../../../../schema/constants";
 import {
-  createUserInputSchema,
-  createUserOutputSchema,
-  StudentListOutput,
-  studentListOutput,
+  updateUserInputSchema,
+  UpdateUserOutputSchema,
+  updateUserOutputSchema,
+  userDetailsInput,
+  UserDetailsOutput,
+  userDetailsOutput,
+  userListInput,
+  UserListOutput,
+  userListOutput,
 } from "../../../../schema/user.schema";
 import { createRouter } from "../createRouter";
+import { prismaError } from "../errors/prisma.errors";
 import { NodemailerInstance } from "../nodemailer_instance";
 
 export const userRouter = createRouter()
-  .mutation("register-user", {
-    input: createUserInputSchema,
-    output: createUserOutputSchema,
+  .mutation("onboard-user", {
+    input: updateUserInputSchema,
+    output: updateUserOutputSchema,
     async resolve({ ctx, input }) {
-      const { name, regno, year, branch, email, password } = input;
-      try {
-        // look for token in db
-        const adminVerifyDBResp: VerificationToken | null =
-          await ctx.prisma.verificationToken.findFirst({
-            where: {
-              email: email,
-            },
-          });
+      let response: UpdateUserOutputSchema = {
+        email: "",
+        name: "",
+        role: "STUDENT",
+      };
 
-        if (adminVerifyDBResp && adminVerifyDBResp.role == "ADMIN") {
-          // user is admin, create admin entry
-          const adminDB: Admin = await ctx.prisma.admin.create({
-            data: {
-              email: email,
-              name: name,
-              password: password,
-              designation: "",
-              emailVerified: true,
-              phoneNo: "",
-              role: "ADMIN",
-            },
-          });
+      const updatedDBUser = await ctx.prisma.user.update({
+        where: {
+          email: input.email,
+        },
+        data: {
+          name: input.name,
+          phoneNo: input.phoneNo?.toString(),
+          userStatus: "ACTIVE",
+        },
+      });
 
-          if (adminDB.id) {
-            // clear admin invite
-            await ctx.prisma.verificationToken.deleteMany({
-              where: {
-                email: email,
+      response = {
+        email: updatedDBUser.email,
+        name: updatedDBUser.name!,
+        role: updatedDBUser.role,
+      };
+      if (updatedDBUser?.role == "ADMIN") {
+        await ctx.prisma.adminDetails.upsert({
+          where: {
+            basicDetailsFk: updatedDBUser.id,
+          },
+          update: {},
+          create: {
+            basicDetails: {
+              connect: {
+                email: input.email,
               },
-            });
-          }
-
-          return {
-            email: adminDB.email,
-            name: adminDB.name,
-          };
-        }
-
-        // -------------------------------------------------------------------------
-
-        // register student flow
-        const now = new Date();
-        const verifyDBResp: VerificationToken =
-          await ctx.prisma.verificationToken.create({
-            data: {
-              email: email,
-              expires: new Date(now.getTime() + 30 * 60000),
-              identifier: randomUUID(),
             },
-          });
-
-        // nodemailer
-        await NodemailerInstance.GetNodemailer();
-        await NodemailerInstance.SendVerifyEmail(
-          verifyDBResp.identifier,
-          email
-        );
-
-        const dbResp: Student = await ctx.prisma.student.create({
-          data: {
-            name: name,
-            email: email,
-            branch: branch,
-            registrationNumber: regno,
-            year: parseInt(year),
-            password: password,
-            emailVerified: false,
-            phoneNo: "",
           },
         });
-        return { email: dbResp.email, name: dbResp.name };
-      } catch (e) {
-        console.log(e);
-        if (e instanceof PrismaClientKnownRequestError) {
-          if (e.code == "P2002") {
-            // unique constraint error
-            throw new trpc.TRPCError({
-              code: "CONFLICT",
-              message: "user already exist",
-            });
-          }
-
-          if (e instanceof PrismaClientValidationError) {
-            throw new trpc.TRPCError({
-              code: "BAD_REQUEST",
-              message: "Data is invalid",
-            });
-          }
-
-          throw new trpc.TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "something went wrong",
-          });
-        }
+      } else if (updatedDBUser?.role == "STUDENT") {
+        await ctx.prisma.studentDetails.upsert({
+          where: {
+            basicDetailsFk: updatedDBUser.id,
+          },
+          update: {
+            branch: input.branch,
+            registrationNumber: input.regNo,
+            year: parseInt(input.year || "0"),
+          },
+          create: {
+            basicDetails: {
+              connect: {
+                email: input.email,
+              },
+            },
+            branch: input.branch,
+            registrationNumber: input.regNo,
+            year: parseInt(input.year || "0"),
+          },
+        });
       }
 
-      // default response
+      return response;
+    },
+  })
+  .mutation("invite-user", {
+    input: inviteUserInput,
+    output: inviteUserOutput,
+    async resolve({ ctx, input }) {
+      try {
+        const user = await ctx.prisma.user.create({
+          data: {
+            email: input.email,
+            role: input.role,
+            userStatus: "INVITED",
+          },
+          select: {
+            email: true,
+            role: true,
+          },
+        });
+        if (user) {
+          // nodemailer
+          await NodemailerInstance.GetNodemailer();
+          await NodemailerInstance.SendUserInviteEmail(input.email, input.role);
+          return {
+            email: user.email,
+            role: user.role as ROLES,
+          };
+        }
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) prismaError(e);
+        else console.log(e);
+      }
+
+      // return fail response
       return {
-        name: "",
         email: "",
+        role: "STUDENT" as ROLES,
       };
     },
   })
-  .query("get-students", {
-    output: studentListOutput,
+  .query("get-user-list", {
+    input: userListInput,
+    output: userListOutput,
     async resolve({ ctx, input }) {
-      const dbStudent: Student[] = await ctx.prisma.student.findMany();
+      const dbStudent = await ctx.prisma.user.findMany({
+        where: {
+          role: input.role as ROLES,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          phoneNo: true,
+          userStatus: true,
+        },
+      });
 
-      const data: StudentListOutput = dbStudent.map((item) => ({
+      const data: UserListOutput = dbStudent.map((item) => ({
+        id: item.id,
         email: item.email,
-        emailVerified: item.emailVerified,
-        name: item.name!,
-        phoneNo: item.phoneNo!,
-        branch: item.branch!,
-        registrationNumber: item.registrationNumber,
-        year: item.year!,
+        name: item.name || "N.A",
+        role: item.role as ROLES,
+        phoneNo: item.phoneNo || "N.A",
+        userStatus: item.userStatus as USER_STATUS,
       }));
+      return data;
+    },
+  })
+  .query("get-user-details", {
+    input: userDetailsInput,
+    output: userDetailsOutput,
+    async resolve({ ctx, input }) {
+      const dbUser = await ctx.prisma.user.findFirst({
+        where: {
+          email: input.email,
+        },
+        select: {
+          email: true,
+          name: true,
+          role: true,
+          phoneNo: true,
+          userStatus: true,
+          Notice: {
+            select: {
+              title: true,
+              isPublished: true,
+              updatedAt: true,
+            },
+          },
+          StudentDetails: {
+            select: {
+              branch: true,
+              registrationNumber: true,
+              year: true,
+            },
+          },
+        },
+      });
+      const data: UserDetailsOutput = {
+        email: dbUser?.email!,
+        name: dbUser?.name || "N.A",
+        role: dbUser?.role as ROLES,
+        phoneNo: dbUser?.phoneNo || "N.A",
+        userStatus: dbUser?.userStatus as USER_STATUS,
+      };
+      if (dbUser?.Notice) {
+        data.adminDetails = {
+          notices: dbUser.Notice.map((notice) => ({
+            title: notice.title,
+            isPublished: notice.isPublished,
+            updatedAt: notice.updatedAt,
+          })),
+        };
+      } else if (dbUser?.StudentDetails) {
+        data.studentDetails = {
+          branch: dbUser.StudentDetails.branch!,
+          registrationNumber: dbUser.StudentDetails.registrationNumber,
+          year: dbUser.StudentDetails.year!,
+        };
+      }
       return data;
     },
   });

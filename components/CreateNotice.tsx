@@ -24,13 +24,13 @@ import {
 import { useForm } from "@mantine/form";
 import { useMediaQuery } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
-import RichTextEditor from "@mantine/rte";
 import { IconFileUpload, IconX } from "@tabler/icons";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { CreateNoticeInput } from "../src/schema/notice.schema";
 import { trpc } from "../src/utils/trpc";
+import RichTextEditor from "./RichText";
 
 function CreateNotice() {
   const [tags, setTags] = useState<MultiSelectItem[]>([
@@ -130,7 +130,7 @@ function CreateNotice() {
       }
     })();
     return () => {};
-  }, [acceptedFileList, form.values.id]);
+  }, [acceptedFileList, createPresignedUrl, form, form.values.id]);
 
   const savePost = async (formdata: CreateNoticeInput) => {
     formdata.tags = selectedTags;

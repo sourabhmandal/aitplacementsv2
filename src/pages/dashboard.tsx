@@ -12,22 +12,34 @@ import {
   ThemeIcon,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
+import { UserStatus } from "@prisma/client";
 import { IconCircleCheck } from "@tabler/icons";
-import { NextPage } from "next";
-import { useSession } from "next-auth/react";
+import { GetStaticPropsResult, NextPage } from "next";
+import { unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { trpc } from "../utils/trpc";
+import { authOptions } from "./api/auth/[...nextauth]";
 
-const Dashboard: NextPage = () => {
-  const router = useRouter();
+interface IPropsDashboard {
+  username: string | null;
+  useremail: string | null;
+  userstatus: UserStatus;
+}
+
+const Dashboard: NextPage<IPropsDashboard> = ({ username, userstatus }) => {
   const noticeListStyle = useNoticeListStyle();
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (userstatus === "INVITED") router.push("/onboard");
+  }, [router, userstatus]);
 
   const publishedNoticeQuery = trpc.useQuery(
     ["notice.published-notice-list", { pageNos }],
@@ -53,21 +65,10 @@ const Dashboard: NextPage = () => {
     settotalPages(pages);
   }, [publishedNoticeQuery, totalPages]);
 
-  const { status, data } = useSession({
-    required: true,
-    onUnauthenticated() {
-      // The user is not authenticated, handle it here.
-      router.push("/login");
-    },
-  });
-
-  if (status === "loading") {
-    return <p>Loading Skeleton...</p>;
-  }
   return (
     <Container>
       <Text weight="bolder" size={30} py="lg">
-        Welcome, {data.user?.name}
+        Welcome, {username}
       </Text>
       <CreateNotice />
       <Divider my="xl" variant="solid" />
@@ -94,7 +95,6 @@ const Dashboard: NextPage = () => {
               onClick={() => {
                 setnoticeId(el.id);
                 setOpenNoticeDialog(true);
-                console.log(el.id);
               }}
               key={idx}
             >
@@ -151,3 +151,29 @@ const useNoticeListStyle = createStyles((_theme, _params, getRef) => ({
     },
   },
 }));
+
+export const getServerSideProps = async (
+  context: any
+): Promise<GetStaticPropsResult<IPropsDashboard>> => {
+  let session = await unstable_getServerSession(
+    context.req,
+    context.res,
+    authOptions
+  );
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      username: session.user?.name || null,
+      useremail: session.user?.email || null,
+      userstatus: session.user?.userStatus || null,
+    },
+  };
+};

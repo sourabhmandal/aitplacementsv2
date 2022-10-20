@@ -13,6 +13,7 @@ import AppContainer from "../../components/AppContainer";
 import { HOSTED_VERCEL_URL, LOCALHOST_URL } from "../utils/constants";
 import { AppRouter } from "./api/server/routes/app.router";
 
+//@ts-ignore
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>("light");
   return (
@@ -83,5 +84,5 @@ export default withTRPC<AppRouter>({
       transformer: superjson,
     };
   },
-  ssr: false,
+  ssr: true,
 })(MyApp);

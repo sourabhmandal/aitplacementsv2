@@ -1,22 +1,25 @@
 import z from "zod";
+import { ROLES_ENUM } from "./constants";
 
-export const inviteAdminInput = z.object({
+export const inviteUserInput = z.object({
   email: z.string().email(),
+  role: ROLES_ENUM,
 });
+export type InviteUserInput = z.TypeOf<typeof inviteUserInput>;
 
-export const inviteAdminOutput = z.object({
+export const inviteUserOutput = z.object({
   email: z.string().email(),
+  role: ROLES_ENUM,
 });
+export type InviteUserOutput = z.TypeOf<typeof inviteUserOutput>;
 
-export const adminListInput = z.object({});
 export const adminListOutput = z.array(
   z.object({
-    email: z.string().email(),
-    name: z.string(),
-    emailVerified: z.boolean(),
-    role: z.enum(["ADMIN", "STUDENT", "SUPER_ADMIN"]),
-    designation: z.string(),
-    phoneNo: z.string(),
+    id: z.string().uuid(),
+    basicDetails: z.object({
+      role: ROLES_ENUM,
+      email: z.string().email(),
+    }),
   })
 );
-export type AdminListInput = z.TypeOf<typeof adminListOutput>;
+export type AdminListOutput = z.TypeOf<typeof adminListOutput>;

@@ -4,39 +4,51 @@ import {
   Divider,
   Loader,
   Modal,
+  Radio,
   SimpleGrid,
   TextInput,
-  Title,
+  Title
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
-import { NextPage } from "next";
+import { GetStaticPropsResult, NextPage } from "next";
+import { unstable_getServerSession } from "next-auth";
 import { useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
+import { InviteUserInput } from "../schema/admin.schema";
+import { ROLES } from "../schema/constants";
 import { trpc } from "../utils/trpc";
+import { authOptions } from "./api/auth/[...nextauth]";
 
-const UserPage: NextPage = () => {
-  const [students, setStudents] = useState<
+interface IUserProps {}
+export type UsersTableProps = {
+  avatar: string;
+  name: string;
+  email: string;
+  role: string;
+  userStatus: string;
+};
+
+const UserPage: NextPage<IUserProps> = () => {
+  const adminListQuery = trpc.useQuery(
+    ["user.get-user-list", { role: "ADMIN" }],
     {
-      avatar: string;
-      name: string;
-      email: string;
-      role: string;
-    }[]
-  >([]);
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+    }
+  );
 
-  const adminListQuery = trpc.useQuery(["admin.get-admins"], {
-    onError: (err) => {
-      showNotification({
-        title: "Error Occured",
-        message: err.message,
-        color: "red",
-      });
-    },
-  });
+  const [students, setStudents] = useState<UsersTableProps[]>(
+    new Array<UsersTableProps>(0)
+  );
 
-  const studentListQuery = trpc.useQuery(["user.get-students"], {
+  trpc.useQuery(["user.get-user-list", { role: "STUDENT" }], {
     onError: (err) => {
       showNotification({
         title: "Error Occured",
@@ -45,23 +57,29 @@ const UserPage: NextPage = () => {
       });
     },
     onSuccess(data) {
-      let students = data.map((item) => ({
-        avatar: "https://picsum.photos/200",
-        name: item.name,
-        email: item.email,
-        role: "Student",
-      }));
+      let students = data.map(
+        (item): UsersTableProps => ({
+          avatar: "https://picsum.photos/200",
+          name: item.name,
+          email: item.email,
+          role: item.role,
+          userStatus: item.userStatus,
+        })
+      );
       setStudents(students);
     },
   });
 
-  const [openInviteAdminModal, setopenInviteAdminModal] =
+  const [openInviteUserModal, setopenInviteUserModal] =
     useState<boolean>(false);
 
   return (
     <Container>
       <Title order={3}>People in the Platform</Title>
       <Divider mt="sm" mb="xl" />
+      <Button onClick={() => setopenInviteUserModal(true)} fullWidth my="xl">
+        ADD MORE USERS
+      </Button>
       <SimpleGrid spacing="xl" cols={2}>
         {adminListQuery.data?.map((item) => (
           <UserInfo
@@ -74,27 +92,22 @@ const UserPage: NextPage = () => {
           />
         ))}
       </SimpleGrid>
-      <Button onClick={() => setopenInviteAdminModal(true)} fullWidth my="xl">
-        ADD MORE ADMINS
-      </Button>
-      <InviteAdminModal
-        openInviteAdminModal={openInviteAdminModal}
-        setopenInviteAdminModal={setopenInviteAdminModal}
+
+      <InviteUserModal
+        openInviteUserModal={openInviteUserModal}
+        setopenInviteUserModal={setopenInviteUserModal}
       />
 
       <Divider my="lg" variant="dashed" />
-      <Userinfolist data={students} />
+      <Userinfolist students={students} />
     </Container>
   );
 };
 
 export default UserPage;
 
-function InviteAdminModal({
-  openInviteAdminModal,
-  setopenInviteAdminModal,
-}: any) {
-  const inviteUserMutation = trpc.useMutation(["admin.invite-admin"], {
+function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
+  const inviteUserMutation = trpc.useMutation(["user.invite-user"], {
     onError: (err) => {
       showNotification({
         title: "Error Occured",
@@ -108,13 +121,14 @@ function InviteAdminModal({
         message: `"${data.email}" is invited as admin`,
         color: "green",
       });
-      setopenInviteAdminModal(false);
+      setopenInviteUserModal(false);
     },
   });
 
-  const form = useForm<{ email: string }>({
+  const form = useForm<InviteUserInput>({
     initialValues: {
       email: "",
+      role: "STUDENT",
     },
 
     validate: {
@@ -124,17 +138,17 @@ function InviteAdminModal({
           : "Invalid email, use @aitpune.edu.in",
     },
   });
-  const handleInviteSubmit = (data: { email: string }) => {
+  const handleInviteSubmit = (data: InviteUserInput) => {
     // call query to invite user
-    inviteUserMutation.mutate({ email: data.email });
+    inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
-    setopenInviteAdminModal(false);
+    setopenInviteUserModal(false);
   };
 
   return (
     <Modal
-      opened={openInviteAdminModal}
-      onClose={() => setopenInviteAdminModal(false)}
+      opened={openInviteUserModal}
+      onClose={() => setopenInviteUserModal(false)}
       title="Send Invite to join AIT Placements as admin"
     >
       <form onSubmit={form.onSubmit((data) => handleInviteSubmit(data))}>
@@ -150,6 +164,18 @@ function InviteAdminModal({
           }}
           error={form.errors.email}
         />
+        <Radio.Group
+          value={form.values.role}
+          onChange={(event) => form.setFieldValue("role", event as ROLES)}
+          name="userRole"
+          label="Invite user as?"
+          description="Only performable by admins and super admins"
+          withAsterisk
+          mt={20}
+        >
+          <Radio value={"STUDENT"} label="Student" />
+          <Radio value={"ADMIN"} label="Admin" />
+        </Radio.Group>
         <Button fullWidth type="submit" mt="md">
           {inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
         </Button>
@@ -157,3 +183,24 @@ function InviteAdminModal({
     </Modal>
   );
 }
+
+export const getServerSideProps = async (
+  context: any
+): Promise<GetStaticPropsResult<IUserProps>> => {
+  let session = await unstable_getServerSession(
+    context.req,
+    context.res,
+    authOptions
+  );
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {},
+  };
+};

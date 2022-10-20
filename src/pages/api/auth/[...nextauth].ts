@@ -1,80 +1,83 @@
-import { Admin, Student } from "@prisma/client";
-import NextAuth from "next-auth";
+import { User } from "@prisma/client";
+import NextAuth, { NextAuthOptions } from "next-auth";
+import AzureADProvider from "next-auth/providers/azure-ad";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "../../../utils/prisma";
 
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
   // Configure one or more authentication providers
   providers: [
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID!,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      tenantId: process.env.AZURE_AD_TENANT_ID,
+    }),
     CredentialsProvider({
-      // The name to display on the sign in form (e.g. 'Sign in with...')
-      name: "Ait Placements",
-      // The credentials is used to generate a suitable form on the sign in page.
-      // You can specify whatever fields you are expecting to be submitted.
-      // e.g. domain, username, password, 2FA token, etc.
-      // You can pass any HTML attribute to the <input> tag through the object.
+      id: "update-user",
       credentials: {
-        email: {
-          label: "College Email",
-          type: "email",
-          placeholder: "sourabh@aitpune.edu.in",
-        },
-        password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" },
+        email: { label: "Email", type: "text" },
       },
       async authorize(credentials, req) {
-        if (credentials?.role == "admin") {
-          const user: Admin | null = await prisma.admin.findFirst({
-            where: {
-              email: credentials?.email,
-              password: credentials?.password,
-            },
-          });
-          return user;
-        } else {
-          const user: Student | null = await prisma.student.findFirst({
-            where: {
-              email: credentials?.email,
-              password: credentials?.password,
-            },
-          });
+        const user = await prisma?.user.findFirst({
+          where: {
+            email: credentials?.email,
+          },
+        });
+
+        // If no error and we have user data, return it
+        if (user) {
           return user;
         }
+        // Return null if user data could not be retrieved
+        return null;
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile, user }) {
       // Persist the OAuth access_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token;
       }
+
       return token;
     },
-    async session({ session, token, user }) {
+    async session({ session, token }) {
+      const dbUser: User | undefined | null = await prisma?.user.findFirst({
+        where: {
+          email: token.email!,
+        },
+      });
+      session.user.role = dbUser?.role;
+      session.user.userStatus = dbUser?.userStatus;
       // Send properties to the client, like an access_token from a provider.
-      session.accessToken = token.accessToken;
       return session;
     },
     //----------------------------------------------------------------
     async signIn({ user, account, profile, email, credentials }) {
-      if (!user?.emailVerified) {
-        return false;
+      const dbUser = await prisma?.user.findFirst({
+        where: {
+          email: user.email!,
+        },
+      });
+      if (dbUser && dbUser.email != "") {
+        return true;
       }
-      return true;
+
+      return false;
     },
     async redirect({ url, baseUrl }) {
-      return baseUrl;
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: "/auth/login",
     signOut: "/auth/signout",
     error: "/auth/error", // Error code passed in query string as ?error=
-    verifyRequest: "/auth/verify-request", // (used for check email message)
-    newUser: "/register", // New users will be directed here on first sign in (leave the property out if not of interest)
   },
-});
+};
+
+export default NextAuth(authOptions);

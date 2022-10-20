@@ -1,3 +1,4 @@
+import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import { createPresignedUrlInput } from "../../../../schema/notice.schema";
 import { createRouter } from "../createRouter";
 import { S3Instance } from "../s3_instance";
@@ -12,7 +13,7 @@ export const attachmentRouter = createRouter().mutation(
       return new Promise((resolve, reject) => {
         S3Instance.GetS3().createPresignedPost(
           {
-            Bucket: process.env.REACT_APP_AWS_BUCKET_ID,
+            Bucket: REACT_APP_AWS_BUCKET_ID,
             Conditions: [["starts-with", "$Content-Type", ""]],
             Fields: {
               key: filepath,

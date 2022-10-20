@@ -58,17 +58,17 @@ class NodeMailerInstance {
       console.log("Email transporter not instantiated");
     }
   }
-  async SendAdminInviteEmail(adminEmail: string) {
-    let onboardUrl = new URL("/register", "http://localhost:3000");
+  async SendUserInviteEmail(email: string, role: string) {
+    let onboardUrl = new URL("/login", "http://localhost:3000");
     if (this.transporter) {
       // send mail with defined transport object
       let info = await this.transporter.sendMail({
         from: '"Ait Placements 👻" <aitplacements@gmail.com>', // sender address
-        to: adminEmail, // list of receivers
-        subject: "Verify registration to ait-placements portal", // Subject line
+        to: email, // list of receivers
+        subject: "Invitation for onboarding on AIT Placements", // Subject line
         html: `<b>Welcome to AIT Placements</b></br>
-          <p>You have been invited as an <b>ADMIN</b> in ait placements</p></br></br>
-          Please click on the link to register into AIT placement link: <a target="_blank" href="${onboardUrl.href}">${onboardUrl.href}</a>`, // html body
+          <p>You have been invited as an <b>${role}</b> in ait placements</p></br></br>
+          Please click on the link to onboard yourself into AIT placement link: <a target="_blank" href="${onboardUrl.href}">${onboardUrl.href}</a>`, // html body
       });
 
       console.log("Message sent: %s", info.messageId);

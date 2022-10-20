@@ -5,11 +5,13 @@ import {
   Box,
   Burger,
   Button,
+  Center,
   ColorScheme,
   Container,
   createStyles,
   Group,
   Header,
+  Loader,
   Menu,
   Text,
   Title,
@@ -31,54 +33,44 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Dispatch, SetStateAction } from "react";
 import Logo from "../assets/logo.gif";
-import { showCommingSoon } from "./constants";
+import { showCommingSoon } from "../src/constants";
 
-const AppContainer: React.FunctionComponent<Props> = ({
+interface IAppContainerProps {
+  theme: string;
+  setTheme: Dispatch<SetStateAction<ColorScheme>>;
+  children: React.ReactNode;
+}
+interface HeaderSimple {
+  link: string;
+  label: string;
+}
+
+const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
   children,
   setTheme,
   theme,
 }) => {
-  const topBarLinks: HeaderSimple[] = [
-    { link: "/", label: "Home" },
-    { link: "/login", label: "Login" },
-    { link: "/register", label: "Register" },
-  ];
-
   const footerLinks: HeaderSimple[] = [
     { link: "/support", label: "Support" },
     { link: "/about", label: "About" },
   ];
-
-  const { status, data } = useSession();
 
   const [opened, { toggle }] = useDisclosure(false);
   const headerStyle = useHeaderStyles();
   const footerStyle = useFooterStyles();
   const appshellStyle = useAppShellStyles();
   const router = useRouter();
+  const session = useSession();
+
   const itemsHeader =
-    status == "unauthenticated" || status == "loading" ? (
-      topBarLinks.map((l) => (
-        <Link key={l.link} href={l.link}>
-          <Button
-            color="orange"
-            variant="subtle"
-            className={headerStyle.cx(headerStyle.classes.link, {
-              [headerStyle.classes.linkActive]: router.asPath === l.link,
-            })}
-          >
-            {l.label}
-          </Button>
-        </Link>
-      ))
-    ) : (
+    session.status === "authenticated" ? (
       <Box>
         <Menu shadow="md" width={220}>
           <Menu.Target>
             <Button variant="subtle" color="orange">
               <Box>
                 <Text size="xs" weight="bold">
-                  {data?.user?.email}
+                  {session.data.user?.email}
                 </Text>
               </Box>
             </Button>
@@ -91,12 +83,9 @@ const AppContainer: React.FunctionComponent<Props> = ({
                 Dashboard
               </Menu.Item>
             </Link>
-            <Menu.Item
-              onClick={showCommingSoon}
-              icon={<IconUserCircle size={14} />}
-            >
-              Profile
-            </Menu.Item>
+            <Link href="/profile">
+              <Menu.Item icon={<IconUserCircle size={14} />}>Profile</Menu.Item>
+            </Link>
             <Link href="/users">
               <Menu.Item icon={<IconUsers size={14} />}>Users</Menu.Item>
             </Link>
@@ -133,6 +122,29 @@ const AppContainer: React.FunctionComponent<Props> = ({
           </Menu.Dropdown>
         </Menu>
       </Box>
+    ) : (
+      <>
+        <Link href={"/"}>
+          <Button
+            color="orange"
+            variant="subtle"
+            className={headerStyle.cx(headerStyle.classes.link, {
+              [headerStyle.classes.linkActive]: router.asPath === "/",
+            })}
+          >
+            Home
+          </Button>
+        </Link>
+        <Link href={"/login"}>
+          <Button
+            color="orange"
+            variant="subtle"
+            className={headerStyle.cx(headerStyle.classes.link)}
+          >
+            Login
+          </Button>
+        </Link>
+      </>
     );
   const itemsFooter = footerLinks.map((link) => (
     <Anchor<"a">
@@ -213,7 +225,13 @@ const AppContainer: React.FunctionComponent<Props> = ({
         },
       })}
     >
-      {children}
+      {session.status === "loading" ? (
+        <Center style={{ height: "70vh" }}>
+          <Loader />
+        </Center>
+      ) : (
+        children
+      )}
     </AppShell>
   );
 };
@@ -309,10 +327,3 @@ const useAppShellStyles = createStyles({
     paddingRight: 0,
   },
 });
-
-type HeaderSimple = { link: string; label: string };
-interface Props {
-  theme: string;
-  setTheme: Dispatch<SetStateAction<ColorScheme>>;
-  children: React.ReactNode;
-}

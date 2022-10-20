@@ -1,5 +1,6 @@
 import { Notice } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import {
   createNoticeInput,
   createNoticeOutput,
@@ -19,8 +20,6 @@ export const noticeRouter = createRouter()
     output: createNoticeOutput,
     async resolve({ ctx, input }) {
       const { adminEmail, attachments, body, isPublished, tags, title } = input;
-
-      console.log(adminEmail);
       try {
         const dbRespNotice: Notice = await ctx.prisma.notice.create({
           data: {
@@ -48,7 +47,7 @@ export const noticeRouter = createRouter()
         });
 
         return {
-          adminEmail: dbRespNotice.adminEmail,
+          adminEmail: dbRespNotice.adminEmailFk,
           isPublished: dbRespNotice.isPublished,
           title: dbRespNotice.title,
         };
@@ -104,7 +103,7 @@ export const noticeRouter = createRouter()
             const url = await S3Instance.GetS3().getSignedUrlPromise(
               "getObject",
               {
-                Bucket: process.env.REACT_APP_AWS_BUCKET_ID,
+                Bucket: REACT_APP_AWS_BUCKET_ID,
                 Key: `${file.fileid}`,
               }
             );
@@ -171,7 +170,7 @@ export const noticeRouter = createRouter()
           return {
             id: data.id,
             title: data.title,
-            admin: data.adminEmail,
+            admin: data.adminEmailFk,
             tags: data.tags,
             updatedAt: data.updatedAt,
           };

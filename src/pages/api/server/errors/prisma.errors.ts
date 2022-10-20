@@ -9,7 +9,7 @@ export function prismaError(e: PrismaClientKnownRequestError) {
     // unique constraint error
     throw new trpc.TRPCError({
       code: "CONFLICT",
-      message: "notice already exist",
+      message: "entry already exist",
     });
   }
 

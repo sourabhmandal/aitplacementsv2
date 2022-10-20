@@ -10,19 +10,16 @@ import {
   Text,
 } from "@mantine/core";
 import { IconAward, IconUserOff, IconUsers } from "@tabler/icons";
+import { UsersTableProps } from "../src/pages/users";
 
-interface UsersTableProps {
-  data: {
-    avatar: string;
-    name: string;
-    email: string;
-    role: string;
-  }[];
-}
-
-function Userinfolist({ data }: UsersTableProps): JSX.Element {
+function Userinfolist({
+  students,
+}: {
+  students: UsersTableProps[];
+}): JSX.Element {
   const userInfoListStyle = useUserinfoListStyle();
-  const rows = data.map((item) => (
+
+  const rows = students.map((item: UsersTableProps) => (
     <tr key={item.name}>
       <td>
         <Group spacing="sm">
@@ -39,9 +36,20 @@ function Userinfolist({ data }: UsersTableProps): JSX.Element {
       </td>
 
       <td>
-        <Badge size="lg" color="violet" fullWidth>
-          {item.role}
+        <Badge color="violet" variant="outline" fullWidth>
+          {item.userStatus}
         </Badge>
+      </td>
+
+      <td>
+        <Text
+          size="xs"
+          weight="bolder"
+          align="center"
+          color={item.role === "STUDENT" ? "orange" : "violet"}
+        >
+          {item.role}
+        </Text>
       </td>
       <td style={{ textAlign: "right" }}>
         <UserListInfoActionMenu />
@@ -55,6 +63,7 @@ function Userinfolist({ data }: UsersTableProps): JSX.Element {
         <thead>
           <tr>
             <th>User</th>
+            <th style={{ textAlign: "center" }}>Status</th>
             <th style={{ textAlign: "center" }}>Role</th>
             <th style={{ textAlign: "right" }}>Actions</th>
           </tr>
