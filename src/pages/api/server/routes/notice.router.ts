@@ -2,13 +2,19 @@ import { Notice } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import {
+  changeNoticeStatusInput,
+  changeNoticeStatusOutput,
   createNoticeInput,
   createNoticeOutput,
+  deleteNoticeInput,
+  deleteNoticeOutput,
   getNoticeDetailInput,
   GetNoticeDetailOutput,
   getNoticeDetailOutput,
   getNoticeListInput,
   getNoticeListOutput,
+  userNoticeInput,
+  userNoticeOutput,
 } from "../../../../schema/notice.schema";
 import { createRouter } from "../createRouter";
 import { prismaError } from "../errors/prisma.errors";
@@ -21,36 +27,44 @@ export const noticeRouter = createRouter()
     async resolve({ ctx, input }) {
       const { adminEmail, attachments, body, isPublished, tags, title } = input;
       try {
-        const dbRespNotice: Notice = await ctx.prisma.notice.create({
-          data: {
-            body: body,
-            title: title,
-            isPublished: isPublished,
-            tags: tags,
-            attachments: {
-              create: attachments.map((atth) => ({
-                fileid: atth.fileid,
-                filename: atth.filename,
-                filetype: atth.filetype,
-              })),
-            },
-            admin: {
-              connect: {
-                email: adminEmail,
-              },
-            },
-          },
-          include: {
-            admin: true,
-            attachments: true,
+        const dbUser = await ctx.prisma.user.findFirst({
+          where: {
+            email: adminEmail,
           },
         });
 
-        return {
-          adminEmail: dbRespNotice.adminEmailFk,
-          isPublished: dbRespNotice.isPublished,
-          title: dbRespNotice.title,
-        };
+        if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
+          const dbRespNotice: Notice = await ctx.prisma.notice.create({
+            data: {
+              body: body,
+              title: title,
+              isPublished: isPublished,
+              tags: tags,
+              attachments: {
+                create: attachments.map((atth) => ({
+                  fileid: atth.fileid,
+                  filename: atth.filename,
+                  filetype: atth.filetype,
+                })),
+              },
+              admin: {
+                connect: {
+                  email: adminEmail,
+                },
+              },
+            },
+            include: {
+              admin: true,
+              attachments: true,
+            },
+          });
+
+          return {
+            adminEmail: dbRespNotice.adminEmailFk,
+            isPublished: dbRespNotice.isPublished,
+            title: dbRespNotice.title,
+          };
+        }
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
@@ -196,5 +210,75 @@ export const noticeRouter = createRouter()
           },
         ],
       };
+    },
+  })
+  .query("my-published-notice", {
+    input: userNoticeInput,
+    output: userNoticeOutput,
+    async resolve({ ctx, input }) {
+      try {
+        const dbNoticeCount = await ctx.prisma.notice.count({
+          where: {
+            adminEmailFk: input.email,
+          },
+        });
+        const dbNotice = await ctx.prisma.notice.findMany({
+          where: {
+            adminEmailFk: input.email,
+          },
+          select: {
+            id: true,
+            isPublished: true,
+            title: true,
+            updatedAt: true,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 10,
+          skip: (input.pageNos - 1) * 10,
+        });
+        return { notice: dbNotice, count: dbNoticeCount };
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        throw e;
+      }
+    },
+  })
+  .mutation("change-notice-status", {
+    input: changeNoticeStatusInput,
+    output: changeNoticeStatusOutput,
+    async resolve({ ctx, input }) {
+      await ctx.prisma.notice.update({
+        data: {
+          isPublished: input.isPublished,
+        },
+        where: {
+          id: input.noticeId,
+        },
+      });
+      return input;
+    },
+  })
+  .mutation("delete-notice", {
+    input: deleteNoticeInput,
+    output: deleteNoticeOutput,
+    async resolve({ ctx, input }) {
+      try {
+        await ctx.prisma.notice.delete({
+          where: {
+            id: input.noticeId,
+          },
+        });
+        return { isDeleted: true };
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        console.log(e);
+      }
+      return { isDeleted: true };
     },
   });

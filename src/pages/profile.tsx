@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Menu,
+  Pagination,
   ScrollArea,
   SimpleGrid,
   Table,
@@ -17,10 +18,11 @@ import {
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
-import { IconEdit, IconTrashX } from "@tabler/icons";
+import { IconNotes, IconNotesOff, IconTrashX } from "@tabler/icons";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -35,12 +37,6 @@ type ProfileFields = {
   fieldName: string;
   fieldValue: string;
 };
-type NoticeFields = {
-  title: string;
-  isPublished: boolean;
-  updatedAt: Date;
-};
-
 const Profile: NextPage<IPropsOnboard> = ({
   useremail,
   userstatus,
@@ -49,8 +45,12 @@ const Profile: NextPage<IPropsOnboard> = ({
   const [baseProfile, setBasicProfile] = useState<ProfileFields[]>([]);
   const [studentProfile, setStudentProfile] = useState<ProfileFields[]>([]);
   const userInfoListStyle = useNoticeListStyle();
+  const [pageNos, setpageNos] = useState(1);
+  const [totalPages, settotalPages] = useState(1);
+  const [noticeId, setnoticeId] = useState<string>("");
+  const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
 
-  const userDetails = trpc.useQuery(
+  const userDetailsQuery = trpc.useQuery(
     ["user.get-user-details", { email: useremail! }],
     {
       onError: (err) => {
@@ -68,10 +68,8 @@ const Profile: NextPage<IPropsOnboard> = ({
           { fieldName: "Role", fieldValue: data.role },
         ]);
 
-        if (userDetails.data?.adminDetails) {
-          const { adminDetails } = userDetails.data;
-        } else if (userDetails.data?.studentDetails) {
-          const { studentDetails } = userDetails.data;
+        if (data?.studentDetails) {
+          const { studentDetails } = data;
           setStudentProfile([
             { fieldName: "Branch", fieldValue: studentDetails.branch },
             {
@@ -88,7 +86,31 @@ const Profile: NextPage<IPropsOnboard> = ({
     }
   );
 
-  if (userDetails.status == "loading")
+  const userNoticesQuery = trpc.useQuery(
+    ["notice.my-published-notice", { email: useremail!, pageNos: pageNos }],
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+      onSuccess(data) {
+        let pages = Math.ceil(data?.count / 10);
+        if (pages == 0) pages += 1;
+        settotalPages(pages);
+      },
+    }
+  );
+  const noticeStatusMutation = trpc.useMutation("notice.change-notice-status");
+  const noticeDeleteMutation = trpc.useMutation("notice.delete-notice");
+
+  useEffect(() => {
+    userNoticesQuery.refetch();
+  }, [noticeStatusMutation.isSuccess, noticeDeleteMutation.isSuccess]);
+
+  if (userDetailsQuery.status == "loading")
     return (
       <Center>
         <Loader />
@@ -125,68 +147,151 @@ const Profile: NextPage<IPropsOnboard> = ({
           </div>
         ))}
       </SimpleGrid>
+      {noticeId === "" ? (
+        <></>
+      ) : (
+        <NoticeDetailModal
+          noticeId={noticeId}
+          openNoticeDialog={openNoticeDialog}
+          setOpenNoticeDialog={setOpenNoticeDialog}
+        />
+      )}
+
       <ScrollArea classNames={userInfoListStyle.classes}>
-        <Table sx={{ minWidth: 800 }} verticalSpacing="sm">
+        <Table
+          sx={{ minWidth: 800 }}
+          horizontalSpacing="lg"
+          verticalSpacing="sm"
+          highlightOnHover
+        >
           <thead>
             <tr>
-              <th>Notice Title</th>
-              <th style={{ textAlign: "center" }}>Publish Status</th>
+              <th style={{ width: "99%" }}>Notice Title</th>
+              <th style={{ textAlign: "center" }}>Status</th>
               <th style={{ textAlign: "right" }}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {userDetails.data?.adminDetails &&
-              userDetails.data?.adminDetails?.notices.map(
-                (item: NoticeFields, idx: number) => (
-                  <tr key={idx}>
-                    <td>
-                      <Text size="sm" weight={500}>
-                        {item.title}
-                      </Text>
-                      <Text size="xs" weight="bolder">
-                        {item.updatedAt.toDateString()}
-                      </Text>
-                    </td>
+            {userNoticesQuery.data?.notice.map((item, idx: number) => (
+              <tr key={idx} style={{ cursor: "pointer" }}>
+                <td
+                  onClick={() => {
+                    setnoticeId(item.id);
+                    setOpenNoticeDialog(true);
+                  }}
+                >
+                  <Text size="sm" weight="bolder">
+                    {item.title}
+                  </Text>
+                  <Text size="xs" color="dimmed">
+                    {item.updatedAt.toDateString()}
+                  </Text>
+                </td>
 
-                    <td style={{ textAlign: "center" }}>
-                      <Badge
-                        variant="outline"
-                        color={item.isPublished ? "orange" : "violet"}
-                      >
-                        {item.isPublished ? "Published" : "Not Published"}
-                      </Badge>
-                    </td>
+                <td
+                  onClick={() => {
+                    setnoticeId(item.id);
+                    setOpenNoticeDialog(true);
+                  }}
+                  style={{ textAlign: "center" }}
+                >
+                  <Badge
+                    variant="outline"
+                    color={item.isPublished ? "orange" : "violet"}
+                  >
+                    {item.isPublished ? "Published" : "Drafted"}
+                  </Badge>
+                </td>
 
-                    <td align="right">
-                      <UserListInfoActionMenu />
-                    </td>
-                  </tr>
-                )
-              )}
+                <td align="right">
+                  <UserListInfoActionMenu
+                    userrole={userrole}
+                    isPublished={item.isPublished}
+                    noticeId={item.id}
+                    noticeStatusMutation={noticeStatusMutation}
+                    noticeDeleteMutation={noticeDeleteMutation}
+                  />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </Table>
       </ScrollArea>
+      <Center>
+        <Pagination
+          total={totalPages}
+          color="orange"
+          page={pageNos}
+          onChange={setpageNos}
+        />
+      </Center>
     </Container>
   );
 };
 
 export default Profile;
 
-function UserListInfoActionMenu() {
+function UserListInfoActionMenu({
+  userrole,
+  isPublished,
+  noticeId,
+  noticeStatusMutation,
+  noticeDeleteMutation,
+}: {
+  userrole: Role;
+  isPublished: boolean;
+  noticeId: string;
+  noticeStatusMutation: any;
+  noticeDeleteMutation: any;
+}) {
+  const updateNoticeStatus = (isPublished: boolean, noticeId: string) => {
+    noticeStatusMutation.mutate({
+      isPublished: isPublished,
+      noticeId: noticeId,
+    });
+  };
+
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
-        <Button>Action Menu</Button>
+        <Button disabled={userrole !== "ADMIN"}>Action Menu</Button>
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Menu.Label>Update Notice</Menu.Label>
-        <Menu.Item icon={<IconEdit size={14} />}>Update Notice</Menu.Item>
-        <Menu.Divider />
-        <Menu.Label>Danger zone</Menu.Label>
-        <Menu.Item color="red" icon={<IconTrashX size={14} />}>
-          Delete Notice
-        </Menu.Item>
+        {userrole === "ADMIN" ? (
+          <>
+            <Menu.Label>Update Notice</Menu.Label>
+            {isPublished ? (
+              <Menu.Item
+                icon={<IconNotesOff size={14} />}
+                onClick={() => updateNoticeStatus(false, noticeId)}
+              >
+                Change to Drafted
+              </Menu.Item>
+            ) : (
+              <Menu.Item
+                icon={<IconNotes size={14} />}
+                onClick={() => updateNoticeStatus(true, noticeId)}
+              >
+                Change to Published
+              </Menu.Item>
+            )}
+
+            <Menu.Divider />
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color="red"
+              icon={<IconTrashX size={14} />}
+              onClick={() =>
+                noticeDeleteMutation.mutate({ noticeId: noticeId })
+              }
+            >
+              Delete Notice
+            </Menu.Item>
+          </>
+        ) : (
+          <></>
+        )}
       </Menu.Dropdown>
     </Menu>
   );

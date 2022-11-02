@@ -11,18 +11,24 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
+import { Role } from "@prisma/client";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
+import { useBackendApiContext } from "../../context/backend.api";
 import { InviteUserInput } from "../schema/admin.schema";
 import { ROLES } from "../schema/constants";
+import { UserListOutput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
-interface IUserProps {}
+interface IUserProps {
+  userrole: Role;
+}
 export type UsersTableProps = {
+  id: string;
   avatar: string;
   name: string;
   email: string;
@@ -30,7 +36,9 @@ export type UsersTableProps = {
   userStatus: string;
 };
 
-const UserPage: NextPage<IUserProps> = () => {
+const UserPage: NextPage<IUserProps> = ({ userrole }) => {
+  const [openInviteUserModal, setopenInviteUserModal] =
+    useState<boolean>(false);
   const adminListQuery = trpc.useQuery(
     ["user.get-user-list", { role: "ADMIN" }],
     {
@@ -44,62 +52,73 @@ const UserPage: NextPage<IUserProps> = () => {
     }
   );
 
-  const [students, setStudents] = useState<UsersTableProps[]>(
-    new Array<UsersTableProps>(0)
+  const [students, setStudents] = useState<UserListOutput>([]);
+
+  const userListQuery = trpc.useQuery(
+    ["user.get-user-list", { role: "STUDENT" }],
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+      onSuccess(data) {
+        setStudents(data);
+      },
+    }
   );
 
-  trpc.useQuery(["user.get-user-list", { role: "STUDENT" }], {
-    onError: (err) => {
-      showNotification({
-        title: "Error Occured",
-        message: err.message,
-        color: "red",
-      });
-    },
-    onSuccess(data) {
-      let students = data.map(
-        (item): UsersTableProps => ({
-          avatar: "https://picsum.photos/200",
-          name: item.name,
-          email: item.email,
-          role: item.role,
-          userStatus: item.userStatus,
-        })
-      );
-      setStudents(students);
-    },
-  });
+  const backend = useBackendApiContext();
 
-  const [openInviteUserModal, setopenInviteUserModal] =
-    useState<boolean>(false);
+  useEffect(() => {
+    adminListQuery.refetch();
+    userListQuery.refetch();
+  }, [
+    backend?.changeUserRoleMutation.isSuccess,
+    backend?.deleteUserMutation.isSuccess,
+  ]);
 
   return (
     <Container>
       <Title order={3}>People in the Platform</Title>
       <Divider mt="sm" mb="xl" />
-      <Button onClick={() => setopenInviteUserModal(true)} fullWidth my="xl">
-        ADD MORE USERS
-      </Button>
+      {userrole == "ADMIN" ? (
+        <>
+          <Button
+            onClick={() => setopenInviteUserModal(true)}
+            fullWidth
+            my="xl"
+          >
+            ADD MORE USERS
+          </Button>
+          <InviteUserModal
+            userListQuery={userListQuery}
+            openInviteUserModal={openInviteUserModal}
+            setopenInviteUserModal={setopenInviteUserModal}
+          />
+
+          <Divider my="lg" variant="dashed" />
+        </>
+      ) : (
+        <></>
+      )}
       <SimpleGrid spacing="xl" cols={2}>
         {adminListQuery.data?.map((item) => (
           <UserInfo
-            key={item.email}
+            key={item.id}
+            id={item.id}
             avatar={"https://picsum.photos/200"}
             name={item.name}
             title={item.role}
             phone={item.phoneNo}
             email={item.email}
+            sessionUserRole={userrole}
           />
         ))}
       </SimpleGrid>
-
-      <InviteUserModal
-        openInviteUserModal={openInviteUserModal}
-        setopenInviteUserModal={setopenInviteUserModal}
-      />
-
-      <Divider my="lg" variant="dashed" />
-      <Userinfolist students={students} />
+      <Userinfolist students={students} userrole={userrole} />
     </Container>
   );
 };
@@ -201,6 +220,8 @@ export const getServerSideProps = async (
     };
   }
   return {
-    props: {},
+    props: {
+      userrole: session.user.role,
+    },
   };
 };

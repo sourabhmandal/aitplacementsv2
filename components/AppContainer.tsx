@@ -94,7 +94,7 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
               onClick={showCommingSoon}
               icon={<IconPhoneCall size={14} />}
             >
-              Support
+              Report Issues
             </Menu.Item>
             <Link
               target="_blank"
@@ -102,7 +102,7 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
               href={"https://github.com/aitoss/aitplacements-v2"}
             >
               <Menu.Item icon={<IconBrandGithub size={14} />}>
-                Contribute
+                Contributors
               </Menu.Item>
             </Link>
             <Menu.Divider></Menu.Divider>

@@ -2,6 +2,7 @@ import {
   Badge,
   Card,
   Divider,
+  Image,
   Loader,
   Modal,
   Space,
@@ -9,11 +10,11 @@ import {
   Title,
   TypographyStylesProvider,
 } from "@mantine/core";
+import { IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useMediaQuery } from "@mantine/hooks";
-import { showNotification } from "@mantine/notifications";
 import Link from "next/link";
 import { Dispatch, SetStateAction } from "react";
-import { trpc } from "../src/utils/trpc";
+import { useBackendApiContext } from "../context/backend.api";
 
 function NoticeDetailModal({
   noticeId,
@@ -25,47 +26,60 @@ function NoticeDetailModal({
   setOpenNoticeDialog: Dispatch<SetStateAction<boolean>>;
 }): JSX.Element {
   const matches = useMediaQuery("(min-width: 600px)");
-  const { isLoading, data } = trpc.useQuery(
-    ["notice.notice-detail", { id: noticeId }],
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
+  const backend = useBackendApiContext();
+  const noticeDetailQuery = backend?.noticeDetailQuery(noticeId);
+
+  const PreviewsAttachments = noticeDetailQuery?.data?.attachments.map(
+    (file, index) => {
+      if (IMAGE_MIME_TYPE.find((f) => f == file.type) == undefined) {
+        return (
+          <Card
+            p={4}
+            sx={{
+              border: "1px solid #ccc",
+              cursor: "pointer",
+              minWidth: "8rem",
+            }}
+            key={index}
+            style={{ position: "absolute" }}
+          >
+            <Link
+              style={{ position: "relative", padding: 8, margin: 4 }}
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div>
+                <Text size="sm">{file.name}</Text>
+                <Text color="dimmed" size="xs">
+                  {file.type}
+                </Text>
+              </div>
+            </Link>
+          </Card>
+        );
+      } else {
+        return (
+          <Link
+            key={index}
+            style={{ border: "1px solid #ccc", padding: 8, margin: 4 }}
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              key={index}
+              src={file.url}
+              alt={file.name}
+              height={100}
+              width={100}
+              caption={<Text size="sm">{file.name}</Text>}
+            />
+          </Link>
+        );
+      }
     }
   );
-
-  const PreviewsImage = data?.attachments.map((file, index) => {
-    return (
-      <Link
-        href={file.url}
-        key={index}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Card
-          p={4}
-          sx={{
-            border: "1px solid #ccc",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            cursor: "pointer",
-          }}
-        >
-          <div style={{ marginLeft: 6 }}>
-            <Text size="sm">{file.name}</Text>
-            <Text color="dimmed" size="xs">
-              {file.type}
-            </Text>
-          </div>
-        </Card>
-      </Link>
-    );
-  });
 
   return (
     <Modal
@@ -77,32 +91,29 @@ function NoticeDetailModal({
       }}
       size="xl"
       radius="md"
-      title={
-        data?.isPublished ? (
-          <>
-            <Title order={1}>{data?.title}</Title>
-            <Badge size="sm" color="violet">
-              Published
-            </Badge>
-          </>
-        ) : (
-          <>
-            <Title order={1}>{data?.title}</Title>
-            <Badge size="sm" color="orange">
-              Draft
-            </Badge>
-          </>
-        )
-      }
+      title={<Title order={1}>{noticeDetailQuery?.data?.title}</Title>}
       withCloseButton
     >
       <>
         <Space h="sm" />
         <Divider variant="dotted" />
         <Space h="xl" />
-        {PreviewsImage}
+        {noticeDetailQuery?.data?.tags.map((item, idx) => (
+          <Badge key={idx} color="orange">
+            {item}
+          </Badge>
+        ))}
+        <Space h="md" />
+        {PreviewsAttachments}
         <Space h="xl" />
-        <NoticeBody isLoading={isLoading} html={data?.body!} />
+        <Space h="xl" />
+        <Divider variant="dotted" />
+        <Space h="xl" />
+
+        <NoticeBody
+          isLoading={noticeDetailQuery?.isLoading!}
+          html={noticeDetailQuery?.data?.body!}
+        />
       </>
     </Modal>
   );

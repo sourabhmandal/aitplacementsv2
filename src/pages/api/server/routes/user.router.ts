@@ -5,15 +5,19 @@ import {
 } from "../../../../schema/admin.schema";
 import { ROLES, USER_STATUS } from "../../../../schema/constants";
 import {
-  updateUserInputSchema,
-  UpdateUserOutputSchema,
-  updateUserOutputSchema,
+  updateUserInput,
+  UpdateUserOutput,
+  updateUserOutput,
+  userDeleteInput,
+  userDeleteOutput,
   userDetailsInput,
   UserDetailsOutput,
   userDetailsOutput,
   userListInput,
   UserListOutput,
   userListOutput,
+  userRoleInput,
+  userRoleOutput,
 } from "../../../../schema/user.schema";
 import { createRouter } from "../createRouter";
 import { prismaError } from "../errors/prisma.errors";
@@ -21,10 +25,10 @@ import { NodemailerInstance } from "../nodemailer_instance";
 
 export const userRouter = createRouter()
   .mutation("onboard-user", {
-    input: updateUserInputSchema,
-    output: updateUserOutputSchema,
+    input: updateUserInput,
+    output: updateUserOutput,
     async resolve({ ctx, input }) {
-      let response: UpdateUserOutputSchema = {
+      let response: UpdateUserOutput = {
         email: "",
         name: "",
         role: "STUDENT",
@@ -166,13 +170,6 @@ export const userRouter = createRouter()
           role: true,
           phoneNo: true,
           userStatus: true,
-          Notice: {
-            select: {
-              title: true,
-              isPublished: true,
-              updatedAt: true,
-            },
-          },
           StudentDetails: {
             select: {
               branch: true,
@@ -189,15 +186,7 @@ export const userRouter = createRouter()
         phoneNo: dbUser?.phoneNo || "N.A",
         userStatus: dbUser?.userStatus as USER_STATUS,
       };
-      if (dbUser?.Notice) {
-        data.adminDetails = {
-          notices: dbUser.Notice.map((notice) => ({
-            title: notice.title,
-            isPublished: notice.isPublished,
-            updatedAt: notice.updatedAt,
-          })),
-        };
-      } else if (dbUser?.StudentDetails) {
+      if (dbUser?.StudentDetails) {
         data.studentDetails = {
           branch: dbUser.StudentDetails.branch!,
           registrationNumber: dbUser.StudentDetails.registrationNumber,
@@ -205,5 +194,49 @@ export const userRouter = createRouter()
         };
       }
       return data;
+    },
+  })
+  .mutation("change-user-role", {
+    input: userRoleInput,
+    output: userRoleOutput,
+    async resolve({ ctx, input }) {
+      const dbUser = await ctx.prisma.user.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          role: input.role,
+        },
+      });
+
+      return {
+        email: dbUser.email,
+        role: dbUser.role,
+      };
+    },
+  })
+  .mutation("delete-user", {
+    input: userDeleteInput,
+    output: userDeleteOutput,
+    async resolve({ ctx, input }) {
+      try {
+        const dbUser = await ctx.prisma.user.delete({
+          where: {
+            id: input.id,
+          },
+        });
+
+        return {
+          email: dbUser.email,
+        };
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        console.log(e);
+      }
+      return {
+        email: "",
+      };
     },
   });

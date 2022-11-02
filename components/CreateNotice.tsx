@@ -28,8 +28,8 @@ import { IconFileUpload, IconX } from "@tabler/icons";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
+import { useBackendApiContext } from "../context/backend.api";
 import { CreateNoticeInput } from "../src/schema/notice.schema";
-import { trpc } from "../src/utils/trpc";
 import RichTextEditor from "./RichText";
 
 function CreateNotice() {
@@ -43,10 +43,10 @@ function CreateNotice() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const matches = useMediaQuery("(min-width: 600px)");
   const { data } = useSession();
-
-  const { mutateAsync: createPresignedUrl } = trpc.useMutation([
-    "attachment.create-presigned-url",
-  ]);
+  const backend = useBackendApiContext();
+  // const { mutateAsync: createPresignedUrl } = trpc.useMutation([
+  //   "attachment.create-presigned-url",
+  // ]);
 
   const form = useForm<CreateNoticeInput>({
     initialValues: {
@@ -66,26 +66,6 @@ function CreateNotice() {
       body: (val: string) => (val == "" ? "Notice body cannot be empty" : null),
     },
   });
-  const mutateCreateNotice = trpc.useMutation(["notice.create-notice"], {
-    onError: (err: any) => {
-      showNotification({
-        title: "Error Occured",
-        message: err.message,
-        color: "red",
-      });
-    },
-    onSuccess(data: {
-      adminEmail: string;
-      isPublished: boolean;
-      title: string;
-    }) {
-      showNotification({
-        title: "Success",
-        message: `Notice "${data.title}" created by admin ${data.adminEmail}`,
-        color: "green",
-      });
-    },
-  });
   const rteStyle = useRteStyle();
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
   const theme = useMantineTheme();
@@ -96,9 +76,10 @@ function CreateNotice() {
     if (len == 0) return;
     (async () => {
       const filepath = `${form.values.id}/${Date.now()}-${targetFile.name}`;
-      const { url, fields } = (await createPresignedUrl({
-        filepath: filepath,
-      })) as any;
+      const { url, fields } =
+        (await backend?.createPresignedUrlMutation.mutateAsync({
+          filepath: filepath,
+        })) as any;
 
       const data = {
         ...fields,
@@ -130,22 +111,25 @@ function CreateNotice() {
       }
     })();
     return () => {};
-  }, [acceptedFileList, createPresignedUrl, form, form.values.id]);
+  }, [acceptedFileList, form.values.id]);
 
   const savePost = async (formdata: CreateNoticeInput) => {
     formdata.tags = selectedTags;
 
     // add unique ids list as attachments
-    mutateCreateNotice.mutate(formdata);
-
-    // resetForm();
-    // setOpenNoticeDialog(false);
+    backend?.createNoticeMutation.mutate(formdata);
+    resetForm();
+    setOpenNoticeDialog(false);
   };
 
   function resetForm() {
-    form.setFieldValue("body", "");
-    form.setFieldValue("isPublished", false);
+    form.setFieldValue("id", v4());
+    form.setFieldValue("tags", []);
+    form.setFieldValue("adminEmail", data?.user?.email!);
     form.setFieldValue("title", "");
+    form.setFieldValue("body", "");
+    form.setFieldValue("isPublished", true);
+    form.setFieldValue("attachments", []);
   }
 
   const PreviewsImage = acceptedFileList.map((file, index) => {

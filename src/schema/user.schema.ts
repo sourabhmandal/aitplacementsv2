@@ -6,7 +6,7 @@ import {
   ACCEPTED_YEAR,
 } from "./constants";
 
-export const updateUserInputSchema = z.object({
+export const updateUserInput = z.object({
   email: z.string().email(), // to search the user to update
   name: z.string(),
   regNo: z.number().optional(),
@@ -14,14 +14,14 @@ export const updateUserInputSchema = z.object({
   branch: ACCEPTED_BRANCHES.optional(),
   phoneNo: z.number().optional(),
 });
-export type UpdateUserInputSchema = z.TypeOf<typeof updateUserInputSchema>;
+export type UpdateUserInput = z.TypeOf<typeof updateUserInput>;
 
-export const updateUserOutputSchema = z.object({
+export const updateUserOutput = z.object({
   name: z.string(),
   email: z.string().email(),
   role: ACCEPTED_ROLES,
 });
-export type UpdateUserOutputSchema = z.TypeOf<typeof updateUserOutputSchema>;
+export type UpdateUserOutput = z.TypeOf<typeof updateUserOutput>;
 
 export const userListInput = z.object({
   role: ACCEPTED_ROLES,
@@ -51,17 +51,7 @@ export const userDetailsOutput = z.object({
   phoneNo: z.string(),
   role: ACCEPTED_ROLES,
   userStatus: ACCEPTED_USER_STATUS,
-  adminDetails: z
-    .object({
-      notices: z.array(
-        z.object({
-          title: z.string(),
-          isPublished: z.boolean(),
-          updatedAt: z.date(),
-        })
-      ),
-    })
-    .optional(),
+  adminDetails: z.object({}).optional(),
   studentDetails: z
     .object({
       branch: z.string(),
@@ -71,3 +61,25 @@ export const userDetailsOutput = z.object({
     .optional(),
 });
 export type UserDetailsOutput = z.TypeOf<typeof userDetailsOutput>;
+
+export const userRoleInput = z.object({
+  id: z.string().uuid(),
+  role: ACCEPTED_ROLES,
+});
+export type UserRoleInput = z.TypeOf<typeof userRoleInput>;
+
+export const userRoleOutput = z.object({
+  email: z.string().email(),
+  role: ACCEPTED_ROLES,
+});
+export type UserRoleOutput = z.TypeOf<typeof userRoleOutput>;
+
+export const userDeleteInput = z.object({
+  id: z.string().uuid(),
+});
+export type UserDeleteInput = z.TypeOf<typeof userDeleteInput>;
+
+export const userDeleteOutput = z.object({
+  email: z.string().email(),
+});
+export type UserDeleteOutput = z.TypeOf<typeof userDeleteOutput>;

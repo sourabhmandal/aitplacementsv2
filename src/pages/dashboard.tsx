@@ -4,120 +4,139 @@ import {
   Container,
   createStyles,
   Divider,
-  Group,
-  List,
   Pagination,
+  ScrollArea,
   Space,
+  Table,
   Text,
-  ThemeIcon,
 } from "@mantine/core";
-import { showNotification } from "@mantine/notifications";
-import { UserStatus } from "@prisma/client";
-import { IconCircleCheck } from "@tabler/icons";
+import { Role, UserStatus } from "@prisma/client";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
-import { trpc } from "../utils/trpc";
+import { useBackendApiContext } from "../../context/backend.api";
+import { GetNoticeListOutput } from "../schema/notice.schema";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
   username: string | null;
   useremail: string | null;
   userstatus: UserStatus;
+  userrole: Role;
 }
 
-const Dashboard: NextPage<IPropsDashboard> = ({ username, userstatus }) => {
+const Dashboard: NextPage<IPropsDashboard> = ({
+  username,
+  userstatus,
+  userrole,
+}) => {
   const noticeListStyle = useNoticeListStyle();
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+  const [fetchedNotice, setfetchedNotice] = useState<GetNoticeListOutput>();
+  const isAdmin = userrole == "ADMIN";
   const router = useRouter();
+  const backend = useBackendApiContext();
+  const userInfoListStyle = useNoticeListStyle();
 
   useEffect(() => {
     if (userstatus === "INVITED") router.push("/onboard");
   }, [router, userstatus]);
 
-  const publishedNoticeQuery = trpc.useQuery(
-    ["notice.published-notice-list", { pageNos }],
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-      onSuccess(data) {
-        console.debug(`notice loaded for page nos. ${pageNos}`);
-        console.debug(data);
-      },
-    }
-  );
+  const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
 
   useEffect(() => {
-    const noticeNos: number = publishedNoticeQuery.data?.totalNotice!;
+    if (publishedNoticeQueryData) {
+      setfetchedNotice(publishedNoticeQueryData.data);
+    }
+  }, [publishedNoticeQueryData]);
+
+  useEffect(() => {
+    const noticeNos: number = fetchedNotice?.totalNotice!;
     let pages = Math.ceil(noticeNos / 10);
     if (pages == 0) pages += 1;
     settotalPages(pages);
-  }, [publishedNoticeQuery, totalPages]);
+  }, [fetchedNotice, totalPages]);
 
   return (
     <Container>
       <Text weight="bolder" size={30} py="lg">
         Welcome, {username}
       </Text>
-      <CreateNotice />
+      {isAdmin ? <CreateNotice /> : <></>}
+
+      {/* Add search bar for notice remove divider*/}
       <Divider my="xl" variant="solid" />
 
-      <List
-        classNames={noticeListStyle.classes}
-        spacing="xs"
-        size="lg"
-        center
-        listStyleType="none"
-      >
-        {noticeId === "" ? (
-          <></>
-        ) : (
-          <NoticeDetailModal
-            noticeId={noticeId}
-            openNoticeDialog={openNoticeDialog}
-            setOpenNoticeDialog={setOpenNoticeDialog}
-          />
-        )}
-        {publishedNoticeQuery.data?.notices.map((el, idx) => {
-          return (
-            <List.Item
-              onClick={() => {
-                setnoticeId(el.id);
-                setOpenNoticeDialog(true);
-              }}
-              key={idx}
-            >
-              <Group spacing="xs">
-                <ThemeIcon color="teal" size={16} radius="xl">
-                  <IconCircleCheck size={10} />
-                </ThemeIcon>
-                <Text size="xs" color="dimmed" weight="bold">
-                  {el.updatedAt.toDateString()}
-                </Text>
-              </Group>
+      {noticeId === "" ? (
+        <></>
+      ) : (
+        <NoticeDetailModal
+          noticeId={noticeId}
+          openNoticeDialog={openNoticeDialog}
+          setOpenNoticeDialog={setOpenNoticeDialog}
+        />
+      )}
 
-              <Text py="xs">{el.title}</Text>
+      <ScrollArea classNames={userInfoListStyle.classes}>
+        <Table
+          sx={{ minWidth: 800 }}
+          verticalSpacing="sm"
+          highlightOnHover
+          horizontalSpacing="xl"
+          withBorder
+        >
+          <thead>
+            <tr>
+              <th style={{ width: "99%" }}>Notice Title</th>
+              <th>Publisher</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fetchedNotice?.notices &&
+              fetchedNotice?.notices.map((item) => (
+                <tr
+                  key={item.id}
+                  onClick={() => {
+                    setnoticeId(item.id);
+                    setOpenNoticeDialog(true);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <td>
+                    <Text size="sm" weight="bolder">
+                      {item.title}
+                    </Text>
+                    {item.tags.map((item, idx) => (
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        color={"orange"}
+                        mr={4}
+                      >
+                        {item}
+                      </Badge>
+                    ))}
+                  </td>
 
-              <Group spacing={5} align="left" classNames={noticeListStyle}>
-                {el.tags.map((tag, idx) => (
-                  <Badge key={idx}>{tag}</Badge>
-                ))}
-              </Group>
-            </List.Item>
-          );
-        })}
-      </List>
+                  <td>
+                    <Text size="xs" weight={"bolder"}>
+                      {item.admin}
+                    </Text>
+                    <Text size="xs" color="dimmed">
+                      {item.updatedAt.toDateString()}
+                    </Text>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </Table>
+      </ScrollArea>
       <Space h="md" />
       <Center>
         <Pagination
@@ -134,21 +153,8 @@ const Dashboard: NextPage<IPropsDashboard> = ({ username, userstatus }) => {
 export default Dashboard;
 
 const useNoticeListStyle = createStyles((_theme, _params, getRef) => ({
-  root: {},
-  item: {
-    transition: "width 250ms ease",
-    padding: 12,
-    cursor: "pointer",
-
-    "&:hover": {
-      background:
-        _theme.colorScheme === "dark"
-          ? _theme.colors.dark[3]
-          : _theme.colors.orange[1],
-      borderRadius: "0.3em",
-      boxShadow:
-        "rgb(0 0 0 / 5%) 0px 1px 3px, rgb(0 0 0 / 5%) 0px 10px 15px -5px, rgb(0 0 0 / 4%) 0px 7px 7px -5px",
-    },
+  viewport: {
+    minHeight: 600,
   },
 }));
 
@@ -174,6 +180,7 @@ export const getServerSideProps = async (
       username: session.user?.name || null,
       useremail: session.user?.email || null,
       userstatus: session.user?.userStatus || null,
+      userrole: session.user?.role || null,
     },
   };
 };

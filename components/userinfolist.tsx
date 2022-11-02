@@ -9,21 +9,24 @@ import {
   Table,
   Text,
 } from "@mantine/core";
-import { IconAward, IconUserOff, IconUsers } from "@tabler/icons";
-import { UsersTableProps } from "../src/pages/users";
+import { Role } from "@prisma/client";
+import { IconAward, IconUserOff } from "@tabler/icons";
+import { useBackendApiContext } from "../context/backend.api";
+import { UserListOutput } from "../src/schema/user.schema";
 
-function Userinfolist({
-  students,
-}: {
-  students: UsersTableProps[];
-}): JSX.Element {
+interface IPropsUserinfoList {
+  students: UserListOutput;
+  userrole: Role;
+}
+
+function Userinfolist({ students, userrole }: IPropsUserinfoList): JSX.Element {
   const userInfoListStyle = useUserinfoListStyle();
 
-  const rows = students.map((item: UsersTableProps) => (
+  const rows = students.map((item) => (
     <tr key={item.name}>
       <td>
         <Group spacing="sm">
-          <Avatar size={40} src={item.avatar} radius={40} />
+          <Avatar size={40} src={"https://picsum.photos/200"} radius={40} />
           <div>
             <Text size="sm" weight={500}>
               {item.name}
@@ -52,7 +55,7 @@ function Userinfolist({
         </Text>
       </td>
       <td style={{ textAlign: "right" }}>
-        <UserListInfoActionMenu />
+        <UserListInfoActionMenu sessionUserRole={userrole} id={item.id} />
       </td>
     </tr>
   ));
@@ -62,7 +65,7 @@ function Userinfolist({
       <Table sx={{ minWidth: 800 }} verticalSpacing="sm">
         <thead>
           <tr>
-            <th>User</th>
+            <th style={{ width: "99%" }}>User</th>
             <th style={{ textAlign: "center" }}>Status</th>
             <th style={{ textAlign: "center" }}>Role</th>
             <th style={{ textAlign: "right" }}>Actions</th>
@@ -76,22 +79,54 @@ function Userinfolist({
 
 export default Userinfolist;
 
-function UserListInfoActionMenu() {
+function UserListInfoActionMenu({
+  sessionUserRole,
+  id,
+}: {
+  sessionUserRole: Role;
+  id: string;
+}) {
+  const backend = useBackendApiContext();
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
-        <Button>Action Menu</Button>
+        <Button disabled={sessionUserRole !== "ADMIN"}>Action Menu</Button>
       </Menu.Target>
 
       <Menu.Dropdown>
         <Menu.Label>Change Role</Menu.Label>
-        <Menu.Item icon={<IconAward size={14} />}>Make Admin</Menu.Item>
-        <Menu.Item icon={<IconUsers size={14} />}>Make Student</Menu.Item>
+        {sessionUserRole == "ADMIN" ? (
+          <Menu.Item
+            icon={<IconAward size={14} />}
+            onClick={() =>
+              backend?.changeUserRoleMutation.mutate({
+                id: id,
+                role: "ADMIN",
+              })
+            }
+          >
+            Make Admin
+          </Menu.Item>
+        ) : (
+          <></>
+        )}
+
         <Menu.Divider />
+
         <Menu.Label>Danger zone</Menu.Label>
-        <Menu.Item color="red" icon={<IconUserOff size={14} />}>
-          Remove User
-        </Menu.Item>
+        {sessionUserRole == "ADMIN" ? (
+          <>
+            <Menu.Item
+              onClick={() => backend?.deleteUserMutation.mutate({ id: id })}
+              color="red"
+              icon={<IconUserOff size={14} />}
+            >
+              Remove User
+            </Menu.Item>
+          </>
+        ) : (
+          <></>
+        )}
       </Menu.Dropdown>
     </Menu>
   );
