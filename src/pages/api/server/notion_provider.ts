@@ -45,12 +45,13 @@ class NotionInstance {
           });
         })
       );
+
       response = pages.map(
         (p): NoticeMetadata => ({
-          id: p.id,
-          title: p.properties["Name"].title[0].plain_text,
-          admin: p.properties["admin email"].email,
-          tags: p.properties["Tags"].multi_select,
+          id: p.id, //@ts-ignore
+          title: p.properties["Name"].title[0].plain_text, //@ts-ignore
+          admin: p.properties["admin email"].email, //@ts-ignore
+          tags: p.properties["Tags"].multi_select, //@ts-ignore
           updatedAt: p.properties["Updated"].last_edited_time,
         })
       );

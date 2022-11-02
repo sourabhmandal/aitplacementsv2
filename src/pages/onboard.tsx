@@ -19,7 +19,7 @@ import { unstable_getServerSession } from "next-auth";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { UpdateUserInputSchema } from "../schema/user.schema";
+import { UpdateUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -69,34 +69,33 @@ const Onboard: NextPage<IPropsOnboard> = ({
     { value: "MECH", label: "Mechanical" },
     { value: "MECH-ME", label: "Mechnical (Masters)" },
   ];
-  const { values, errors, setFieldValue, onSubmit } =
-    useForm<UpdateUserInputSchema>({
-      initialValues: {
-        name: "",
-        email: useremail || "",
-        regNo: undefined,
-        year: "3",
-        branch: "COMP",
-        phoneNo: undefined,
-      },
+  const { values, errors, setFieldValue, onSubmit } = useForm<UpdateUserInput>({
+    initialValues: {
+      name: "",
+      email: useremail || "",
+      regNo: undefined,
+      year: "3",
+      branch: "COMP",
+      phoneNo: undefined,
+    },
 
-      validate: {
-        name: (val: string) =>
-          /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-        regNo: (val: number) => {
-          if (val < 10000 && val > 99999)
-            return "please enter your valid 5 digit registration number";
-          else "";
-        },
-        phoneNo: (val: number) =>
-          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
-            ? null
-            : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
+    validate: {
+      name: (val: string) =>
+        /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
+      regNo: (val: number) => {
+        if (val < 10000 && val > 99999)
+          return "please enter your valid 5 digit registration number";
+        else "";
       },
-    });
+      phoneNo: (val: number) =>
+        /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
+          ? null
+          : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
+    },
+  });
 
-  const handleFormSubmit = async (data: UpdateUserInputSchema) => {
-    const reqData: UpdateUserInputSchema = {
+  const handleFormSubmit = async (data: UpdateUserInput) => {
+    const reqData: UpdateUserInput = {
       name: data.name,
       email: useremail || "",
       year: data.year,
@@ -134,9 +133,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
         <Space h={"md"} />
 
         <form
-          onSubmit={onSubmit((data: UpdateUserInputSchema) =>
-            handleFormSubmit(data)
-          )}
+          onSubmit={onSubmit((data: UpdateUserInput) => handleFormSubmit(data))}
         >
           <Stack>
             <TextInput
