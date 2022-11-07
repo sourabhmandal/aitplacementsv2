@@ -5,15 +5,18 @@ import {
   Image,
   Loader,
   Modal,
+  Overlay,
+  SimpleGrid,
   Space,
   Text,
   Title,
   TypographyStylesProvider,
+  useMantineTheme,
 } from "@mantine/core";
 import { IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useMediaQuery } from "@mantine/hooks";
-import Link from "next/link";
-import { Dispatch, SetStateAction } from "react";
+import { IconFileUpload } from "@tabler/icons";
+import { Dispatch, SetStateAction, useState } from "react";
 import { useBackendApiContext } from "../context/backend.api";
 
 function NoticeDetailModal({
@@ -28,6 +31,8 @@ function NoticeDetailModal({
   const matches = useMediaQuery("(min-width: 600px)");
   const backend = useBackendApiContext();
   const noticeDetailQuery = backend?.noticeDetailQuery(noticeId);
+  const theme = useMantineTheme();
+  const [imageOverlayVisible, setimageOverlayVisible] = useState(false);
 
   const PreviewsAttachments = noticeDetailQuery?.data?.attachments.map(
     (file, index) => {
@@ -35,49 +40,78 @@ function NoticeDetailModal({
         return (
           <Card
             p={4}
+            key={file.name}
             sx={{
               border: "1px solid #ccc",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               cursor: "pointer",
-              minWidth: "8rem",
             }}
-            key={index}
-            style={{ position: "absolute" }}
+            onClick={() => {
+              window.open(file.url, "_blank");
+            }}
           >
-            <Link
-              style={{ position: "relative", padding: 8, margin: 4 }}
-              href={file.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div>
-                <Text size="sm">{file.name}</Text>
-                <Text color="dimmed" size="xs">
-                  {file.type}
-                </Text>
-              </div>
-            </Link>
+            <IconFileUpload
+              color={
+                theme.colors[theme.primaryColor][
+                  theme.colorScheme === "dark" ? 4 : 6
+                ]
+              }
+            />
+            <div style={{ marginLeft: 6 }}>
+              <Text size="sm">{file.name}</Text>
+              <Text color="dimmed" size="xs">
+                {file.type}
+              </Text>
+            </div>
           </Card>
         );
-      } else {
-        return (
-          <Link
-            key={index}
-            style={{ border: "1px solid #ccc", padding: 8, margin: 4 }}
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              key={index}
-              src={file.url}
-              alt={file.name}
-              height={100}
-              width={100}
-              caption={<Text size="sm">{file.name}</Text>}
-            />
-          </Link>
-        );
       }
+      return (
+        <Card
+          key={file.name}
+          sx={{
+            border: "1px solid #ccc",
+            backgroundColor: "#fff2e5",
+            borderRadius: "0.5em",
+            cursor: "pointer",
+          }}
+          p={2}
+          m={0}
+          onClick={() => {
+            window.open(file.url, "_blank");
+          }}
+          onMouseOver={() => setimageOverlayVisible(true)}
+          onMouseLeave={() => setimageOverlayVisible(false)}
+        >
+          {imageOverlayVisible && (
+            <Overlay opacity={0.6} color="#000" zIndex={5} blur={2} />
+          )}
+          <Image
+            src={file.url}
+            alt={file.name}
+            height={150}
+            fit="none"
+            caption={
+              <Text
+                size="sm"
+                sx={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {file.name}
+              </Text>
+            }
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: "0.5em",
+            }}
+          />
+        </Card>
+      );
     }
   );
 
@@ -95,17 +129,17 @@ function NoticeDetailModal({
       withCloseButton
     >
       <>
-        <Space h="sm" />
         <Divider variant="dotted" />
-        <Space h="xl" />
+        <Space h="xs" />
         {noticeDetailQuery?.data?.tags.map((item, idx) => (
           <Badge key={idx} color="orange">
             {item}
           </Badge>
         ))}
-        <Space h="md" />
-        {PreviewsAttachments}
-        <Space h="xl" />
+        <Space h="xs" />
+        <SimpleGrid cols={3} mt={8}>
+          {PreviewsAttachments}
+        </SimpleGrid>
         <Space h="xl" />
         <Divider variant="dotted" />
         <Space h="xl" />

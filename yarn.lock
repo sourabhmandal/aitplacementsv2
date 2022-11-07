@@ -1204,6 +1204,13 @@
     quill-mention "^3.0.8"
     react-quill "2.0.0"
 
+"@mantine/spotlight@^5.7.1":
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/@mantine/spotlight/-/spotlight-5.7.1.tgz#8dcc84a263e2be37793671844a6b1471aee4a830"
+  integrity sha512-5FYoHfn3u/Pc0bH4Kz3cCTRkn1ZyM/1XGBnO+9KnNC9/VJSF/4cEyoCt7L4teqm3de06wbDb7182ZPL/lUm50A==
+  dependencies:
+    "@mantine/utils" "5.7.1"
+
 "@mantine/ssr@5.5.5":
   version "5.5.5"
   resolved "https://registry.yarnpkg.com/@mantine/ssr/-/ssr-5.5.5.tgz#101a2b9bb0949ee1b38082d8da2f8f6c86439ee0"
@@ -1224,6 +1231,11 @@
   version "5.5.5"
   resolved "https://registry.yarnpkg.com/@mantine/utils/-/utils-5.5.5.tgz#22b412b6e9d78f2515f9f98db3f5ed83deca91ca"
   integrity sha512-nt8+A0N1cV4cJNqlKuXazShoEwqtLohHNKFuywEdF3B6vHWdbY799PbT2WmqGTwNQ+se8y5/nBMmamBZrUN4fg==
+
+"@mantine/utils@5.7.1":
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/@mantine/utils/-/utils-5.7.1.tgz#d6890be0650cdd499afd2d954713901672d15711"
+  integrity sha512-YHn6BDI2kkmLY6Zdv8MnFaolKbD+sJyCBG1GY0yO6aHiz8/vTxiaTJv7mhro7Pc1XzclDzVJvd9kAd6lzumAyg==
 
 "@next-auth/prisma-adapter@^1.0.5":
   version "1.0.5"

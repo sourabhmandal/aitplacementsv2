@@ -23,6 +23,7 @@ import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useEffect, useState } from "react";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
+import { useBackendApiContext } from "../../context/backend.api";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -49,6 +50,7 @@ const Profile: NextPage<IPropsOnboard> = ({
   const [totalPages, settotalPages] = useState(1);
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+  const backend = useBackendApiContext();
 
   const userDetailsQuery = trpc.useQuery(
     ["user.get-user-details", { email: useremail! }],
@@ -103,12 +105,13 @@ const Profile: NextPage<IPropsOnboard> = ({
       },
     }
   );
-  const noticeStatusMutation = trpc.useMutation("notice.change-notice-status");
-  const noticeDeleteMutation = trpc.useMutation("notice.delete-notice");
 
   useEffect(() => {
     userNoticesQuery.refetch();
-  }, [noticeStatusMutation.isSuccess, noticeDeleteMutation.isSuccess]);
+  }, [
+    backend?.changeNoticeStatusMutation.isSuccess,
+    backend?.deleteNoticeMutation.isSuccess,
+  ]);
 
   if (userDetailsQuery.status == "loading")
     return (
@@ -208,8 +211,6 @@ const Profile: NextPage<IPropsOnboard> = ({
                     userrole={userrole}
                     isPublished={item.isPublished}
                     noticeId={item.id}
-                    noticeStatusMutation={noticeStatusMutation}
-                    noticeDeleteMutation={noticeDeleteMutation}
                   />
                 </td>
               </tr>
@@ -235,17 +236,14 @@ function UserListInfoActionMenu({
   userrole,
   isPublished,
   noticeId,
-  noticeStatusMutation,
-  noticeDeleteMutation,
 }: {
   userrole: Role;
   isPublished: boolean;
   noticeId: string;
-  noticeStatusMutation: any;
-  noticeDeleteMutation: any;
 }) {
+  const backend = useBackendApiContext();
   const updateNoticeStatus = (isPublished: boolean, noticeId: string) => {
-    noticeStatusMutation.mutate({
+    backend?.changeNoticeStatusMutation.mutate({
       isPublished: isPublished,
       noticeId: noticeId,
     });
@@ -283,7 +281,7 @@ function UserListInfoActionMenu({
               color="red"
               icon={<IconTrashX size={14} />}
               onClick={() =>
-                noticeDeleteMutation.mutate({ noticeId: noticeId })
+                backend?.deleteNoticeMutation.mutate({ noticeId: noticeId })
               }
             >
               Delete Notice

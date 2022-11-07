@@ -96,15 +96,18 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
             >
               Report Issues
             </Menu.Item>
-            <Link
-              target="_blank"
-              rel="noopener noreferrer"
-              href={"https://github.com/aitoss/aitplacements-v2"}
+
+            <Menu.Item
+              icon={<IconBrandGithub size={14} />}
+              onClick={() =>
+                window.open(
+                  "https://github.com/aitoss/aitplacements-v2",
+                  "_blank"
+                )
+              }
             >
-              <Menu.Item icon={<IconBrandGithub size={14} />}>
-                Contributors
-              </Menu.Item>
-            </Link>
+              Contributors
+            </Menu.Item>
             <Menu.Divider></Menu.Divider>
             <Menu.Label>Danger</Menu.Label>
             <Menu.Item

@@ -134,3 +134,7 @@ export const userNoticeOutput = z.object({
 });
 export type UserNoticeOutput = z.TypeOf<typeof userNoticeOutput>;
 
+export const noticeSearchInput = z.object({
+  searchText: z.string(),
+});
+export type NoticeSearchInput = z.TypeOf<typeof noticeSearchInput>;

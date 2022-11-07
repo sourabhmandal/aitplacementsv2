@@ -12,7 +12,10 @@ import {
   GetNoticeDetailOutput,
   getNoticeDetailOutput,
   getNoticeListInput,
+  GetNoticeListOutput,
   getNoticeListOutput,
+  NoticeMetadata,
+  noticeSearchInput,
   userNoticeInput,
   userNoticeOutput,
 } from "../../../../schema/notice.schema";
@@ -180,7 +183,7 @@ export const noticeRouter = createRouter()
           take: 10,
         });
 
-        const resp = dbResp.map((data) => {
+        const resp: NoticeMetadata[] = dbResp.map((data) => {
           return {
             id: data.id,
             title: data.title,
@@ -267,11 +270,58 @@ export const noticeRouter = createRouter()
     output: deleteNoticeOutput,
     async resolve({ ctx, input }) {
       try {
+        const noticeToDelete = await ctx.prisma.notice.findFirst({
+          where: {
+            id: input.noticeId,
+          },
+          select: {
+            _count: true,
+            attachments: true,
+          },
+        });
+
+        // delete all attachment
+        await ctx.prisma.notice.update({
+          where: {
+            id: input.noticeId,
+          },
+          data: {
+            attachments: {
+              deleteMany: {},
+            },
+          },
+        });
+
+        console.log(noticeToDelete);
+
+        if (
+          noticeToDelete?._count.attachments &&
+          noticeToDelete?._count.attachments > 0
+        ) {
+          console.log("files found");
+          for (let file of noticeToDelete?.attachments) {
+            await S3Instance.GetS3().deleteObject(
+              {
+                Bucket: REACT_APP_AWS_BUCKET_ID!,
+                Key: `${file.fileid}`,
+              },
+              (err, data) => {
+                console.log(data, err);
+              }
+            );
+          }
+        }
+
         await ctx.prisma.notice.delete({
           where: {
             id: input.noticeId,
           },
+          select: {
+            _count: true,
+            attachments: true,
+          },
         });
+
         return { isDeleted: true };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
@@ -280,5 +330,48 @@ export const noticeRouter = createRouter()
         console.log(e);
       }
       return { isDeleted: true };
+    },
+  })
+  .mutation("search-notice-by-title", {
+    input: noticeSearchInput,
+    output: getNoticeListOutput,
+    async resolve({ ctx, input }) {
+      try {
+        const searchProcessedString = input.searchText
+          .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
+          .replace(/ +(?= )/g, "") // remove multiple whitespace
+          .trim(); // remove starting and trailing spaces
+        //.replaceAll(" ", " | "); // add or
+        const dbNoticeSearch = await ctx.prisma.notice.findMany({
+          where: {
+            title: {
+              contains: searchProcessedString,
+              mode: "insensitive",
+            },
+          },
+        });
+
+        const metaNoticeData: NoticeMetadata[] = dbNoticeSearch.map(
+          (notice) => {
+            return {
+              admin: notice.adminEmailFk,
+              id: notice.id,
+              tags: notice.tags,
+              title: notice.title,
+              updatedAt: notice.updatedAt,
+            };
+          }
+        );
+        const response: GetNoticeListOutput = {
+          notices: metaNoticeData,
+          totalNotice: dbNoticeSearch.length,
+        };
+        return response;
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        throw e;
+      }
     },
   });

@@ -66,6 +66,7 @@ export function BackendApi({ children }: { children: JSX.Element }) {
         console.debug(data);
       },
     });
+
   let sharedState: IBackendApi = {
     createPresignedUrlMutation,
     changeNoticeStatusMutation,

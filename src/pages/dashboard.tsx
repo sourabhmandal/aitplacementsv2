@@ -3,14 +3,25 @@ import {
   Center,
   Container,
   createStyles,
-  Divider,
+  Group,
   Pagination,
   ScrollArea,
   Space,
   Table,
   Text,
+  UnstyledButton,
 } from "@mantine/core";
+import {
+  openSpotlight,
+  registerSpotlightActions,
+  SpotlightAction,
+  SpotlightProvider,
+} from "@mantine/spotlight";
+
 import { Role, UserStatus } from "@prisma/client";
+import { IconNotebook, IconSearch } from "@tabler/icons";
+import { debounce, DebouncedFunc } from "lodash";
+
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
@@ -19,6 +30,7 @@ import CreateNotice from "../../components/CreateNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { useBackendApiContext } from "../../context/backend.api";
 import { GetNoticeListOutput } from "../schema/notice.schema";
+import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
@@ -33,12 +45,15 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   userstatus,
   userrole,
 }) => {
-  const noticeListStyle = useNoticeListStyle();
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
-  const [fetchedNotice, setfetchedNotice] = useState<GetNoticeListOutput>();
+  const [fetchedNotice, setfetchedNotice] = useState<GetNoticeListOutput>({
+    totalNotice: 0,
+    notices: [],
+  });
+  const searchedNotice: SpotlightAction[] = [];
   const isAdmin = userrole == "ADMIN";
   const router = useRouter();
   const backend = useBackendApiContext();
@@ -49,12 +64,41 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   }, [router, userstatus]);
 
   const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
+  const searchNoticeQueryMutation = trpc.useMutation(
+    "notice.search-notice-by-title"
+  );
 
   useEffect(() => {
-    if (publishedNoticeQueryData) {
-      setfetchedNotice(publishedNoticeQueryData.data);
+    console.log("SETTING QUERY DATA");
+    if (publishedNoticeQueryData?.isSuccess) {
+      setfetchedNotice(publishedNoticeQueryData?.data!);
     }
-  }, [publishedNoticeQueryData]);
+  }, [
+    publishedNoticeQueryData?.isLoading,
+    publishedNoticeQueryData?.isSuccess,
+  ]);
+
+  useEffect(() => {
+    console.log("SETTING SEARCH DATA");
+    if (searchNoticeQueryMutation.isSuccess) {
+      const search: SpotlightAction[] =
+        searchNoticeQueryMutation.data.notices.map((el) => {
+          return {
+            title: el.title,
+            icon: <IconNotebook />,
+            onTrigger: () => {
+              setnoticeId(el.id);
+              setOpenNoticeDialog(true);
+            },
+            keywords: el.tags,
+          };
+        });
+      registerSpotlightActions(search);
+    }
+  }, [
+    searchNoticeQueryMutation.isSuccess,
+    searchNoticeQueryMutation.isLoading,
+  ]);
 
   useEffect(() => {
     const noticeNos: number = fetchedNotice?.totalNotice!;
@@ -63,15 +107,22 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     settotalPages(pages);
   }, [fetchedNotice, totalPages]);
 
+  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
+    (query) => {
+      searchNoticeQueryMutation.mutate({
+        searchText: query,
+      });
+    },
+    1000,
+    { leading: true }
+  );
+
   return (
     <Container>
       <Text weight="bolder" size={30} py="lg">
         Welcome, {username}
       </Text>
       {isAdmin ? <CreateNotice /> : <></>}
-
-      {/* Add search bar for notice remove divider*/}
-      <Divider my="xl" variant="solid" />
 
       {noticeId === "" ? (
         <></>
@@ -82,6 +133,39 @@ const Dashboard: NextPage<IPropsDashboard> = ({
           setOpenNoticeDialog={setOpenNoticeDialog}
         />
       )}
+
+      <SpotlightProvider
+        actions={searchedNotice}
+        searchIcon={<IconSearch size={18} />}
+        searchPlaceholder="Search..."
+        shortcut="mod + ctrl + F"
+        nothingFoundMessage="Nothing found..."
+        onQueryChange={(query) => handleTextSearch(query)}
+        highlightQuery
+        limit={100}
+      >
+        <Group position="center">
+          <UnstyledButton
+            sx={{
+              border: 1,
+              borderRadius: "0.5em",
+              borderStyle: "solid",
+              borderColor: "#ddd",
+              marginTop: 15,
+              marginBottom: 15,
+              width: "100%",
+            }}
+            onClick={() => openSpotlight()}
+          >
+            <Group p={10}>
+              <IconSearch size={16} style={{ color: "#ddd" }} />
+              <Text color="dimmed" size="sm">
+                Search
+              </Text>
+            </Group>
+          </UnstyledButton>
+        </Group>
+      </SpotlightProvider>
 
       <ScrollArea classNames={userInfoListStyle.classes}>
         <Table
@@ -98,42 +182,36 @@ const Dashboard: NextPage<IPropsDashboard> = ({
             </tr>
           </thead>
           <tbody>
-            {fetchedNotice?.notices &&
-              fetchedNotice?.notices.map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => {
-                    setnoticeId(item.id);
-                    setOpenNoticeDialog(true);
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>
-                    <Text size="sm" weight="bolder">
-                      {item.title}
-                    </Text>
-                    {item.tags.map((item, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="outline"
-                        color={"orange"}
-                        mr={4}
-                      >
-                        {item}
-                      </Badge>
-                    ))}
-                  </td>
+            {fetchedNotice?.notices.map((item) => (
+              <tr
+                key={item.id}
+                onClick={() => {
+                  setnoticeId(item.id);
+                  setOpenNoticeDialog(true);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <td>
+                  <Text size="sm" weight="bolder">
+                    {item.title}
+                  </Text>
+                  {item.tags.map((item, idx) => (
+                    <Badge key={idx} variant="outline" color={"orange"} mr={4}>
+                      {item}
+                    </Badge>
+                  ))}
+                </td>
 
-                  <td>
-                    <Text size="xs" weight={"bolder"}>
-                      {item.admin}
-                    </Text>
-                    <Text size="xs" color="dimmed">
-                      {item.updatedAt.toDateString()}
-                    </Text>
-                  </td>
-                </tr>
-              ))}
+                <td>
+                  <Text size="xs" weight={"bolder"}>
+                    {item.admin}
+                  </Text>
+                  <Text size="xs" color="dimmed">
+                    {item.updatedAt.toDateString()}
+                  </Text>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </Table>
       </ScrollArea>
@@ -148,7 +226,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
       </Center>
     </Container>
   );
-};
+};;;
 
 export default Dashboard;
 
