@@ -14,7 +14,7 @@ module.exports = withBundleAnalyzer({
     return [
       {
         // matching all API routes
-        source: "/api/:path*",
+        source: "/api/trpc/(.*)",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
           { key: "Access-Control-Allow-Origin", value: "*" },
