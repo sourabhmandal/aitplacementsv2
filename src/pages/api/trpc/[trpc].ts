@@ -22,6 +22,7 @@ export default trpcNext.createNextApiHandler({
       "Access-Control-Allow-Headers":
         "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
     };
+    console.log(ctx?.req.method, ctx?.res.statusCode);
 
     // accept options
     if (ctx?.req.method?.toString() === "OPTIONS") {
