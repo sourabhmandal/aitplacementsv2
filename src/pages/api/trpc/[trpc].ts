@@ -15,25 +15,4 @@ export default trpcNext.createNextApiHandler({
       console.log(`ERROR ${error.code} :: (${error.name}) ${error.message}`);
     }
   },
-  responseMeta({ data, errors, type, ctx, paths }) {
-    const corsHeaders = {
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Allow-Origin": ctx?.req.headers.host?.toString() || "*",
-      "Access-Control-Allow-Headers":
-        "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
-    };
-    console.log(ctx?.req.method, ctx?.res.statusCode);
-
-    // accept options
-    if (ctx?.req.method?.toString() === "OPTIONS") {
-      return {
-        headers: corsHeaders,
-        status: 200,
-      };
-    }
-    return {
-      headers: corsHeaders,
-      status: ctx?.res.statusCode ?? 500,
-    };
-  },
 });

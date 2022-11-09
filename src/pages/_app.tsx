@@ -75,10 +75,26 @@ export default withTRPC<AppRouter>({
         },
       },
       headers() {
+        const corsHeaders = {
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Origin":
+            ctx?.req?.headers.host?.toString() || "*",
+          "Access-Control-Allow-Headers":
+            "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+        };
+
+        if (ctx?.req?.method?.toString() === "OPTIONS") {
+          return {
+            ...ctx.req.headers,
+            ...corsHeaders,
+          };
+        }
+
         if (ctx?.req) {
           return {
             ...ctx.req.headers,
             "x-ssr": "1",
+            ...corsHeaders,
           };
         }
         return {};
