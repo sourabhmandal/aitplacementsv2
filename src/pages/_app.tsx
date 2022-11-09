@@ -84,10 +84,7 @@ export default withTRPC<AppRouter>({
         };
 
         if (ctx?.req?.method?.toString() === "OPTIONS") {
-          return {
-            ...ctx.req.headers,
-            ...corsHeaders,
-          };
+          ctx.res?.writeHead(200);
         }
 
         if (ctx?.req) {
@@ -97,7 +94,7 @@ export default withTRPC<AppRouter>({
             ...corsHeaders,
           };
         }
-        return {};
+        return { ...corsHeaders };
       },
       links,
       transformer: superjson,
