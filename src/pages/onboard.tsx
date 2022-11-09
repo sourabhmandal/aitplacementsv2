@@ -16,7 +16,7 @@ import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { UpdateUserInput } from "../schema/user.schema";
@@ -40,6 +40,13 @@ const Onboard: NextPage<IPropsOnboard> = ({
   useEffect(() => {
     if (userstatus !== "INVITED") router.push("/dashboard");
   }, [userstatus, router]);
+
+  const clientSession = useSession();
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
 
   const { isLoading, mutate } = trpc.useMutation(["user.onboard-user"], {
     onError: (err) => {

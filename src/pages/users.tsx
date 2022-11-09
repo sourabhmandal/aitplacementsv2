@@ -14,6 +14,8 @@ import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
@@ -79,6 +81,14 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
     backend?.changeUserRoleMutation.isSuccess,
     backend?.deleteUserMutation.isSuccess,
   ]);
+
+  const clientSession = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
 
   return (
     <Container>

@@ -1,5 +1,6 @@
 import {
   Badge,
+  Box,
   Center,
   Container,
   createStyles,
@@ -24,6 +25,7 @@ import { debounce, DebouncedFunc } from "lodash";
 
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
@@ -44,6 +46,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   username,
   userstatus,
   userrole,
+  useremail,
 }) => {
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
@@ -78,8 +81,15 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     publishedNoticeQueryData?.isSuccess,
   ]);
 
+  const clientSession = useSession();
+
   useEffect(() => {
-    console.log("SETTING SEARCH DATA");
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
+
+  // for searching
+  useEffect(() => {
     if (searchNoticeQueryMutation.isSuccess) {
       const search: SpotlightAction[] =
         searchNoticeQueryMutation.data.notices.map((el) => {
@@ -95,11 +105,19 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         });
       registerSpotlightActions(search);
     }
-  }, [
-    searchNoticeQueryMutation.isSuccess,
-    searchNoticeQueryMutation.isLoading,
-  ]);
+  }, [searchNoticeQueryMutation.isSuccess]);
+  // debounce searching
+  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
+    (query) => {
+      searchNoticeQueryMutation.mutate({
+        searchText: query,
+      });
+    },
+    800,
+    { trailing: true, leading: false }
+  );
 
+  // for setting total page numbers of pagination component
   useEffect(() => {
     const noticeNos: number = fetchedNotice?.totalNotice!;
     let pages = Math.ceil(noticeNos / 10);
@@ -107,21 +125,17 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     settotalPages(pages);
   }, [fetchedNotice, totalPages]);
 
-  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
-    (query) => {
-      searchNoticeQueryMutation.mutate({
-        searchText: query,
-      });
-    },
-    1000,
-    { leading: true }
-  );
-
   return (
     <Container>
-      <Text weight="bolder" size={30} py="lg">
-        Welcome, {username}
-      </Text>
+      <Box py="lg">
+        <Text weight="bolder" size={25}>
+          Welcome, {username}
+        </Text>
+        <Text size={"xs"} color="dimmed">
+          {useremail}
+        </Text>
+      </Box>
+
       {isAdmin ? <CreateNotice /> : <></>}
 
       {noticeId === "" ? (
@@ -226,7 +240,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
       </Center>
     </Container>
   );
-};;;
+};;;;;;;;;;;;;;;;;;;
 
 export default Dashboard;
 

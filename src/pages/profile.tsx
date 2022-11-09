@@ -21,6 +21,8 @@ import { Role, UserStatus } from "@prisma/client";
 import { IconNotes, IconNotesOff, IconTrashX } from "@tabler/icons";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { useBackendApiContext } from "../../context/backend.api";
@@ -105,6 +107,14 @@ const Profile: NextPage<IPropsOnboard> = ({
       },
     }
   );
+
+  const clientSession = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
 
   useEffect(() => {
     userNoticesQuery.refetch();

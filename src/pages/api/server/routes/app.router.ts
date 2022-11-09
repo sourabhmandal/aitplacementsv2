@@ -3,12 +3,13 @@ import { attachmentRouter } from "./attachment.router";
 import { noticeRouter } from "./notice.router";
 import { userRouter } from "./user.router";
 
+
+
 export const appRouter = createRouter()
   .middleware(async ({ path, type, next }) => {
     const start = Date.now();
     const result = await next();
     const durationMs = Date.now() - start;
-    console.log(`RESULT :: ${result}`);
     result.ok
       ? console.log(
           `OK request timing ::: PATH: ${path}, TYPE: ${type}, DURATION: ${durationMs}`,
@@ -44,4 +45,11 @@ export const appRouter = createRouter()
   .merge("notice.", noticeRouter)
   .merge("attachment.", attachmentRouter);
 
+// const isAuthed = appRouter.middleware(async ({ next, ctx }) => {
+//   // only check authorization if enabled
+//   if (!ctx.user) {
+//     throw new TRPCError({ code: "UNAUTHORIZED" });
+//   }
+//   return next();
+// });
 export type AppRouter = typeof appRouter;
