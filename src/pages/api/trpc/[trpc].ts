@@ -21,20 +21,18 @@ export default trpcNext.createNextApiHandler({
       "Access-Control-Allow-Origin": ctx?.req.headers.host?.toString() || "*",
       "Access-Control-Allow-Headers":
         "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
-    }
+    };
 
     // accept options
-  if (ctx?.req.method === "OPTIONS") {
+    if (ctx?.req.method?.toString() === "OPTIONS") {
+      return {
+        headers: corsHeaders,
+        status: 200,
+      };
+    }
     return {
       headers: corsHeaders,
-      status: 200
+      status: errors[0].code ?? 500,
     };
-  }
-
-    return {
-      headers: corsHeaders,
-      status: ctx?.res.statusCode || 500
-    };
-    
   },
 });
