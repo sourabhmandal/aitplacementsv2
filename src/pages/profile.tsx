@@ -209,7 +209,7 @@ const Profile: NextPage<IPropsOnboard> = ({
                 <td align="right">
                   <UserListInfoActionMenu
                     userrole={userrole}
-                    isPublished={item.isPublished}
+                    isPublished={item.isPublished || false}
                     noticeId={item.id}
                   />
                 </td>
