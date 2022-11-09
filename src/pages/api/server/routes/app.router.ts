@@ -4,6 +4,25 @@ import { noticeRouter } from "./notice.router";
 import { userRouter } from "./user.router";
 
 export const appRouter = createRouter()
+  .middleware(async ({ path, type, next }) => {
+    const start = Date.now();
+    const result = await next();
+    const durationMs = Date.now() - start;
+    result.ok
+      ? console.log(
+          `OK request timing ::: PATH: ${path}, TYPE: ${type}, DURATION: ${durationMs}`,
+          path,
+          type,
+          durationMs
+        )
+      : console.log(
+          `NOT-OK request timing ::: PATH: ${path}, TYPE: ${type}, DURATION: ${durationMs}`,
+          path,
+          type,
+          durationMs
+        );
+    return result;
+  })
   .middleware(async ({ ctx, next }) => {
     ctx?.res.setHeader("Access-Control-Allow-Credentials", "true");
     ctx?.res.setHeader(
