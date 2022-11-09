@@ -8,6 +8,7 @@ export const appRouter = createRouter()
     const start = Date.now();
     const result = await next();
     const durationMs = Date.now() - start;
+    console.log(`RESULT :: ${result}`);
     result.ok
       ? console.log(
           `OK request timing ::: PATH: ${path}, TYPE: ${type}, DURATION: ${durationMs}`,
