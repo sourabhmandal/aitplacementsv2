@@ -34,7 +34,7 @@ export const userRouter = createRouter()
         role: "STUDENT",
       };
 
-      const updatedDBUser = await ctx.prisma.user.update({
+      const updatedDBUser = await ctx?.prisma.user.update({
         where: {
           email: input.email,
         },
@@ -43,7 +43,7 @@ export const userRouter = createRouter()
           phoneNo: input.phoneNo?.toString(),
           userStatus: "ACTIVE",
         },
-      });
+      })!;
 
       response = {
         email: updatedDBUser.email,
@@ -51,7 +51,7 @@ export const userRouter = createRouter()
         role: updatedDBUser.role,
       };
       if (updatedDBUser?.role == "ADMIN") {
-        await ctx.prisma.adminDetails.upsert({
+        await ctx?.prisma.adminDetails.upsert({
           where: {
             basicDetailsFk: updatedDBUser.id,
           },
@@ -65,7 +65,7 @@ export const userRouter = createRouter()
           },
         });
       } else if (updatedDBUser?.role == "STUDENT") {
-        await ctx.prisma.studentDetails.upsert({
+        await ctx?.prisma.studentDetails.upsert({
           where: {
             basicDetailsFk: updatedDBUser.id,
           },
@@ -95,7 +95,7 @@ export const userRouter = createRouter()
     output: inviteUserOutput,
     async resolve({ ctx, input }) {
       try {
-        const user = await ctx.prisma.user.create({
+        const user = await ctx?.prisma.user.create({
           data: {
             email: input.email,
             role: input.role,
@@ -131,7 +131,7 @@ export const userRouter = createRouter()
     input: userListInput,
     output: userListOutput,
     async resolve({ ctx, input }) {
-      const dbStudent = await ctx.prisma.user.findMany({
+      const dbStudent = await ctx?.prisma.user.findMany({
         where: {
           role: input.role as ROLES,
         },
@@ -145,14 +145,14 @@ export const userRouter = createRouter()
         },
       });
 
-      const data: UserListOutput = dbStudent.map((item) => ({
+      const data: UserListOutput = dbStudent?.map((item) => ({
         id: item.id,
         email: item.email,
         name: item.name || "N.A",
         role: item.role as ROLES,
         phoneNo: item.phoneNo || "N.A",
         userStatus: item.userStatus as USER_STATUS,
-      }));
+      }))!;
       return data;
     },
   })
@@ -160,7 +160,7 @@ export const userRouter = createRouter()
     input: userDetailsInput,
     output: userDetailsOutput,
     async resolve({ ctx, input }) {
-      const dbUser = await ctx.prisma.user.findFirst({
+      const dbUser = await ctx?.prisma.user.findFirst({
         where: {
           email: input.email,
         },
@@ -200,14 +200,14 @@ export const userRouter = createRouter()
     input: userRoleInput,
     output: userRoleOutput,
     async resolve({ ctx, input }) {
-      const dbUser = await ctx.prisma.user.update({
+      const dbUser = await ctx?.prisma.user.update({
         where: {
           id: input.id,
         },
         data: {
           role: input.role,
         },
-      });
+      })!;
 
       return {
         email: dbUser.email,
@@ -220,11 +220,11 @@ export const userRouter = createRouter()
     output: userDeleteOutput,
     async resolve({ ctx, input }) {
       try {
-        const dbUser = await ctx.prisma.user.delete({
+        const dbUser = await ctx?.prisma.user.delete({
           where: {
             id: input.id,
           },
-        });
+        })!;
 
         return {
           email: dbUser.email,

@@ -17,6 +17,7 @@ import {
   NoticeMetadata,
   noticeSearchInput,
   userNoticeInput,
+  UserNoticeOutput,
   userNoticeOutput,
 } from "../../../../schema/notice.schema";
 import { createRouter } from "../createRouter";
@@ -30,14 +31,14 @@ export const noticeRouter = createRouter()
     async resolve({ ctx, input }) {
       const { adminEmail, attachments, body, isPublished, tags, title } = input;
       try {
-        const dbUser = await ctx.prisma.user.findFirst({
+        const dbUser = await ctx?.prisma.user.findFirst({
           where: {
             email: adminEmail,
           },
         });
 
         if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
-          const dbRespNotice: Notice = await ctx.prisma.notice.create({
+          const dbRespNotice: Notice = await ctx?.prisma?.notice?.create({
             data: {
               body: body,
               title: title,
@@ -60,7 +61,7 @@ export const noticeRouter = createRouter()
               admin: true,
               attachments: true,
             },
-          });
+          })!;
 
           return {
             adminEmail: dbRespNotice.adminEmailFk,
@@ -94,7 +95,7 @@ export const noticeRouter = createRouter()
         type: string;
       }>(0);
       try {
-        const dbRespNotice = await ctx.prisma.notice.findUnique({
+        const dbRespNotice = await ctx?.prisma.notice.findUnique({
           where: {
             id: id,
           },
@@ -167,12 +168,12 @@ export const noticeRouter = createRouter()
     async resolve({ ctx, input }) {
       const { pageNos } = input;
       try {
-        const noticeLenght: number = await ctx.prisma.notice.count({
+        const noticeLenght: number = await ctx?.prisma.notice.count({
           where: {
             isPublished: true,
           },
-        });
-        const dbResp: Notice[] = await ctx.prisma.notice.findMany({
+        })!;
+        const dbResp: Notice[] = await ctx?.prisma.notice.findMany({
           where: {
             isPublished: true,
           },
@@ -181,7 +182,7 @@ export const noticeRouter = createRouter()
           },
           skip: (pageNos - 1) * 10,
           take: 10,
-        });
+        })!;
 
         const resp: NoticeMetadata[] = dbResp.map((data) => {
           return {
@@ -220,12 +221,12 @@ export const noticeRouter = createRouter()
     output: userNoticeOutput,
     async resolve({ ctx, input }) {
       try {
-        const dbNoticeCount = await ctx.prisma.notice.count({
+        const dbNoticeCount = await ctx?.prisma.notice.count({
           where: {
             adminEmailFk: input.email,
           },
-        });
-        const dbNotice = await ctx.prisma.notice.findMany({
+        })!;
+        const dbNotice = await ctx?.prisma.notice.findMany({
           where: {
             adminEmailFk: input.email,
           },
@@ -241,7 +242,20 @@ export const noticeRouter = createRouter()
           take: 10,
           skip: (input.pageNos - 1) * 10,
         });
-        return { notice: dbNotice, count: dbNoticeCount };
+
+        const respNotice: NoticeMetadata[] = dbNotice?.map(
+          (notice): NoticeMetadata => ({
+            id: notice.id,
+            title: notice.title,
+            updatedAt: notice.updatedAt,
+          })
+        )!;
+
+        const response: UserNoticeOutput = {
+          notice: respNotice,
+          count: dbNoticeCount,
+        };
+        return response;
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           prismaError(e);
@@ -254,7 +268,7 @@ export const noticeRouter = createRouter()
     input: changeNoticeStatusInput,
     output: changeNoticeStatusOutput,
     async resolve({ ctx, input }) {
-      await ctx.prisma.notice.update({
+      await ctx?.prisma.notice.update({
         data: {
           isPublished: input.isPublished,
         },
@@ -270,7 +284,7 @@ export const noticeRouter = createRouter()
     output: deleteNoticeOutput,
     async resolve({ ctx, input }) {
       try {
-        const noticeToDelete = await ctx.prisma.notice.findFirst({
+        const noticeToDelete = await ctx?.prisma.notice.findFirst({
           where: {
             id: input.noticeId,
           },
@@ -281,7 +295,7 @@ export const noticeRouter = createRouter()
         });
 
         // delete all attachment
-        await ctx.prisma.notice.update({
+        await ctx?.prisma.notice.update({
           where: {
             id: input.noticeId,
           },
@@ -312,7 +326,7 @@ export const noticeRouter = createRouter()
           }
         }
 
-        await ctx.prisma.notice.delete({
+        await ctx?.prisma.notice.delete({
           where: {
             id: input.noticeId,
           },
@@ -342,7 +356,7 @@ export const noticeRouter = createRouter()
           .replace(/ +(?= )/g, "") // remove multiple whitespace
           .trim(); // remove starting and trailing spaces
         //.replaceAll(" ", " | "); // add or
-        const dbNoticeSearch = await ctx.prisma.notice.findMany({
+        const dbNoticeSearch = await ctx?.prisma.notice.findMany({
           where: {
             title: {
               contains: searchProcessedString,
@@ -351,7 +365,7 @@ export const noticeRouter = createRouter()
           },
         });
 
-        const metaNoticeData: NoticeMetadata[] = dbNoticeSearch.map(
+        const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
           (notice) => {
             return {
               admin: notice.adminEmailFk,
@@ -361,10 +375,10 @@ export const noticeRouter = createRouter()
               updatedAt: notice.updatedAt,
             };
           }
-        );
+        )!;
         const response: GetNoticeListOutput = {
           notices: metaNoticeData,
-          totalNotice: dbNoticeSearch.length,
+          totalNotice: dbNoticeSearch?.length || 0,
         };
         return response;
       } catch (e) {
