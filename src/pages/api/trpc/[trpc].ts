@@ -32,7 +32,7 @@ export default trpcNext.createNextApiHandler({
     }
     return {
       headers: corsHeaders,
-      status: errors[0].code ?? 500,
+      status: ctx?.res.statusCode ?? 500,
     };
   },
 });
