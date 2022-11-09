@@ -216,7 +216,7 @@ export const noticeRouter = createRouter()
       };
     },
   })
-  .query("my-published-notice", {
+  .query("my-notices", {
     input: userNoticeInput,
     output: userNoticeOutput,
     async resolve({ ctx, input }) {
@@ -248,6 +248,7 @@ export const noticeRouter = createRouter()
             id: notice.id,
             title: notice.title,
             updatedAt: notice.updatedAt,
+            isPublished: notice.isPublished,
           })
         )!;
 

@@ -89,7 +89,7 @@ const Profile: NextPage<IPropsOnboard> = ({
   );
 
   const userNoticesQuery = trpc.useQuery(
-    ["notice.my-published-notice", { email: useremail!, pageNos: pageNos }],
+    ["notice.my-notices", { email: useremail!, pageNos: pageNos }],
     {
       onError: (err) => {
         showNotification({
