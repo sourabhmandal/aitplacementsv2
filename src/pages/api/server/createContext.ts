@@ -9,15 +9,21 @@ export function createContext({
   res: NextApiResponse;
 }) {
   // enable CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Request-Method", "*");
-  res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST");
-  res.setHeader("Access-Control-Allow-Headers", "*");
-
-  // accepts OPTIONS
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  // another common pattern
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin!);
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
+  // accept options
   if (req.method === "OPTIONS") {
-    res.writeHead(200);
-    return res.end();
+    res.status(200).end();
+    return;
   }
 
   return {
