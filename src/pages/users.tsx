@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Container,
   Divider,
@@ -86,16 +85,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
               // redirect to user profile page
               // without showing phone number
             },
-            data: (
-              <>
-                <Group spacing="md">
-                  <Text>{el.name} </Text>
-                  <Badge>{el.userStatus}</Badge>
-                </Group>
-                <Text>{el.role}</Text>
-                <Text>{el.phoneNo}</Text>
-              </>
-            ),
+            description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
           };
         }
       );
