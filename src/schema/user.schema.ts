@@ -83,3 +83,8 @@ export const userDeleteOutput = z.object({
   email: z.string().email(),
 });
 export type UserDeleteOutput = z.TypeOf<typeof userDeleteOutput>;
+
+export const userSearchInput = z.object({
+  searchText: z.string(),
+});
+export type UserSearchInput = z.TypeOf<typeof userSearchInput>;

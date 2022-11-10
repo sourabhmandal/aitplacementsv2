@@ -1,4 +1,5 @@
 import { showNotification } from "@mantine/notifications";
+import { Role } from "@prisma/client";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { createContext, useContext } from "react";
 import { UseMutationResult, UseQueryResult } from "react-query";
@@ -14,14 +15,17 @@ import {
   DeleteNoticeOutput,
   GetNoticeDetailOutput,
   GetNoticeListOutput,
+  NoticeSearchInput,
 } from "../src/schema/notice.schema";
 import {
   UpdateUserInput,
   UpdateUserOutput,
   UserDeleteInput,
   UserDeleteOutput,
+  UserListOutput,
   UserRoleInput,
   UserRoleOutput,
+  UserSearchInput,
 } from "../src/schema/user.schema";
 import { trpc } from "../src/utils/trpc";
 const BackendApiContext = createContext<IBackendApi | null>(null);
@@ -50,6 +54,8 @@ export function BackendApi({ children }: { children: JSX.Element }) {
   const deleteUserMutation = trpc.useMutation("user.delete-user");
   const inviteUserMutation = trpc.useMutation("user.invite-user");
   const onboardUserMutation = trpc.useMutation("user.onboard-user");
+  const searchNoticeByTitle = trpc.useMutation("notice.search-notice-by-title");
+  const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
 
   // query
   const publishedNoticeQuery = (pageNos: number) =>
@@ -67,6 +73,17 @@ export function BackendApi({ children }: { children: JSX.Element }) {
       },
     });
 
+  const userListQuery = (userRole: Role) =>
+    trpc.useQuery(["user.get-user-list", { role: userRole }], {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+    });
+
   let sharedState: IBackendApi = {
     createPresignedUrlMutation,
     changeNoticeStatusMutation,
@@ -76,9 +93,12 @@ export function BackendApi({ children }: { children: JSX.Element }) {
     deleteUserMutation,
     inviteUserMutation,
     onboardUserMutation,
+    searchNoticeByTitle,
+    searchUserByEmail,
     // query
     publishedNoticeQuery,
     noticeDetailQuery,
+    userListQuery,
   };
 
   return (
@@ -133,10 +153,23 @@ interface IBackendApi {
     TRPCClientErrorLike<AppRouter>,
     UpdateUserInput
   >;
+  searchNoticeByTitle: UseMutationResult<
+    GetNoticeListOutput,
+    TRPCClientErrorLike<AppRouter>,
+    NoticeSearchInput
+  >;
+  searchUserByEmail: UseMutationResult<
+    UserListOutput,
+    TRPCClientErrorLike<AppRouter>,
+    UserSearchInput
+  >;
   publishedNoticeQuery: (
     pageNos: number
   ) => UseQueryResult<GetNoticeListOutput, TRPCClientErrorLike<AppRouter>>;
   noticeDetailQuery: (
     noticeId: string
   ) => UseQueryResult<GetNoticeDetailOutput, TRPCClientErrorLike<AppRouter>>;
+  userListQuery: (
+    userTole: Role
+  ) => UseQueryResult<UserListOutput, TRPCClientErrorLike<AppRouter>>;
 }

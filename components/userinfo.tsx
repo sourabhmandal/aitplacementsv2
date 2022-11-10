@@ -1,7 +1,14 @@
-import { Avatar, Button, createStyles, Group, Text } from "@mantine/core";
+import {
+  Avatar,
+  Button,
+  createStyles,
+  Group,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { openConfirmModal } from "@mantine/modals";
 import { Role } from "@prisma/client";
-import { IconAt, IconPhoneCall } from "@tabler/icons";
+import { IconAt, IconPhoneCall, IconStatusChange } from "@tabler/icons";
 import { useBackendApiContext } from "../context/backend.api";
 
 interface UserInfoIconsProps {
@@ -10,6 +17,7 @@ interface UserInfoIconsProps {
   name: string;
   title: string;
   phone: string;
+  userstatus: string;
   email: string;
   sessionUserRole: Role;
 }
@@ -19,6 +27,7 @@ export function UserInfo({
   name,
   title,
   phone,
+  userstatus,
   email,
   sessionUserRole,
   id,
@@ -41,9 +50,9 @@ export function UserInfo({
     });
 
   return (
-    <Group noWrap>
+    <Group>
       <Avatar src={avatar} size={94} radius="md" />
-      <div>
+      <Stack spacing={0}>
         <Text
           size="xs"
           sx={{ textTransform: "uppercase" }}
@@ -70,14 +79,37 @@ export function UserInfo({
             {phone}
           </Text>
         </Group>
-        {sessionUserRole === "ADMIN" ? (
-          <Button compact size="xs" mt={4} onClick={() => openModal(email)}>
-            Make Student
-          </Button>
-        ) : (
-          <></>
-        )}
-      </div>
+        <Group>
+          <IconStatusChange stroke={1.5} size={16} className={classes.icon} />
+          <Group align="baseline">
+            <Text
+              size="xs"
+              weight="bolder"
+              color={userstatus == "ACTIVE" ? "orange" : "violet"}
+            >
+              {userstatus}
+            </Text>
+
+            {sessionUserRole === "ADMIN" ? (
+              <Button
+                compact
+                size="xs"
+                mt={4}
+                disabled={
+                  backend?.deleteUserMutation.isLoading ||
+                  backend?.changeUserRoleMutation.isLoading ||
+                  sessionUserRole !== "ADMIN"
+                }
+                onClick={() => openModal(email)}
+              >
+                Make Student
+              </Button>
+            ) : (
+              <></>
+            )}
+          </Group>
+        </Group>
+      </Stack>
     </Group>
   );
 }

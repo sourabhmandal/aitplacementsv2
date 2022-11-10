@@ -18,6 +18,7 @@ import {
   userListOutput,
   userRoleInput,
   userRoleOutput,
+  userSearchInput,
 } from "../../../../schema/user.schema";
 import { createRouter } from "../createRouter";
 import { prismaError } from "../errors/prisma.errors";
@@ -238,5 +239,45 @@ export const userRouter = createRouter()
       return {
         email: "",
       };
+    },
+  })
+  .mutation("search-user-by-email", {
+    input: userSearchInput,
+    output: userListOutput,
+    async resolve({ ctx, input }) {
+      try {
+        const searchProcessedString = input.searchText
+          .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
+          .replaceAll(/\s/g, "") // remove multiple whitespace
+          .trim(); // remove starting and trailing spaces
+        //.replaceAll(" ", " | "); // add or
+
+        const dbUserSearch = await ctx?.prisma.user.findMany({
+          where: {
+            email: {
+              contains: searchProcessedString,
+              mode: "insensitive",
+            },
+          },
+        });
+
+        const response: UserListOutput = dbUserSearch?.map((user) => {
+          return {
+            email: user.email,
+            id: user.id,
+            name: user.name || "N.A",
+            phoneNo: user.phoneNo || "N.A",
+            role: user.role,
+            userStatus: user.userStatus,
+          };
+        })!;
+
+        return response;
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        throw e;
+      }
     },
   });

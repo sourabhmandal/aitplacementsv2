@@ -32,7 +32,6 @@ import CreateNotice from "../../components/CreateNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { useBackendApiContext } from "../../context/backend.api";
 import { GetNoticeListOutput } from "../schema/notice.schema";
-import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
@@ -67,9 +66,6 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   }, [router, userstatus]);
 
   const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
-  const searchNoticeQueryMutation = trpc.useMutation(
-    "notice.search-notice-by-title"
-  );
 
   useEffect(() => {
     console.log("SETTING QUERY DATA");
@@ -90,9 +86,9 @@ const Dashboard: NextPage<IPropsDashboard> = ({
 
   // for searching
   useEffect(() => {
-    if (searchNoticeQueryMutation.isSuccess) {
+    if (backend?.searchNoticeByTitle.isSuccess) {
       const search: SpotlightAction[] =
-        searchNoticeQueryMutation.data.notices.map((el) => {
+        backend?.searchNoticeByTitle.data.notices.map((el) => {
           return {
             title: el.title,
             icon: <IconNotebook />,
@@ -105,11 +101,11 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         });
       registerSpotlightActions(search);
     }
-  }, [searchNoticeQueryMutation.isSuccess]);
+  }, [backend?.searchNoticeByTitle.isSuccess]);
   // debounce searching
   const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
     (query) => {
-      searchNoticeQueryMutation.mutate({
+      backend?.searchNoticeByTitle.mutate({
         searchText: query,
       });
     },
