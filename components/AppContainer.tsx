@@ -326,7 +326,8 @@ const useFooterStyles = createStyles((theme) => ({
 
 const useAppShellStyles = createStyles({
   main: {
-    paddingLeft: 0,
-    paddingRight: 0,
+    padding: 0,
+    marginTop: 60,
+    marginBottom: 0,
   },
 });

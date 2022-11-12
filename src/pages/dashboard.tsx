@@ -8,6 +8,7 @@ import {
   Pagination,
   ScrollArea,
   Space,
+  Stack,
   Table,
   Text,
   UnstyledButton,
@@ -26,6 +27,7 @@ import { debounce, DebouncedFunc } from "lodash";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
@@ -121,7 +123,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     settotalPages(pages);
   }, [fetchedNotice, totalPages]);
 
-  return (
+  return userstatus === "ACTIVE" ? (
     <Container>
       <Box py="lg">
         <Text weight="bolder" size={25}>
@@ -235,8 +237,17 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         />
       </Center>
     </Container>
+  ) : (
+    <Stack
+      justify="center"
+      align="center"
+      style={{ height: "100%", textAlign: "center" }}
+    >
+      <Text>you are not onboarded yet, please complete your profile</Text>
+      <Link href="/onboard">Register yourself</Link>
+    </Stack>
   );
-};;;;;;;;;;;;;;;;;;;
+};
 
 export default Dashboard;
 

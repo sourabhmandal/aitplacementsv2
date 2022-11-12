@@ -3,10 +3,13 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import {
   changeNoticeStatusInput,
+  ChangeNoticeStatusOutput,
   changeNoticeStatusOutput,
   createNoticeInput,
+  CreateNoticeOutput,
   createNoticeOutput,
   deleteNoticeInput,
+  DeleteNoticeOutput,
   deleteNoticeOutput,
   getNoticeDetailInput,
   GetNoticeDetailOutput,
@@ -18,7 +21,7 @@ import {
   noticeSearchInput,
   userNoticeInput,
   UserNoticeOutput,
-  userNoticeOutput,
+  userNoticeOutput
 } from "../../../../schema/notice.schema";
 import { createRouter } from "../createRouter";
 import { prismaError } from "../errors/prisma.errors";
@@ -30,6 +33,11 @@ export const noticeRouter = createRouter()
     output: createNoticeOutput,
     async resolve({ ctx, input }) {
       const { adminEmail, attachments, body, isPublished, tags, title } = input;
+      let response: CreateNoticeOutput = {
+        adminEmail: "",
+        isPublished: false,
+        title: "",
+      };
       try {
         const dbUser = await ctx?.prisma.user.findFirst({
           where: {
@@ -63,7 +71,7 @@ export const noticeRouter = createRouter()
             },
           })!;
 
-          return {
+          response = {
             adminEmail: dbRespNotice.adminEmailFk,
             isPublished: dbRespNotice.isPublished,
             title: dbRespNotice.title,
@@ -77,11 +85,7 @@ export const noticeRouter = createRouter()
       }
 
       // default response
-      return {
-        adminEmail: "",
-        isPublished: false,
-        title: "",
-      };
+      return response
     },
   })
   .query("notice-detail", {
@@ -94,6 +98,15 @@ export const noticeRouter = createRouter()
         name: string;
         type: string;
       }>(0);
+
+      let response = {
+        id: "",
+        tags: new Array<string>(0),
+        isPublished: true,
+        title: "",
+        body: "",
+        attachments: atthUrls,
+      };
       try {
         const dbRespNotice = await ctx?.prisma.notice.findUnique({
           where: {
@@ -135,7 +148,7 @@ export const noticeRouter = createRouter()
         }
 
         if (dbRespNotice) {
-          return {
+          response = {
             id: dbRespNotice.id,
             title: dbRespNotice.title,
             tags: dbRespNotice.tags,
@@ -145,21 +158,14 @@ export const noticeRouter = createRouter()
           };
         }
       } catch (e) {
-        console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
           throw prismaError(e);
         }
+        console.log(e);
       }
 
       // default response
-      return {
-        id: "",
-        tags: new Array<string>(0),
-        isPublished: true,
-        title: "",
-        body: "",
-        attachments: atthUrls,
-      };
+      return response;
     },
   })
   .query("published-notice-list", {
@@ -167,6 +173,10 @@ export const noticeRouter = createRouter()
     output: getNoticeListOutput,
     async resolve({ ctx, input }) {
       const { pageNos } = input;
+      let response: GetNoticeListOutput = {
+        notices: [],
+        totalNotice: 0,
+      };
       try {
         const noticeLenght: number = await ctx?.prisma.notice.count({
           where: {
@@ -193,33 +203,25 @@ export const noticeRouter = createRouter()
             updatedAt: data.updatedAt,
           };
         });
-        return { totalNotice: noticeLenght, notices: resp };
+        response = { totalNotice: noticeLenght, notices: resp };
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
           throw prismaError(e);
         }
       }
-
       // default response
-      return {
-        totalNotice: 0,
-        notices: [
-          {
-            id: "",
-            admin: "",
-            tags: [""],
-            title: "",
-            updatedAt: new Date(),
-          },
-        ],
-      };
+      return response;
     },
   })
   .query("my-notices", {
     input: userNoticeInput,
     output: userNoticeOutput,
     async resolve({ ctx, input }) {
+      let response: UserNoticeOutput = {
+        count: 0,
+        notice: [],
+      };
       try {
         const dbNoticeCount = await ctx?.prisma.notice.count({
           where: {
@@ -252,38 +254,50 @@ export const noticeRouter = createRouter()
           })
         )!;
 
-        const response: UserNoticeOutput = {
+        response = {
           notice: respNotice,
           count: dbNoticeCount,
         };
-        return response;
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           prismaError(e);
         }
-        throw e;
+        console.log(e);
       }
+      return response;
     },
   })
   .mutation("change-notice-status", {
     input: changeNoticeStatusInput,
     output: changeNoticeStatusOutput,
     async resolve({ ctx, input }) {
-      await ctx?.prisma.notice.update({
-        data: {
-          isPublished: input.isPublished,
-        },
-        where: {
-          id: input.noticeId,
-        },
-      });
-      return input;
+      let response: ChangeNoticeStatusOutput = {
+        isPublished: false,
+      };
+      try {
+        await ctx?.prisma.notice.update({
+          data: {
+            isPublished: input.isPublished,
+          },
+          where: {
+            id: input.noticeId,
+          },
+        });
+        response = { isPublished: input.isPublished };
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          prismaError(e);
+        }
+        console.log(e);
+      }
+      return response;
     },
   })
   .mutation("delete-notice", {
     input: deleteNoticeInput,
     output: deleteNoticeOutput,
     async resolve({ ctx, input }) {
+      let response: DeleteNoticeOutput = { isDeleted: false };
       try {
         const noticeToDelete = await ctx?.prisma.notice.findFirst({
           where: {
@@ -306,8 +320,6 @@ export const noticeRouter = createRouter()
             },
           },
         });
-
-        console.log(noticeToDelete);
 
         if (
           noticeToDelete?._count.attachments &&
@@ -337,20 +349,24 @@ export const noticeRouter = createRouter()
           },
         });
 
-        return { isDeleted: true };
+        response = { isDeleted: true };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           prismaError(e);
         }
         console.log(e);
       }
-      return { isDeleted: true };
+      return response;
     },
   })
   .mutation("search-notice-by-title", {
     input: noticeSearchInput,
     output: getNoticeListOutput,
     async resolve({ ctx, input }) {
+      let response: GetNoticeListOutput = {
+        notices: [],
+        totalNotice: 0,
+      };
       try {
         const searchProcessedString = input.searchText
           .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
@@ -377,7 +393,7 @@ export const noticeRouter = createRouter()
             };
           }
         )!;
-        const response: GetNoticeListOutput = {
+        response = {
           notices: metaNoticeData,
           totalNotice: dbNoticeSearch?.length || 0,
         };
@@ -386,7 +402,8 @@ export const noticeRouter = createRouter()
         if (e instanceof PrismaClientKnownRequestError) {
           prismaError(e);
         }
-        throw e;
+        console.log(e);
       }
+      return response;
     },
   });

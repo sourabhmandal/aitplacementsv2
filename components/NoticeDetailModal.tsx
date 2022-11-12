@@ -137,22 +137,32 @@ function NoticeDetailModal({
       withCloseButton
     >
       <>
-        <Divider variant="dotted" />
-        <Space h="xs" />
-        <Skeleton visible={noticeDetailQuery?.isLoading!}>
-          {noticeDetailQuery?.data?.tags.map((item, idx) => (
-            <Badge key={idx} color="orange">
-              {item}
-            </Badge>
-          ))}
-        </Skeleton>
-        <Space h="xs" />
-        <Skeleton visible={noticeDetailQuery?.isLoading!}>
-          <SimpleGrid cols={3} mt={8}>
-            {PreviewsAttachments}
-          </SimpleGrid>
-        </Skeleton>
-        <Space h="xl" />
+        {noticeDetailQuery?.data?.tags.length! > 0 ? (
+          <Skeleton visible={noticeDetailQuery?.isLoading!}>
+            <Divider variant="dotted" />
+            <Space h="xs" />
+            {noticeDetailQuery?.data?.tags.map((item, idx) => (
+              <Badge key={idx} color="orange">
+                {item}
+              </Badge>
+            ))}
+            <Space h="xs" />
+          </Skeleton>
+        ) : (
+          <></>
+        )}
+
+        {PreviewsAttachments?.length! > 0 ? (
+          <Skeleton visible={noticeDetailQuery?.isLoading!}>
+            <SimpleGrid cols={3} mt={8}>
+              {PreviewsAttachments}
+            </SimpleGrid>
+            <Space h="xl" />
+          </Skeleton>
+        ) : (
+          <></>
+        )}
+
         <Divider variant="dotted" />
         <Space h="xl" />
 

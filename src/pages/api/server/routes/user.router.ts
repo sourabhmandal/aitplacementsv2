@@ -9,6 +9,7 @@ import {
   UpdateUserOutput,
   updateUserOutput,
   userDeleteInput,
+  UserDeleteOutput,
   userDeleteOutput,
   userDetailsInput,
   UserDetailsOutput,
@@ -17,6 +18,7 @@ import {
   UserListOutput,
   userListOutput,
   userRoleInput,
+  UserRoleOutput,
   userRoleOutput,
   userSearchInput,
 } from "../../../../schema/user.schema";
@@ -35,57 +37,62 @@ export const userRouter = createRouter()
         role: "STUDENT",
       };
 
-      const updatedDBUser = await ctx?.prisma.user.update({
-        where: {
-          email: input.email,
-        },
-        data: {
-          name: input.name,
-          phoneNo: input.phoneNo?.toString(),
-          userStatus: "ACTIVE",
-        },
-      })!;
+      try {
+        const updatedDBUser = await ctx?.prisma.user.update({
+          where: {
+            email: input.email,
+          },
+          data: {
+            name: input.name,
+            phoneNo: input.phoneNo?.toString(),
+            userStatus: "ACTIVE",
+          },
+        })!;
 
-      response = {
-        email: updatedDBUser.email,
-        name: updatedDBUser.name!,
-        role: updatedDBUser.role,
-      };
-      if (updatedDBUser?.role == "ADMIN") {
-        await ctx?.prisma.adminDetails.upsert({
-          where: {
-            basicDetailsFk: updatedDBUser.id,
-          },
-          update: {},
-          create: {
-            basicDetails: {
-              connect: {
-                email: input.email,
+        response = {
+          email: updatedDBUser.email,
+          name: updatedDBUser.name!,
+          role: updatedDBUser.role,
+        };
+        if (updatedDBUser?.role == "ADMIN") {
+          await ctx?.prisma.adminDetails.upsert({
+            where: {
+              basicDetailsFk: updatedDBUser.id,
+            },
+            update: {},
+            create: {
+              basicDetails: {
+                connect: {
+                  email: input.email,
+                },
               },
             },
-          },
-        });
-      } else if (updatedDBUser?.role == "STUDENT") {
-        await ctx?.prisma.studentDetails.upsert({
-          where: {
-            basicDetailsFk: updatedDBUser.id,
-          },
-          update: {
-            branch: input.branch,
-            registrationNumber: input.regNo,
-            year: parseInt(input.year || "0"),
-          },
-          create: {
-            basicDetails: {
-              connect: {
-                email: input.email,
-              },
+          });
+        } else if (updatedDBUser?.role == "STUDENT") {
+          await ctx?.prisma.studentDetails.upsert({
+            where: {
+              basicDetailsFk: updatedDBUser.id,
             },
-            branch: input.branch,
-            registrationNumber: input.regNo,
-            year: parseInt(input.year || "0"),
-          },
-        });
+            update: {
+              branch: input.branch,
+              registrationNumber: input.regNo,
+              year: parseInt(input.year || "0"),
+            },
+            create: {
+              basicDetails: {
+                connect: {
+                  email: input.email,
+                },
+              },
+              branch: input.branch,
+              registrationNumber: input.regNo,
+              year: parseInt(input.year || "0"),
+            },
+          });
+        }
+      } catch (err) {
+        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        else console.log(err);
       }
 
       return response;
@@ -132,94 +139,134 @@ export const userRouter = createRouter()
     input: userListInput,
     output: userListOutput,
     async resolve({ ctx, input }) {
-      const dbStudent = await ctx?.prisma.user.findMany({
-        where: {
-          role: input.role as ROLES,
+      let response: UserListOutput = [
+        {
+          email: "",
+          id: "",
+          name: "",
+          phoneNo: "",
+          role: "STUDENT",
+          userStatus: "INACTIVE",
         },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          phoneNo: true,
-          userStatus: true,
-        },
-      });
+      ];
+      try {
+        const dbStudent = await ctx?.prisma.user.findMany({
+          where: {
+            role: input.role as ROLES,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            phoneNo: true,
+            userStatus: true,
+          },
+        });
 
-      const data: UserListOutput = dbStudent?.map((item) => ({
-        id: item.id,
-        email: item.email,
-        name: item.name || "N.A",
-        role: item.role as ROLES,
-        phoneNo: item.phoneNo || "N.A",
-        userStatus: item.userStatus as USER_STATUS,
-      }))!;
-      return data;
+        response = dbStudent?.map((item) => ({
+          id: item.id,
+          email: item.email,
+          name: item.name || "N.A",
+          role: item.role as ROLES,
+          phoneNo: item.phoneNo || "N.A",
+          userStatus: item.userStatus as USER_STATUS,
+        }))!;
+      } catch (err) {
+        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        else console.log(err);
+      }
+      return response;
     },
   })
   .query("get-user-details", {
     input: userDetailsInput,
     output: userDetailsOutput,
     async resolve({ ctx, input }) {
-      const dbUser = await ctx?.prisma.user.findFirst({
-        where: {
-          email: input.email,
-        },
-        select: {
-          email: true,
-          name: true,
-          role: true,
-          phoneNo: true,
-          userStatus: true,
-          StudentDetails: {
-            select: {
-              branch: true,
-              registrationNumber: true,
-              year: true,
+      let response: UserDetailsOutput = {
+        email: "",
+        name: "",
+        phoneNo: "",
+        role: "STUDENT",
+        userStatus: "INACTIVE",
+      };
+      try {
+        const dbUser = await ctx?.prisma.user.findFirst({
+          where: {
+            email: input.email,
+          },
+          select: {
+            email: true,
+            name: true,
+            role: true,
+            phoneNo: true,
+            userStatus: true,
+            StudentDetails: {
+              select: {
+                branch: true,
+                registrationNumber: true,
+                year: true,
+              },
             },
           },
-        },
-      });
-      const data: UserDetailsOutput = {
-        email: dbUser?.email!,
-        name: dbUser?.name || "N.A",
-        role: dbUser?.role as ROLES,
-        phoneNo: dbUser?.phoneNo || "N.A",
-        userStatus: dbUser?.userStatus as USER_STATUS,
-      };
-      if (dbUser?.StudentDetails) {
-        data.studentDetails = {
-          branch: dbUser.StudentDetails.branch!,
-          registrationNumber: dbUser.StudentDetails.registrationNumber,
-          year: dbUser.StudentDetails.year!,
+        });
+        response = {
+          email: dbUser?.email!,
+          name: dbUser?.name || "N.A",
+          role: dbUser?.role as ROLES,
+          phoneNo: dbUser?.phoneNo || "N.A",
+          userStatus: dbUser?.userStatus as USER_STATUS,
         };
+        if (dbUser?.StudentDetails) {
+          response.studentDetails = {
+            branch: dbUser.StudentDetails.branch!,
+            registrationNumber: dbUser.StudentDetails.registrationNumber,
+            year: dbUser.StudentDetails.year!,
+          };
+        }
+      } catch (err) {
+        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        else console.log(err);
       }
-      return data;
+      return response;
     },
   })
   .mutation("change-user-role", {
     input: userRoleInput,
     output: userRoleOutput,
     async resolve({ ctx, input }) {
-      const dbUser = await ctx?.prisma.user.update({
-        where: {
-          id: input.id,
-        },
-        data: {
-          role: input.role,
-        },
-      })!;
-
-      return {
-        email: dbUser.email,
-        role: dbUser.role,
+      let response: UserRoleOutput = {
+        email: "",
+        role: "STUDENT",
       };
+      try {
+        const dbUser = await ctx?.prisma.user.update({
+          where: {
+            id: input.id,
+          },
+          data: {
+            role: input.role,
+          },
+        })!;
+
+        response = {
+          email: dbUser.email,
+          role: dbUser.role,
+        };
+      } catch (err) {
+        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        else console.log(err);
+      }
+      return response; 
     },
   })
   .mutation("delete-user", {
     input: userDeleteInput,
     output: userDeleteOutput,
     async resolve({ ctx, input }) {
+      let response: UserDeleteOutput = {
+        email: "",
+      };
       try {
         const dbUser = await ctx?.prisma.user.delete({
           where: {
@@ -236,15 +283,14 @@ export const userRouter = createRouter()
         }
         console.log(e);
       }
-      return {
-        email: "",
-      };
+      return response;
     },
   })
   .mutation("search-user-by-email", {
     input: userSearchInput,
     output: userListOutput,
     async resolve({ ctx, input }) {
+      let response: UserListOutput = [];
       try {
         const searchProcessedString = input.searchText
           .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
@@ -261,7 +307,7 @@ export const userRouter = createRouter()
           },
         });
 
-        const response: UserListOutput = dbUserSearch?.map((user) => {
+        response = dbUserSearch?.map((user) => {
           return {
             email: user.email,
             id: user.id,
@@ -271,13 +317,12 @@ export const userRouter = createRouter()
             userStatus: user.userStatus,
           };
         })!;
-
-        return response;
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           prismaError(e);
         }
-        throw e;
+        console.log(e);
       }
+      return response;
     },
   });

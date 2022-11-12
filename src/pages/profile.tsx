@@ -169,73 +169,78 @@ const Profile: NextPage<IPropsOnboard> = ({
           setOpenNoticeDialog={setOpenNoticeDialog}
         />
       )}
+      {userrole == "ADMIN" ? (
+        <>
+          <ScrollArea classNames={userInfoListStyle.classes}>
+            <Table
+              sx={{ minWidth: 800 }}
+              horizontalSpacing="lg"
+              verticalSpacing="sm"
+              highlightOnHover
+            >
+              <thead>
+                <tr>
+                  <th style={{ width: "99%" }}>Notice Title</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                  <th style={{ textAlign: "right" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userNoticesQuery.data?.notice.map((item, idx: number) => (
+                  <tr key={idx} style={{ cursor: "pointer" }}>
+                    <td
+                      onClick={() => {
+                        setnoticeId(item.id);
+                        setOpenNoticeDialog(true);
+                      }}
+                    >
+                      <Text size="sm" weight="bolder">
+                        {item.title}
+                      </Text>
+                      <Text size="xs" color="dimmed">
+                        {item.updatedAt.toDateString()}
+                      </Text>
+                    </td>
 
-      <ScrollArea classNames={userInfoListStyle.classes}>
-        <Table
-          sx={{ minWidth: 800 }}
-          horizontalSpacing="lg"
-          verticalSpacing="sm"
-          highlightOnHover
-        >
-          <thead>
-            <tr>
-              <th style={{ width: "99%" }}>Notice Title</th>
-              <th style={{ textAlign: "center" }}>Status</th>
-              <th style={{ textAlign: "right" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userNoticesQuery.data?.notice.map((item, idx: number) => (
-              <tr key={idx} style={{ cursor: "pointer" }}>
-                <td
-                  onClick={() => {
-                    setnoticeId(item.id);
-                    setOpenNoticeDialog(true);
-                  }}
-                >
-                  <Text size="sm" weight="bolder">
-                    {item.title}
-                  </Text>
-                  <Text size="xs" color="dimmed">
-                    {item.updatedAt.toDateString()}
-                  </Text>
-                </td>
+                    <td
+                      onClick={() => {
+                        setnoticeId(item.id);
+                        setOpenNoticeDialog(true);
+                      }}
+                      style={{ textAlign: "center" }}
+                    >
+                      <Badge
+                        variant="outline"
+                        color={item.isPublished ? "orange" : "violet"}
+                      >
+                        {item.isPublished ? "Published" : "Drafted"}
+                      </Badge>
+                    </td>
 
-                <td
-                  onClick={() => {
-                    setnoticeId(item.id);
-                    setOpenNoticeDialog(true);
-                  }}
-                  style={{ textAlign: "center" }}
-                >
-                  <Badge
-                    variant="outline"
-                    color={item.isPublished ? "orange" : "violet"}
-                  >
-                    {item.isPublished ? "Published" : "Drafted"}
-                  </Badge>
-                </td>
-
-                <td align="right">
-                  <UserListInfoActionMenu
-                    userrole={userrole}
-                    isPublished={item.isPublished || false}
-                    noticeId={item.id}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </ScrollArea>
-      <Center>
-        <Pagination
-          total={totalPages}
-          color="orange"
-          page={pageNos}
-          onChange={setpageNos}
-        />
-      </Center>
+                    <td align="right">
+                      <UserListInfoActionMenu
+                        userrole={userrole}
+                        isPublished={item.isPublished || false}
+                        noticeId={item.id}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </ScrollArea>
+          <Center>
+            <Pagination
+              total={totalPages}
+              color="orange"
+              page={pageNos}
+              onChange={setpageNos}
+            />
+          </Center>
+        </>
+      ) : (
+        <></>
+      )}
     </Container>
   );
 };

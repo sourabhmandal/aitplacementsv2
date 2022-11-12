@@ -56,6 +56,22 @@ export function BackendApi({ children }: { children: JSX.Element }) {
   const onboardUserMutation = trpc.useMutation("user.onboard-user");
   const searchNoticeByTitle = trpc.useMutation("notice.search-notice-by-title");
   const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
+  // const onboardUser = trpc.useMutation(["user.onboard-user"], {
+  //   onError: (err) => {
+  //     showNotification({
+  //       title: "Error Occured",
+  //       message: err.message,
+  //       color: "red",
+  //     });
+  //   },
+  //   onSuccess(data) {
+  //     showNotification({
+  //       title: "Success",
+  //       message: `User ${data.name} created with email ${data.email}`,
+  //       color: "green",
+  //     });
+  //   },
+  // });
 
   // query
   const publishedNoticeQuery = (pageNos: number) =>
