@@ -75,12 +75,25 @@ const AuthError: NextPage<{}> = () => {
         errorCode: "AccessDenied",
         error: "User Access Denied",
         message:
-          "your email is not registered or being blocked by admin please reachout to platform admin",
+          "your email is not registered or being blocked by admin, please contact admin if issue persists",
       },
       {
-        errorCode: "defaultError",
+        errorCode: "Configuration",
+        error: "Authentication Configuration Issue",
+        message:
+          "improper configuration of authentication detected in the server, please contact admin if issue persists",
+      },
+      {
+        errorCode: "Verification",
+        error: "Session Token Expired",
+        message:
+          "user session has expired during login, please contact admin if issue persists",
+      },
+      {
+        errorCode: "Default",
         error: "Unknown Error Occured",
-        message: "something went wrong on our side please contact the admin",
+        message:
+          "something went wrong on our side, please contact admin if issue persists",
       },
     ],
     []
