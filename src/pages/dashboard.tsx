@@ -70,7 +70,6 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
 
   useEffect(() => {
-    console.log("SETTING QUERY DATA");
     if (publishedNoticeQueryData?.isSuccess) {
       setfetchedNotice(publishedNoticeQueryData?.data!);
     }

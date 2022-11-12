@@ -1,16 +1,20 @@
 import {
+  PrismaClientInitializationError,
   PrismaClientKnownRequestError,
+  PrismaClientRustPanicError,
   PrismaClientUnknownRequestError,
   PrismaClientValidationError,
 } from "@prisma/client/runtime";
 import * as trpc from "@trpc/server";
 import { error } from "console";
 
-export function prismaKnownClientError(
+export function handlePrismaError(
   e:
     | PrismaClientKnownRequestError
     | PrismaClientUnknownRequestError
     | PrismaClientValidationError
+    | PrismaClientRustPanicError
+    | PrismaClientInitializationError
 ) {
   if (e instanceof PrismaClientKnownRequestError) {
     console.log(
