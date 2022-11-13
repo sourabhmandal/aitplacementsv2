@@ -93,7 +93,8 @@ function UserListInfoActionMenu({
         <Button
           disabled={
             backend?.deleteUserMutation.isLoading ||
-            backend?.changeUserRoleMutation.isLoading
+            backend?.changeUserRoleMutation.isLoading ||
+            sessionUserRole == "STUDENT"
           }
         >
           Action Menu

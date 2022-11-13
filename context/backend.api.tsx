@@ -32,14 +32,107 @@ const BackendApiContext = createContext<IBackendApi | null>(null);
 
 export function BackendApi({ children }: { children: JSX.Element }) {
   const createPresignedUrlMutation = trpc.useMutation(
-    "attachment.create-presigned-url"
+    "attachment.create-presigned-url",
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+    }
   );
 
   const changeNoticeStatusMutation = trpc.useMutation(
-    "notice.change-notice-status"
+    "notice.change-notice-status",
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+    }
   );
-  const createNoticeMutation = trpc.useMutation("notice.create-notice");
-  const deleteNoticeMutation = trpc.useMutation("notice.delete-notice");
+  const createNoticeMutation = trpc.useMutation("notice.create-notice", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const deleteNoticeMutation = trpc.useMutation("notice.delete-notice", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const deleteUserMutation = trpc.useMutation("user.delete-user", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const inviteUserMutation = trpc.useMutation("user.invite-user", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const onboardUserMutation = trpc.useMutation("user.onboard-user", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+  const searchNoticeByTitle = trpc.useMutation(
+    "notice.search-notice-by-title",
+    {
+      onError: (err) => {
+        showNotification({
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
+        });
+      },
+    }
+  );
+  const searchUserByEmail = trpc.useMutation("user.search-user-by-email", {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
+
+  // query
   const noticeDetailQuery = (noticeId: string) =>
     trpc.useQuery(["notice.notice-detail", { id: noticeId }], {
       onError: (err) => {
@@ -50,30 +143,7 @@ export function BackendApi({ children }: { children: JSX.Element }) {
         });
       },
     });
-  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
-  const deleteUserMutation = trpc.useMutation("user.delete-user");
-  const inviteUserMutation = trpc.useMutation("user.invite-user");
-  const onboardUserMutation = trpc.useMutation("user.onboard-user");
-  const searchNoticeByTitle = trpc.useMutation("notice.search-notice-by-title");
-  const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
-  // const onboardUser = trpc.useMutation(["user.onboard-user"], {
-  //   onError: (err) => {
-  //     showNotification({
-  //       title: "Error Occured",
-  //       message: err.message,
-  //       color: "red",
-  //     });
-  //   },
-  //   onSuccess(data) {
-  //     showNotification({
-  //       title: "Success",
-  //       message: `User ${data.name} created with email ${data.email}`,
-  //       color: "green",
-  //     });
-  //   },
-  // });
 
-  // query
   const publishedNoticeQuery = (pageNos: number) =>
     trpc.useQuery(["notice.published-notice-list", { pageNos }], {
       onError: (err) => {
