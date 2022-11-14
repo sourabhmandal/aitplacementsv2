@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import superjson from "superjson";
 import AppContainer from "../../components/AppContainer";
 import { BackendApi } from "../../context/backend.api";
-import { HOSTED_VERCEL_URL, LOCALHOST_URL } from "../utils/constants";
+import { HOSTED_VERCEL_URL } from "../utils/constants";
 import { AppRouter } from "./api/server/routes/app.router";
 
 //@ts-ignore
@@ -63,10 +63,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    const url = process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `${HOSTED_VERCEL_URL}/api/trpc`
-      : `${LOCALHOST_URL}/api/trpc`;
-
+    const url = `${HOSTED_VERCEL_URL}/api/trpc`;
     const links = [
       loggerLink(),
       httpBatchLink({

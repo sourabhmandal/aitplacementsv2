@@ -23,7 +23,7 @@ import {
   userSearchInput,
 } from "../../../../schema/user.schema";
 import { createRouter } from "../createRouter";
-import { prismaError } from "../errors/prisma.errors";
+import { handlePrismaError } from "../errors/prisma.errors";
 import { NodemailerInstance } from "../nodemailer_instance";
 
 export const userRouter = createRouter()
@@ -91,7 +91,8 @@ export const userRouter = createRouter()
           });
         }
       } catch (err) {
-        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        if (err instanceof PrismaClientKnownRequestError)
+          handlePrismaError(err);
         else console.log(err);
       }
 
@@ -124,7 +125,7 @@ export const userRouter = createRouter()
           };
         }
       } catch (e) {
-        if (e instanceof PrismaClientKnownRequestError) prismaError(e);
+        if (e instanceof PrismaClientKnownRequestError) handlePrismaError(e);
         else console.log(e);
       }
 
@@ -173,7 +174,8 @@ export const userRouter = createRouter()
           userStatus: item.userStatus as USER_STATUS,
         }))!;
       } catch (err) {
-        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        if (err instanceof PrismaClientKnownRequestError)
+          handlePrismaError(err);
         else console.log(err);
       }
       return response;
@@ -225,7 +227,8 @@ export const userRouter = createRouter()
           };
         }
       } catch (err) {
-        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        if (err instanceof PrismaClientKnownRequestError)
+          handlePrismaError(err);
         else console.log(err);
       }
       return response;
@@ -254,10 +257,11 @@ export const userRouter = createRouter()
           role: dbUser.role,
         };
       } catch (err) {
-        if (err instanceof PrismaClientKnownRequestError) prismaError(err);
+        if (err instanceof PrismaClientKnownRequestError)
+          handlePrismaError(err);
         else console.log(err);
       }
-      return response; 
+      return response;
     },
   })
   .mutation("delete-user", {
@@ -279,7 +283,7 @@ export const userRouter = createRouter()
         };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }
@@ -319,7 +323,7 @@ export const userRouter = createRouter()
         })!;
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }

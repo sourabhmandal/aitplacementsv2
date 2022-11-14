@@ -1,6 +1,5 @@
 import { Notice } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
-import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import {
   changeNoticeStatusInput,
   ChangeNoticeStatusOutput,
@@ -21,10 +20,11 @@ import {
   noticeSearchInput,
   userNoticeInput,
   UserNoticeOutput,
-  userNoticeOutput
+  userNoticeOutput,
 } from "../../../../schema/notice.schema";
+import { REACT_APP_AWS_BUCKET_ID } from "../../../../utils/constants";
 import { createRouter } from "../createRouter";
-import { prismaError } from "../errors/prisma.errors";
+import { handlePrismaError } from "../errors/prisma.errors";
 import { S3Instance } from "../s3_instance";
 
 export const noticeRouter = createRouter()
@@ -80,12 +80,12 @@ export const noticeRouter = createRouter()
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
       }
 
       // default response
-      return response
+      return response;
     },
   })
   .query("notice-detail", {
@@ -159,7 +159,7 @@ export const noticeRouter = createRouter()
         }
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          throw prismaError(e);
+          throw handlePrismaError(e);
         }
         console.log(e);
       }
@@ -207,7 +207,7 @@ export const noticeRouter = createRouter()
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
-          throw prismaError(e);
+          throw handlePrismaError(e);
         }
       }
       // default response
@@ -260,7 +260,7 @@ export const noticeRouter = createRouter()
         };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }
@@ -286,7 +286,7 @@ export const noticeRouter = createRouter()
         response = { isPublished: input.isPublished };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }
@@ -352,7 +352,7 @@ export const noticeRouter = createRouter()
         response = { isDeleted: true };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }
@@ -400,7 +400,7 @@ export const noticeRouter = createRouter()
         return response;
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
-          prismaError(e);
+          handlePrismaError(e);
         }
         console.log(e);
       }

@@ -33,7 +33,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Dispatch, SetStateAction } from "react";
 import Logo from "../assets/logo.gif";
-import { showCommingSoon } from "../src/constants";
+import { showCommingSoon } from "../src/utils/constants";
 
 interface IAppContainerProps {
   theme: string;
