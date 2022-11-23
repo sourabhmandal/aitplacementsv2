@@ -63,7 +63,9 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    const url = `${HOSTED_VERCEL_URL}/api/trpc`;
+    const url = `${
+      HOSTED_VERCEL_URL ? HOSTED_VERCEL_URL : process.env.VERCEL_URL
+    }/api/trpc`;
     const links = [
       loggerLink(),
       httpBatchLink({

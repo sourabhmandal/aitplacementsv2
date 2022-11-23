@@ -24,4 +24,4 @@ export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID;
 
 export const JWT_TOKEN = process.env.JWT_TOKEN!;
 
-export let HOSTED_VERCEL_URL = `https://${process.env.VERCEL_URL}`;
+export let HOSTED_VERCEL_URL = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
