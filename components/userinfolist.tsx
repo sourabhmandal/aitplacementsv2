@@ -15,15 +15,15 @@ import { useBackendApiContext } from "../context/backend.api";
 import { UserListOutput } from "../src/schema/user.schema";
 
 interface IPropsUserinfoList {
-  students: UserListOutput;
+  students: UserListOutput | undefined;
   userrole: Role;
 }
 
 function Userinfolist({ students, userrole }: IPropsUserinfoList): JSX.Element {
   const userInfoListStyle = useUserinfoListStyle();
 
-  const rows = students.map((item) => (
-    <tr key={item.name}>
+  const rows = students?.map((item) => (
+    <tr key={item.id}>
       <td>
         <Group spacing="sm">
           <Avatar size={40} src={"https://picsum.photos/200"} radius={40} />
@@ -90,7 +90,15 @@ function UserListInfoActionMenu({
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
-        <Button disabled={sessionUserRole !== "ADMIN"}>Action Menu</Button>
+        <Button
+          disabled={
+            backend?.deleteUserMutation.isLoading ||
+            backend?.changeUserRoleMutation.isLoading ||
+            sessionUserRole == "STUDENT"
+          }
+        >
+          Action Menu
+        </Button>
       </Menu.Target>
 
       <Menu.Dropdown>

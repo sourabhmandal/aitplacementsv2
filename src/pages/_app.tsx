@@ -7,16 +7,25 @@ import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import { AppProps } from "next/app";
 import Head from "next/head";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import superjson from "superjson";
 import AppContainer from "../../components/AppContainer";
 import { BackendApi } from "../../context/backend.api";
-import { HOSTED_VERCEL_URL, LOCALHOST_URL } from "../utils/constants";
+import { HOSTED_VERCEL_URL } from "../utils/constants";
 import { AppRouter } from "./api/server/routes/app.router";
 
 //@ts-ignore
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>("light");
+
+  useEffect(() => {
+    setTheme(localStorage.getItem("theme") as ColorScheme);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
   return (
     <>
       <Head>
@@ -54,10 +63,9 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    const url = process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `${HOSTED_VERCEL_URL}/api/trpc`
-      : `${LOCALHOST_URL}/api/trpc`;
-
+    const url = `${
+      HOSTED_VERCEL_URL ? HOSTED_VERCEL_URL : process.env.VERCEL_URL
+    }/api/trpc`;
     const links = [
       loggerLink(),
       httpBatchLink({
@@ -75,13 +83,26 @@ export default withTRPC<AppRouter>({
         },
       },
       headers() {
+        const corsHeaders = {
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Origin":
+            ctx?.req?.headers.host?.toString() || "*",
+          "Access-Control-Allow-Headers":
+            "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+        };
+
+        if (ctx?.req?.method?.toString() === "OPTIONS") {
+          ctx.res?.writeHead(200);
+        }
+
         if (ctx?.req) {
           return {
             ...ctx.req.headers,
             "x-ssr": "1",
+            ...corsHeaders,
           };
         }
-        return {};
+        return { ...corsHeaders };
       },
       links,
       transformer: superjson,

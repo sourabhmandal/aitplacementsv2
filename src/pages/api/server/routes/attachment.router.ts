@@ -1,5 +1,5 @@
-import { REACT_APP_AWS_BUCKET_ID } from "../../../../constants";
 import { createPresignedUrlInput } from "../../../../schema/notice.schema";
+import { REACT_APP_AWS_BUCKET_ID } from "../../../../utils/constants";
 import { createRouter } from "../createRouter";
 import { S3Instance } from "../s3_instance";
 

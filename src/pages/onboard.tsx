@@ -12,15 +12,14 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import { useBackendApiContext } from "../../context/backend.api";
 import { UpdateUserInput } from "../schema/user.schema";
-import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsOnboard {
@@ -41,22 +40,15 @@ const Onboard: NextPage<IPropsOnboard> = ({
     if (userstatus !== "INVITED") router.push("/dashboard");
   }, [userstatus, router]);
 
-  const { isLoading, mutate } = trpc.useMutation(["user.onboard-user"], {
-    onError: (err) => {
-      showNotification({
-        title: "Error Occured",
-        message: err.message,
-        color: "red",
-      });
-    },
-    onSuccess(data) {
-      showNotification({
-        title: "Success",
-        message: `User ${data.name} created with email ${data.email}`,
-        color: "green",
-      });
-    },
-  });
+  const backend = useBackendApiContext();
+  const clientSession = useSession();
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
+
+  const onboardUserMutation = backend?.onboardUserMutation;
 
   const yearList: (string | SelectItem)[] = [
     { value: "3", label: "3rd Year" },
@@ -103,7 +95,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
       regNo: data.regNo,
       phoneNo: data.phoneNo,
     };
-    mutate(reqData);
+    onboardUserMutation?.mutate(reqData);
     await signIn("update-user", {
       email: useremail,
     });
@@ -147,35 +139,49 @@ const Onboard: NextPage<IPropsOnboard> = ({
               error={errors.name}
             />
 
-            <NumberInput
-              //@ts-ignore
-              required
-              maxLength={5}
-              hideControls
-              label="Registration Number"
-              placeholder="18255"
-              parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-              value={values.regNo}
-              onChange={(event: number) => setFieldValue("regno", event)}
-              error={errors.regNo}
-            />
+            {userrole == "STUDENT" ? (
+              <NumberInput
+                //@ts-ignore
+                required
+                maxLength={5}
+                hideControls
+                label="Registration Number"
+                placeholder="18255"
+                parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
+                value={values.regNo}
+                onChange={(event: number) => setFieldValue("regno", event)}
+                error={errors.regNo}
+              />
+            ) : (
+              <></>
+            )}
 
-            <Select
-              label="Year"
-              placeholder="Current year"
-              value={values.year}
-              onChange={(val: AvailableYear) => setFieldValue("year", val)}
-              data={yearList}
-              required
-            />
-            <Select
-              label="Branch"
-              placeholder="Current Branch"
-              value={values.branch}
-              onChange={(val: AvailableBranch) => setFieldValue("branch", val)}
-              data={branchList}
-              required
-            />
+            {userrole == "STUDENT" ? (
+              <Select
+                label="Year"
+                placeholder="Current year"
+                value={values.year}
+                onChange={(val: AvailableYear) => setFieldValue("year", val)}
+                data={yearList}
+                required
+              />
+            ) : (
+              <></>
+            )}
+            {userrole == "STUDENT" ? (
+              <Select
+                label="Branch"
+                placeholder="Current Branch"
+                value={values.branch}
+                onChange={(val: AvailableBranch) =>
+                  setFieldValue("branch", val)
+                }
+                data={branchList}
+                required
+              />
+            ) : (
+              <></>
+            )}
             <NumberInput
               label="Phone Number"
               placeholder="93797-39879"
@@ -202,9 +208,13 @@ const Onboard: NextPage<IPropsOnboard> = ({
             my="xl"
             fullWidth
             color={"orange"}
-            disabled={isLoading}
+            disabled={onboardUserMutation?.isLoading}
           >
-            {isLoading ? <Loader size={"sm"} color="yellow" /> : "SAVE"}
+            {onboardUserMutation?.isLoading ? (
+              <Loader size={"sm"} color="yellow" />
+            ) : (
+              "SAVE"
+            )}
           </Button>
         </form>
       </Paper>

@@ -33,7 +33,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { Dispatch, SetStateAction } from "react";
 import Logo from "../assets/logo.gif";
-import { showCommingSoon } from "../src/constants";
+import { showCommingSoon } from "../src/utils/constants";
 
 interface IAppContainerProps {
   theme: string;
@@ -326,7 +326,8 @@ const useFooterStyles = createStyles((theme) => ({
 
 const useAppShellStyles = createStyles({
   main: {
-    paddingLeft: 0,
-    paddingRight: 0,
+    padding: 0,
+    marginTop: 60,
+    marginBottom: 0,
   },
 });

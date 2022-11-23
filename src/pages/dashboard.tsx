@@ -1,5 +1,6 @@
 import {
   Badge,
+  Box,
   Center,
   Container,
   createStyles,
@@ -7,6 +8,7 @@ import {
   Pagination,
   ScrollArea,
   Space,
+  Stack,
   Table,
   Text,
   UnstyledButton,
@@ -24,13 +26,14 @@ import { debounce, DebouncedFunc } from "lodash";
 
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CreateNotice from "../../components/CreateNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { useBackendApiContext } from "../../context/backend.api";
 import { GetNoticeListOutput } from "../schema/notice.schema";
-import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
@@ -44,6 +47,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   username,
   userstatus,
   userrole,
+  useremail,
 }) => {
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
@@ -64,12 +68,8 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   }, [router, userstatus]);
 
   const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
-  const searchNoticeQueryMutation = trpc.useMutation(
-    "notice.search-notice-by-title"
-  );
 
   useEffect(() => {
-    console.log("SETTING QUERY DATA");
     if (publishedNoticeQueryData?.isSuccess) {
       setfetchedNotice(publishedNoticeQueryData?.data!);
     }
@@ -78,11 +78,18 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     publishedNoticeQueryData?.isSuccess,
   ]);
 
+  const clientSession = useSession();
+
   useEffect(() => {
-    console.log("SETTING SEARCH DATA");
-    if (searchNoticeQueryMutation.isSuccess) {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
+
+  // for searching
+  useEffect(() => {
+    if (backend?.searchNoticeByTitle.isSuccess) {
       const search: SpotlightAction[] =
-        searchNoticeQueryMutation.data.notices.map((el) => {
+        backend?.searchNoticeByTitle.data.notices.map((el) => {
           return {
             title: el.title,
             icon: <IconNotebook />,
@@ -95,11 +102,19 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         });
       registerSpotlightActions(search);
     }
-  }, [
-    searchNoticeQueryMutation.isSuccess,
-    searchNoticeQueryMutation.isLoading,
-  ]);
+  }, [backend?.searchNoticeByTitle.isSuccess]);
+  // debounce searching
+  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
+    (query) => {
+      backend?.searchNoticeByTitle.mutate({
+        searchText: query,
+      });
+    },
+    800,
+    { trailing: true, leading: false }
+  );
 
+  // for setting total page numbers of pagination component
   useEffect(() => {
     const noticeNos: number = fetchedNotice?.totalNotice!;
     let pages = Math.ceil(noticeNos / 10);
@@ -107,21 +122,17 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     settotalPages(pages);
   }, [fetchedNotice, totalPages]);
 
-  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
-    (query) => {
-      searchNoticeQueryMutation.mutate({
-        searchText: query,
-      });
-    },
-    1000,
-    { leading: true }
-  );
-
-  return (
+  return userstatus === "ACTIVE" ? (
     <Container>
-      <Text weight="bolder" size={30} py="lg">
-        Welcome, {username}
-      </Text>
+      <Box py="lg">
+        <Text weight="bolder" size={25}>
+          Welcome, {username}
+        </Text>
+        <Text size={"xs"} color="dimmed">
+          {useremail}
+        </Text>
+      </Box>
+
       {isAdmin ? <CreateNotice /> : <></>}
 
       {noticeId === "" ? (
@@ -195,7 +206,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
                   <Text size="sm" weight="bolder">
                     {item.title}
                   </Text>
-                  {item.tags.map((item, idx) => (
+                  {item.tags?.map((item, idx) => (
                     <Badge key={idx} variant="outline" color={"orange"} mr={4}>
                       {item}
                     </Badge>
@@ -225,8 +236,17 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         />
       </Center>
     </Container>
+  ) : (
+    <Stack
+      justify="center"
+      align="center"
+      style={{ height: "100%", textAlign: "center" }}
+    >
+      <Text>you are not onboarded yet, please complete your profile</Text>
+      <Link href="/onboard">Register yourself</Link>
+    </Stack>
   );
-};;;
+};
 
 export default Dashboard;
 

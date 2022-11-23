@@ -2,26 +2,36 @@ import {
   Button,
   Container,
   Divider,
+  Group,
   Loader,
   Modal,
   Radio,
   SimpleGrid,
+  Text,
   TextInput,
-  Title
+  Title,
+  UnstyledButton,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { showNotification } from "@mantine/notifications";
+import {
+  openSpotlight,
+  registerSpotlightActions,
+  SpotlightAction,
+  SpotlightProvider,
+} from "@mantine/spotlight";
 import { Role } from "@prisma/client";
+import { IconSearch, IconUserCircle } from "@tabler/icons";
+import { debounce, DebouncedFunc } from "lodash";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
 import { useBackendApiContext } from "../../context/backend.api";
 import { InviteUserInput } from "../schema/admin.schema";
 import { ROLES } from "../schema/constants";
-import { UserListOutput } from "../schema/user.schema";
-import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IUserProps {
@@ -39,50 +49,95 @@ export type UsersTableProps = {
 const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [openInviteUserModal, setopenInviteUserModal] =
     useState<boolean>(false);
-  const adminListQuery = trpc.useQuery(
-    ["user.get-user-list", { role: "ADMIN" }],
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-    }
-  );
-
-  const [students, setStudents] = useState<UserListOutput>([]);
-
-  const userListQuery = trpc.useQuery(
-    ["user.get-user-list", { role: "STUDENT" }],
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-      onSuccess(data) {
-        setStudents(data);
-      },
-    }
-  );
-
   const backend = useBackendApiContext();
+  const adminListQuery = backend?.userListQuery("ADMIN");
+  const studentListQuery = backend?.userListQuery("STUDENT");
 
   useEffect(() => {
-    adminListQuery.refetch();
-    userListQuery.refetch();
+    adminListQuery?.refetch();
+    studentListQuery?.refetch();
   }, [
     backend?.changeUserRoleMutation.isSuccess,
     backend?.deleteUserMutation.isSuccess,
+    backend?.inviteUserMutation.isSuccess,
   ]);
+
+  const clientSession = useSession();
+  const router = useRouter();
+  const searchedNotice: SpotlightAction[] = [];
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/login");
+  }, [router, clientSession.status]);
+
+  // for searching
+  useEffect(() => {
+    if (backend?.searchUserByEmail.isSuccess) {
+      //@ts-ignore
+      const search: SpotlightAction[] = backend?.searchUserByEmail.data.map(
+        (el) => {
+          return {
+            title: el.email,
+            icon: <IconUserCircle />,
+            onTrigger: () => {
+              // TODO
+              // redirect to user profile page
+              // without showing phone number
+            },
+            description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
+          };
+        }
+      );
+      registerSpotlightActions(search);
+    }
+  }, [backend?.searchUserByEmail.isSuccess]);
+  // debounce searching
+  const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
+    (query) => {
+      backend?.searchUserByEmail.mutate({
+        searchText: query,
+      });
+    },
+    800,
+    { trailing: true, leading: false }
+  );
 
   return (
     <Container>
       <Title order={3}>People in the Platform</Title>
+      <SpotlightProvider
+        actions={searchedNotice}
+        searchIcon={<IconSearch size={18} />}
+        searchPlaceholder="Search..."
+        shortcut="mod + ctrl + F"
+        nothingFoundMessage="Nothing found..."
+        onQueryChange={(query) => handleTextSearch(query)}
+        highlightQuery
+        limit={100}
+      >
+        <Group position="center">
+          <UnstyledButton
+            sx={{
+              border: 1,
+              borderRadius: "0.5em",
+              borderStyle: "solid",
+              borderColor: "#ddd",
+              marginTop: 15,
+              marginBottom: 15,
+              width: "100%",
+            }}
+            onClick={() => openSpotlight()}
+          >
+            <Group p={10}>
+              <IconSearch size={16} style={{ color: "#ddd" }} />
+              <Text color="dimmed" size="sm">
+                Search
+              </Text>
+            </Group>
+          </UnstyledButton>
+        </Group>
+      </SpotlightProvider>
       <Divider mt="sm" mb="xl" />
       {userrole == "ADMIN" ? (
         <>
@@ -94,7 +149,6 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
             ADD MORE USERS
           </Button>
           <InviteUserModal
-            userListQuery={userListQuery}
             openInviteUserModal={openInviteUserModal}
             setopenInviteUserModal={setopenInviteUserModal}
           />
@@ -105,7 +159,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
         <></>
       )}
       <SimpleGrid spacing="xl" cols={2}>
-        {adminListQuery.data?.map((item) => (
+        {adminListQuery?.data?.map((item) => (
           <UserInfo
             key={item.id}
             id={item.id}
@@ -114,11 +168,12 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
             title={item.role}
             phone={item.phoneNo}
             email={item.email}
+            userstatus={item.userStatus}
             sessionUserRole={userrole}
           />
         ))}
       </SimpleGrid>
-      <Userinfolist students={students} userrole={userrole} />
+      <Userinfolist students={studentListQuery?.data} userrole={userrole} />
     </Container>
   );
 };
@@ -126,23 +181,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
-  const inviteUserMutation = trpc.useMutation(["user.invite-user"], {
-    onError: (err) => {
-      showNotification({
-        title: "Error Occured",
-        message: err.message,
-        color: "red",
-      });
-    },
-    onSuccess(data) {
-      showNotification({
-        title: "Success",
-        message: `"${data.email}" is invited as admin`,
-        color: "green",
-      });
-      setopenInviteUserModal(false);
-    },
-  });
+  const backend = useBackendApiContext();
 
   const form = useForm<InviteUserInput>({
     initialValues: {
@@ -159,7 +198,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
   });
   const handleInviteSubmit = (data: InviteUserInput) => {
     // call query to invite user
-    inviteUserMutation.mutate(data);
+    backend?.inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
     setopenInviteUserModal(false);
   };
@@ -196,7 +235,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
           <Radio value={"ADMIN"} label="Admin" />
         </Radio.Group>
         <Button fullWidth type="submit" mt="md">
-          {inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
+          {backend?.inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
         </Button>
       </form>
     </Modal>

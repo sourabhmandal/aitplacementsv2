@@ -3,10 +3,10 @@ import {
   Card,
   Divider,
   Image,
-  Loader,
   Modal,
   Overlay,
   SimpleGrid,
+  Skeleton,
   Space,
   Text,
   Title,
@@ -125,22 +125,44 @@ function NoticeDetailModal({
       }}
       size="xl"
       radius="md"
-      title={<Title order={1}>{noticeDetailQuery?.data?.title}</Title>}
+      title={
+        <>
+          {noticeDetailQuery?.isLoading! ? (
+            <Skeleton height={50} radius="xl" width="100%" />
+          ) : (
+            <Title order={1}>{noticeDetailQuery?.data?.title}</Title>
+          )}
+        </>
+      }
       withCloseButton
     >
       <>
-        <Divider variant="dotted" />
-        <Space h="xs" />
-        {noticeDetailQuery?.data?.tags.map((item, idx) => (
-          <Badge key={idx} color="orange">
-            {item}
-          </Badge>
-        ))}
-        <Space h="xs" />
-        <SimpleGrid cols={3} mt={8}>
-          {PreviewsAttachments}
-        </SimpleGrid>
-        <Space h="xl" />
+        {noticeDetailQuery?.data?.tags.length! > 0 ? (
+          <Skeleton visible={noticeDetailQuery?.isLoading!}>
+            <Divider variant="dotted" />
+            <Space h="xs" />
+            {noticeDetailQuery?.data?.tags.map((item, idx) => (
+              <Badge key={idx} color="orange">
+                {item}
+              </Badge>
+            ))}
+            <Space h="xs" />
+          </Skeleton>
+        ) : (
+          <></>
+        )}
+
+        {PreviewsAttachments?.length! > 0 ? (
+          <Skeleton visible={noticeDetailQuery?.isLoading!}>
+            <SimpleGrid cols={3} mt={8}>
+              {PreviewsAttachments}
+            </SimpleGrid>
+            <Space h="xl" />
+          </Skeleton>
+        ) : (
+          <></>
+        )}
+
         <Divider variant="dotted" />
         <Space h="xl" />
 
@@ -162,10 +184,11 @@ function NoticeBody({
   isLoading: boolean;
   html: string;
 }): JSX.Element {
-  if (isLoading) return <Loader color="orange" />;
   return (
-    <TypographyStylesProvider>
-      <div dangerouslySetInnerHTML={{ __html: html }} />
-    </TypographyStylesProvider>
+    <Skeleton visible={isLoading} height={300}>
+      <TypographyStylesProvider>
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      </TypographyStylesProvider>
+    </Skeleton>
   );
 }

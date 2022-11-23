@@ -34,8 +34,9 @@ export type GetNoticeListInput = z.TypeOf<typeof getNoticeListInput>;
 const noticeMetadata = z.object({
   id: z.string(),
   title: z.string(),
-  admin: z.string(),
-  tags: z.array(z.string()),
+  admin: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  isPublished: z.boolean().optional(),
   updatedAt: z.date(),
 });
 export type NoticeMetadata = z.TypeOf<typeof noticeMetadata>;
@@ -122,14 +123,7 @@ export const userNoticeInput = z.object({
 export type UserNoticeInput = z.TypeOf<typeof userNoticeInput>;
 
 export const userNoticeOutput = z.object({
-  notice: z.array(
-    z.object({
-      id: z.string().uuid(),
-      title: z.string(),
-      isPublished: z.boolean(),
-      updatedAt: z.date(),
-    })
-  ),
+  notice: z.array(noticeMetadata),
   count: z.number(),
 });
 export type UserNoticeOutput = z.TypeOf<typeof userNoticeOutput>;
