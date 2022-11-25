@@ -1,15 +1,11 @@
 import {
-  Badge,
   Box,
-  Center,
+  Button,
   Container,
-  createStyles,
   Group,
-  Pagination,
-  ScrollArea,
   Space,
   Stack,
-  Table,
+  Tabs,
   Text,
   UnstyledButton,
 } from "@mantine/core";
@@ -21,7 +17,12 @@ import {
 } from "@mantine/spotlight";
 
 import { Role, UserStatus } from "@prisma/client";
-import { IconNotebook, IconSearch } from "@tabler/icons";
+import {
+  IconClipboard,
+  IconMailbox,
+  IconNotebook,
+  IconSearch,
+} from "@tabler/icons";
 import { debounce, DebouncedFunc } from "lodash";
 
 import { GetStaticPropsResult, NextPage } from "next";
@@ -30,10 +31,10 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import CreateNotice from "../../components/CreateNotice";
+import MyNotice from "../../components/dashboard/MyNotice";
+import PublishedNotices from "../../components/dashboard/PublishedNotices";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
 import { useBackendApiContext } from "../../context/backend.api";
-import { GetNoticeListOutput } from "../schema/notice.schema";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
@@ -49,35 +50,16 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   userrole,
   useremail,
 }) => {
-  const [pageNos, setpageNos] = useState(1);
-  const [totalPages, settotalPages] = useState(1);
-  const [noticeId, setnoticeId] = useState<string>("");
-  const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
-  const [fetchedNotice, setfetchedNotice] = useState<GetNoticeListOutput>({
-    totalNotice: 0,
-    notices: [],
-  });
   const searchedNotice: SpotlightAction[] = [];
   const isAdmin = userrole == "ADMIN";
   const router = useRouter();
   const backend = useBackendApiContext();
-  const userInfoListStyle = useNoticeListStyle();
+  const [noticeId, setnoticeId] = useState<string>("");
+  const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
 
   useEffect(() => {
     if (userstatus === "INVITED") router.push("/onboard");
   }, [router, userstatus]);
-
-  const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
-
-  useEffect(() => {
-    if (publishedNoticeQueryData?.isSuccess) {
-      setfetchedNotice(publishedNoticeQueryData?.data!);
-    }
-  }, [
-    publishedNoticeQueryData?.isLoading,
-    publishedNoticeQueryData?.isSuccess,
-  ]);
-
   const clientSession = useSession();
 
   useEffect(() => {
@@ -114,27 +96,8 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     { trailing: true, leading: false }
   );
 
-  // for setting total page numbers of pagination component
-  useEffect(() => {
-    const noticeNos: number = fetchedNotice?.totalNotice!;
-    let pages = Math.ceil(noticeNos / 10);
-    if (pages == 0) pages += 1;
-    settotalPages(pages);
-  }, [fetchedNotice, totalPages]);
-
   return userstatus === "ACTIVE" ? (
     <Container>
-      <Box py="lg">
-        <Text weight="bolder" size={25}>
-          Welcome, {username}
-        </Text>
-        <Text size={"xs"} color="dimmed">
-          {useremail}
-        </Text>
-      </Box>
-
-      {isAdmin ? <CreateNotice /> : <></>}
-
       {noticeId === "" ? (
         <></>
       ) : (
@@ -144,6 +107,31 @@ const Dashboard: NextPage<IPropsDashboard> = ({
           setOpenNoticeDialog={setOpenNoticeDialog}
         />
       )}
+      <Box py="lg">
+        <Text weight="bolder" size={25}>
+          Welcome, {username}
+        </Text>
+        <Text size={"xs"} color="dimmed">
+          {useremail}
+        </Text>
+      </Box>
+      {isAdmin ? (
+        <Button fullWidth onClick={() => router.push(`/notice/`)}>
+          Create a Notice
+        </Button>
+      ) : (
+        <></>
+      )}
+      <Button
+        fullWidth
+        onClick={() => router.push(`https://anubhav.aitoss.club/`)}
+        color="blue"
+        variant="outline"
+        my={16}
+      >
+        AIT Interview Experience
+      </Button>
+      <Space h="xl" />
 
       <SpotlightProvider
         actions={searchedNotice}
@@ -178,63 +166,38 @@ const Dashboard: NextPage<IPropsDashboard> = ({
         </Group>
       </SpotlightProvider>
 
-      <ScrollArea classNames={userInfoListStyle.classes}>
-        <Table
-          sx={{ minWidth: 800 }}
-          verticalSpacing="sm"
-          highlightOnHover
-          horizontalSpacing="xl"
-          withBorder
-        >
-          <thead>
-            <tr>
-              <th style={{ width: "99%" }}>Notice Title</th>
-              <th>Publisher</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fetchedNotice?.notices.map((item) => (
-              <tr
-                key={item.id}
-                onClick={() => {
-                  setnoticeId(item.id);
-                  setOpenNoticeDialog(true);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <td>
-                  <Text size="sm" weight="bolder">
-                    {item.title}
-                  </Text>
-                  {item.tags?.map((item, idx) => (
-                    <Badge key={idx} variant="outline" color={"orange"} mr={4}>
-                      {item}
-                    </Badge>
-                  ))}
-                </td>
+      {userrole == "ADMIN" ? (
+        <Tabs defaultValue="published">
+          <Tabs.List>
+            <Tabs.Tab value="published" icon={<IconClipboard size={14} />}>
+              Published
+            </Tabs.Tab>
+            <Tabs.Tab value="drafted" icon={<IconMailbox size={14} />}>
+              My Notices
+            </Tabs.Tab>
+          </Tabs.List>
 
-                <td>
-                  <Text size="xs" weight={"bolder"}>
-                    {item.admin}
-                  </Text>
-                  <Text size="xs" color="dimmed">
-                    {item.updatedAt.toDateString()}
-                  </Text>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </ScrollArea>
-      <Space h="md" />
-      <Center>
-        <Pagination
-          total={totalPages}
-          color="orange"
-          page={pageNos}
-          onChange={setpageNos}
+          <Tabs.Panel value="published" pt="xs">
+            <PublishedNotices
+              setnoticeId={setnoticeId}
+              setOpenNoticeDialog={setOpenNoticeDialog}
+            />
+          </Tabs.Panel>
+          <Tabs.Panel value="drafted" pt="xs">
+            <MyNotice
+              userrole={userrole}
+              useremail={useremail}
+              setnoticeId={setnoticeId}
+              setOpenNoticeDialog={setOpenNoticeDialog}
+            />
+          </Tabs.Panel>
+        </Tabs>
+      ) : (
+        <PublishedNotices
+          setnoticeId={setnoticeId}
+          setOpenNoticeDialog={setOpenNoticeDialog}
         />
-      </Center>
+      )}
     </Container>
   ) : (
     <Stack
@@ -249,12 +212,6 @@ const Dashboard: NextPage<IPropsDashboard> = ({
 };
 
 export default Dashboard;
-
-const useNoticeListStyle = createStyles((_theme, _params, getRef) => ({
-  viewport: {
-    minHeight: 600,
-  },
-}));
 
 export const getServerSideProps = async (
   context: any

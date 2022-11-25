@@ -1,31 +1,24 @@
 import {
   Avatar,
-  Badge,
-  Button,
   Center,
   Container,
-  createStyles,
   Divider,
   Group,
   Loader,
-  Menu,
-  Pagination,
-  ScrollArea,
   SimpleGrid,
-  Table,
+  Space,
   Text,
   Title,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
-import { IconNotes, IconNotesOff, IconTrashX } from "@tabler/icons";
 import { GetStaticPropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import MyNotice from "../../components/dashboard/MyNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
-import { useBackendApiContext } from "../../context/backend.api";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -45,14 +38,10 @@ const Profile: NextPage<IPropsOnboard> = ({
   userstatus,
   userrole,
 }) => {
+  const [noticeId, setnoticeId] = useState<string>("");
   const [baseProfile, setBasicProfile] = useState<ProfileFields[]>([]);
   const [studentProfile, setStudentProfile] = useState<ProfileFields[]>([]);
-  const userInfoListStyle = useNoticeListStyle();
-  const [pageNos, setpageNos] = useState(1);
-  const [totalPages, settotalPages] = useState(1);
-  const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
-  const backend = useBackendApiContext();
 
   const userDetailsQuery = trpc.useQuery(
     ["user.get-user-details", { email: useremail! }],
@@ -90,24 +79,6 @@ const Profile: NextPage<IPropsOnboard> = ({
     }
   );
 
-  const userNoticesQuery = trpc.useQuery(
-    ["notice.my-notices", { email: useremail!, pageNos: pageNos }],
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-      onSuccess(data) {
-        let pages = Math.ceil(data?.count / 10);
-        if (pages == 0) pages += 1;
-        settotalPages(pages);
-      },
-    }
-  );
-
   const clientSession = useSession();
   const router = useRouter();
 
@@ -115,13 +86,6 @@ const Profile: NextPage<IPropsOnboard> = ({
     if (clientSession.status == "loading") return;
     if (clientSession.status == "unauthenticated") router.push("/login");
   }, [router, clientSession.status]);
-
-  useEffect(() => {
-    userNoticesQuery.refetch();
-  }, [
-    backend?.changeNoticeStatusMutation.isSuccess,
-    backend?.deleteNoticeMutation.isSuccess,
-  ]);
 
   if (userDetailsQuery.status == "loading")
     return (
@@ -169,152 +133,18 @@ const Profile: NextPage<IPropsOnboard> = ({
           setOpenNoticeDialog={setOpenNoticeDialog}
         />
       )}
-      {userrole == "ADMIN" ? (
-        <>
-          <ScrollArea classNames={userInfoListStyle.classes}>
-            <Table
-              sx={{ minWidth: 800 }}
-              horizontalSpacing="lg"
-              verticalSpacing="sm"
-              highlightOnHover
-            >
-              <thead>
-                <tr>
-                  <th style={{ width: "99%" }}>Notice Title</th>
-                  <th style={{ textAlign: "center" }}>Status</th>
-                  <th style={{ textAlign: "right" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userNoticesQuery.data?.notice.map((item, idx: number) => (
-                  <tr key={idx} style={{ cursor: "pointer" }}>
-                    <td
-                      onClick={() => {
-                        setnoticeId(item.id);
-                        setOpenNoticeDialog(true);
-                      }}
-                    >
-                      <Text size="sm" weight="bolder">
-                        {item.title}
-                      </Text>
-                      <Text size="xs" color="dimmed">
-                        {item.updatedAt.toDateString()}
-                      </Text>
-                    </td>
-
-                    <td
-                      onClick={() => {
-                        setnoticeId(item.id);
-                        setOpenNoticeDialog(true);
-                      }}
-                      style={{ textAlign: "center" }}
-                    >
-                      <Badge
-                        variant="outline"
-                        color={item.isPublished ? "orange" : "violet"}
-                      >
-                        {item.isPublished ? "Published" : "Drafted"}
-                      </Badge>
-                    </td>
-
-                    <td align="right">
-                      <UserListInfoActionMenu
-                        userrole={userrole}
-                        isPublished={item.isPublished || false}
-                        noticeId={item.id}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </ScrollArea>
-          <Center>
-            <Pagination
-              total={totalPages}
-              color="orange"
-              page={pageNos}
-              onChange={setpageNos}
-            />
-          </Center>
-        </>
-      ) : (
-        <></>
-      )}
+      <MyNotice
+        userrole={userrole}
+        useremail={useremail}
+        setnoticeId={setnoticeId}
+        setOpenNoticeDialog={setOpenNoticeDialog}
+      />
+      <Space h="xl" />
     </Container>
   );
 };
 
 export default Profile;
-
-function UserListInfoActionMenu({
-  userrole,
-  isPublished,
-  noticeId,
-}: {
-  userrole: Role;
-  isPublished: boolean;
-  noticeId: string;
-}) {
-  const backend = useBackendApiContext();
-  const updateNoticeStatus = (isPublished: boolean, noticeId: string) => {
-    backend?.changeNoticeStatusMutation.mutate({
-      isPublished: isPublished,
-      noticeId: noticeId,
-    });
-  };
-
-  return (
-    <Menu shadow="md" width={200}>
-      <Menu.Target>
-        <Button disabled={userrole !== "ADMIN"}>Action Menu</Button>
-      </Menu.Target>
-
-      <Menu.Dropdown>
-        {userrole === "ADMIN" ? (
-          <>
-            <Menu.Label>Update Notice</Menu.Label>
-            {isPublished ? (
-              <Menu.Item
-                icon={<IconNotesOff size={14} />}
-                onClick={() => updateNoticeStatus(false, noticeId)}
-              >
-                Change to Drafted
-              </Menu.Item>
-            ) : (
-              <Menu.Item
-                icon={<IconNotes size={14} />}
-                onClick={() => updateNoticeStatus(true, noticeId)}
-              >
-                Change to Published
-              </Menu.Item>
-            )}
-
-            <Menu.Divider />
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color="red"
-              icon={<IconTrashX size={14} />}
-              onClick={() =>
-                backend?.deleteNoticeMutation.mutate({ noticeId: noticeId })
-              }
-            >
-              Delete Notice
-            </Menu.Item>
-          </>
-        ) : (
-          <></>
-        )}
-      </Menu.Dropdown>
-    </Menu>
-  );
-}
-
-const useNoticeListStyle = createStyles((theme) => ({
-  viewport: {
-    minHeight: 600,
-  },
-}));
 
 export const getServerSideProps = async (
   context: any

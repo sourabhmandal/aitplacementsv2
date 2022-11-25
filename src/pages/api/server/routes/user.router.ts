@@ -1,4 +1,5 @@
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { TRPCError } from "@trpc/server";
 import {
   inviteUserInput,
   inviteUserOutput,
@@ -104,6 +105,14 @@ export const userRouter = createRouter()
     output: inviteUserOutput,
     async resolve({ ctx, input }) {
       try {
+        if (!input.email.endsWith("@aitpune.edu.in")) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            cause: "invalid email id",
+            message:
+              "only user with email having @aitpune.edu.in can be invited",
+          });
+        }
         const user = await ctx?.prisma.user.create({
           data: {
             email: input.email,

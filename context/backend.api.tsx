@@ -16,6 +16,7 @@ import {
   GetNoticeDetailOutput,
   GetNoticeListOutput,
   NoticeSearchInput,
+  UserNoticeOutput,
 } from "../src/schema/notice.schema";
 import {
   UpdateUserInput,
@@ -170,6 +171,20 @@ export function BackendApi({ children }: { children: JSX.Element }) {
       },
     });
 
+  const myNoticeQuery = (useremail: string, pageNos: number) =>
+    trpc.useQuery(
+      ["notice.my-notices", { email: useremail, pageNos: pageNos }],
+      {
+        onError: (err) => {
+          showNotification({
+            title: "Error Occured",
+            message: err.message,
+            color: "red",
+          });
+        },
+      }
+    );
+
   let sharedState: IBackendApi = {
     createPresignedUrlMutation,
     changeNoticeStatusMutation,
@@ -185,6 +200,7 @@ export function BackendApi({ children }: { children: JSX.Element }) {
     publishedNoticeQuery,
     noticeDetailQuery,
     userListQuery,
+    myNoticeQuery,
   };
 
   return (
@@ -258,4 +274,9 @@ interface IBackendApi {
   userListQuery: (
     userTole: Role
   ) => UseQueryResult<UserListOutput, TRPCClientErrorLike<AppRouter>>;
+
+  myNoticeQuery: (
+    useremail: string,
+    pageNos: number
+  ) => UseQueryResult<UserNoticeOutput, TRPCClientErrorLike<AppRouter>>;
 }

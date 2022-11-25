@@ -27,4 +27,6 @@ export const JWT_TOKEN = process.env.JWT_TOKEN!;
 export let HOSTED_VERCEL_URL =
   process.env.NEXT_PUBLIC_VERCEL_ENV == "production"
     ? `https://v2.aitplacements.in`
-    : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    : process.env.NEXT_PUBLIC_VERCEL_ENV == "preview"
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : `http://${process.env.NEXT_PUBLIC_VERCEL_URL}`;

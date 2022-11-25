@@ -119,6 +119,7 @@ function NoticeDetailModal({
     <Modal
       fullScreen={matches ? false : true}
       centered
+      overflow="outside"
       opened={openNoticeDialog}
       onClose={() => {
         setOpenNoticeDialog(false);
@@ -185,7 +186,7 @@ function NoticeBody({
   html: string;
 }): JSX.Element {
   return (
-    <Skeleton visible={isLoading} height={300}>
+    <Skeleton visible={isLoading}>
       <TypographyStylesProvider>
         <div dangerouslySetInnerHTML={{ __html: html }} />
       </TypographyStylesProvider>
