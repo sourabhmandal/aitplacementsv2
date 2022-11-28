@@ -9,7 +9,8 @@
     "lint": "next lint",
     "pfmt": "prisma format",
     "pmigdev": "prisma migrate dev",
-    "pgen": "prisma generate --schema ./prisma/schema.prisma"
+    "pgen": "prisma generate --schema ./prisma/schema.prisma",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.188.0",
