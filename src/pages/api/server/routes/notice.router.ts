@@ -321,7 +321,7 @@ export const noticeRouter = createRouter()
         });
 
         const respNotice: NoticeMetadata[] = dbNotice?.map(
-          (notice: Notice): NoticeMetadata => ({
+          (notice): NoticeMetadata => ({
             id: notice.id,
             title: notice.title,
             updatedAt: notice.updatedAt,
@@ -450,7 +450,7 @@ export const noticeRouter = createRouter()
         });
 
         const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
-          (notice: Notice) => {
+          (notice) => {
             return {
               admin: notice.adminEmailFk,
               id: notice.id,

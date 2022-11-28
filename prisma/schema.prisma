@@ -60,7 +60,7 @@ model Notice {
 }
 
 model Attachments {
-  filepath String @id @unique
+  fileid String @id @unique
   notice   Notice @relation(fields: [noticeid], references: [id])
   noticeid String
   filename String
