@@ -1,5 +1,6 @@
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 import {
+  CreatePresignedUrlInput,
   createPresignedUrlInput,
   deleteNoticeByFileIdInput,
   deleteNoticeByFileIdOutput,
@@ -13,7 +14,7 @@ import { S3Instance } from "../s3_instance";
 export const attachmentRouter = createRouter()
   .mutation("create-presigned-url", {
     input: createPresignedUrlInput,
-    async resolve({ ctx, input }) {
+    async resolve({ input }: { input: CreatePresignedUrlInput }) {
       const { filepath } = input;
 
       return new Promise((resolve, reject) => {
@@ -26,7 +27,7 @@ export const attachmentRouter = createRouter()
             },
             Expires: 60,
           },
-          (err, signed) => {
+          (err: any, signed: any) => {
             if (err) return reject(err);
             resolve(signed);
           }

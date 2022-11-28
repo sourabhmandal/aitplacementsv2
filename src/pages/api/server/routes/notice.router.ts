@@ -106,7 +106,6 @@ export const noticeRouter = createRouter()
         });
 
         if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
-
           // upsert attachments first
           attachments.forEach(async (atth) => {
             await ctx?.prisma.attachments.upsert({
@@ -123,11 +122,11 @@ export const noticeRouter = createRouter()
                 noticeid: id,
               },
               where: {
-                fileid: atth.fileid
+                fileid: atth.fileid,
               },
               select: {
-                fileid: true
-              }
+                fileid: true,
+              },
             });
           });
           // upsert notice
@@ -322,7 +321,7 @@ export const noticeRouter = createRouter()
         });
 
         const respNotice: NoticeMetadata[] = dbNotice?.map(
-          (notice): NoticeMetadata => ({
+          (notice: Notice): NoticeMetadata => ({
             id: notice.id,
             title: notice.title,
             updatedAt: notice.updatedAt,
@@ -451,7 +450,7 @@ export const noticeRouter = createRouter()
         });
 
         const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
-          (notice) => {
+          (notice: Notice) => {
             return {
               admin: notice.adminEmailFk,
               id: notice.id,
