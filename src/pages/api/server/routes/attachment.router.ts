@@ -42,7 +42,6 @@ export const attachmentRouter = createRouter()
       let filepath = `${input.noticeId}/${input.filename}`;
       try {
         await S3Instance.DeleteFileByFileId(filepath);
-
         await ctx?.prisma.attachments.delete({
           where: {
             fileid: filepath,
