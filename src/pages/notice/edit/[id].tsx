@@ -17,39 +17,71 @@ import { Dropzone, FileWithPath, MIME_TYPES } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { IconFileUpload, IconNotes, IconNotesOff, IconX } from "@tabler/icons";
-import { NextPage } from "next";
-import { useSession } from "next-auth/react";
+import { GetServerSidePropsResult, NextPage } from "next";
+import { Session, unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import { v4 } from "uuid";
-import RichTextEditor from "../../../components/RichText";
-import { useBackendApiContext } from "../../../context/backend.api";
-import { CreateNoticeInput } from "../../schema/notice.schema";
-import { createAWSFilePath } from "../../utils/constants";
+import { useEffect, useState } from "react";
+import RichTextEditor from "../../../../components/RichText";
+import { useBackendApiContext } from "../../../../context/backend.api";
+import {
+  CreateNoticeInput,
+  GetNoticeDetailOutput,
+} from "../../../schema/notice.schema";
+import { createAWSFilePath } from "../../../utils/constants";
+import { trpc } from "../../../utils/trpc";
+import { authOptions } from "../../api/auth/[...nextauth]";
+import { noticeRouter } from "../../api/server/routes/notice.router";
 
-const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
-  const [tags, setTags] = useState<MultiSelectItem[]>([
+const CreateNotice: NextPage<IPropsCreateNotice> = ({
+  id,
+  useremail,
+  noticeDetails,
+}) => {
+  const [defaultTags, setDefaultTags] = useState<MultiSelectItem[]>([
     { value: "COMP", label: "COMP" },
     { value: "IT", label: "IT" },
     { value: "ENTC", label: "ENTC" },
     { value: "MECH", label: "MECH" },
   ]);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const { data } = useSession();
   const backend = useBackendApiContext();
   const router = useRouter();
   const theme = useMantineTheme();
+  const trpcContext = trpc.useContext();
+
+  const updateNoticeMutation = trpc.useMutation("notice.update-notice");
+  const noticeDetailQuery = trpc.useQuery(["notice.notice-detail", { id }]);
+
+  useEffect(() => {
+    if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
+      form.setFieldValue(
+        "attachments",
+        noticeDetailQuery.data.attachments.map((f) => ({
+          fileid: createAWSFilePath(id, f.name),
+          filename: f.name,
+          filetype: f.type,
+        }))
+      );
+    }
+  }, [
+    noticeDetailQuery.isSuccess,
+    noticeDetailQuery.data,
+    noticeDetailQuery.isFetched,
+  ]);
 
   const form = useForm<CreateNoticeInput>({
     initialValues: {
-      id: id,
-      tags: [],
-      adminEmail: data?.user?.email!,
-      isPublished: true,
-      title: "",
-      body: "",
-      attachments: [],
+      id: noticeDetails.id,
+      tags: noticeDetails.tags,
+      adminEmail: useremail,
+      title: noticeDetails.title,
+      body: noticeDetails.body,
+      attachments: noticeDetails.attachments.map((atth) => ({
+        fileid: createAWSFilePath(noticeDetails.id, atth.name),
+        filename: atth.name,
+        filetype: atth.type,
+      })),
+      isPublished: noticeDetails.isPublished,
     },
     validate: {
       title: (val: string) =>
@@ -96,21 +128,38 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
       console.log(err);
     }
   };
-
   const savePost = async (formdata: CreateNoticeInput) => {
-    formdata.tags = selectedTags;
     await acceptedFileList.map((file) => uploadFile(file));
 
+    //const data =;
+
+    formdata.attachments = [
+      ...formdata.attachments,
+      ...acceptedFileList.map((f) => ({
+        fileid: createAWSFilePath(id, f.name),
+        filename: f.name,
+        filetype: f.type,
+      })),
+    ];
+
     // add unique ids list as attachments
-    await backend?.createNoticeMutation.mutate(formdata);
+    await updateNoticeMutation.mutate(formdata);
+
+    trpcContext.invalidateQueries("notice.published-notice-list");
+    trpcContext.invalidateQueries("notice.my-notices");
+
     router.push("/dashboard");
   };
 
-  const PreviewsImage = acceptedFileList.map((file, index) => {
+  const deleteNoticeByFileId = trpc.useMutation(
+    "attachment.delete-attachment-by-fileid"
+  );
+
+  const PreviewsLocalFiles = acceptedFileList.map((file, index) => {
     return (
       <Card
         p={4}
-        key={index}
+        key={file.name}
         sx={{
           border: "1px solid #ccc",
           display: "flex",
@@ -139,13 +188,53 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
               (filterfile) => file.name != filterfile.name
             );
             setacceptedFileList(revisedFiles);
-            form.setFieldValue(
-              "attachments",
-              revisedFiles.map((f) => ({
-                fileid: createAWSFilePath(id, f.name),
-                filename: f.name,
-                filetype: f.type,
-              }))
+          }}
+        >
+          <IconX />
+        </ActionIcon>
+      </Card>
+    );
+  });
+
+  const PreviewsRemoteFiles = form.values.attachments.map((file, index) => {
+    return (
+      <Card
+        p={4}
+        key={file.fileid}
+        sx={{
+          border: "1px solid #ccc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <IconFileUpload
+          color={
+            theme.colors[theme.primaryColor][
+              theme.colorScheme === "dark" ? 4 : 6
+            ]
+          }
+        />
+        <div style={{ marginLeft: 6 }}>
+          <Text size="sm">{file.filename}</Text>
+          <Text color="dimmed" size="xs">
+            {file.filetype}
+          </Text>
+        </div>
+        <ActionIcon
+          variant="light"
+          onClick={() => {
+            // remove from aws files
+            deleteNoticeByFileId.mutate(
+              { noticeId: id, filename: file.filename },
+              {
+                onSuccess(variables, context) {
+                  showNotification({
+                    message: `${context.filename} deleted`,
+                  });
+                  trpcContext.invalidateQueries("notice.notice-detail");
+                },
+              }
             );
           }}
         >
@@ -175,18 +264,17 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
         <MultiSelect
           creatable
           searchable
-          data={tags}
+          data={defaultTags}
           label="Tags"
           placeholder="Add tags for this post"
           mb={40}
           getCreateLabel={(query) => `+ Create ${query}`}
           onCreate={(query: string) => {
-            setTags((current: any) => [...current, query]);
-            setSelectedTags((current: any) => [...current, query]);
+            setDefaultTags((current: any) => [...current, query]);
             return query;
           }}
           onChange={(values: string[]) => {
-            setSelectedTags(values);
+            console.log(form.values.tags);
             return values;
           }}
           maxDropdownHeight={160}
@@ -206,20 +294,10 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           }}
         />
         <Dropzone
-          multiple={true}
+          multiple={false}
           useFsAccessApi={false}
           onDrop={(files) => {
             setacceptedFileList((prev) => [...prev, ...files]);
-            files.map((file) =>
-              form.setFieldValue("attachments", [
-                ...form.values.attachments,
-                {
-                  fileid: createAWSFilePath(id, file.name),
-                  filename: file.name,
-                  filetype: file.type,
-                },
-              ])
-            );
           }}
           onReject={() =>
             showNotification({
@@ -264,35 +342,9 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           </Group>
         </Dropzone>
         <SimpleGrid cols={3} mt={8}>
-          {PreviewsImage}
+          {PreviewsLocalFiles}
+          {PreviewsRemoteFiles}
         </SimpleGrid>
-        {/* 
-        <Switch
-          size="lg"
-          my="lg"
-          mx="sm"
-          onLabel="PUBLISH"
-          offLabel="DRAFT"
-          checked={form.values.isPublished}
-          onChange={(event) =>
-            form.setFieldValue("isPublished", event.currentTarget.checked)
-          }
-          thumbIcon={
-            form.values.isPublished ? (
-              <IconCheck
-                size={12}
-                color={theme.colors.teal[theme.fn.primaryShade()]}
-                stroke={3}
-              />
-            ) : (
-              <IconX
-                size={12}
-                color={theme.colors.red[theme.fn.primaryShade()]}
-                stroke={3}
-              />
-            )
-          }
-        /> */}
 
         <SegmentedControl
           fullWidth
@@ -334,15 +386,44 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
 
 export default CreateNotice;
 
-export const getServerSideProps = async (context: any) => {
-  console.log(context.params);
+export const getServerSideProps = async (
+  context: any
+): Promise<GetServerSidePropsResult<IPropsCreateNotice>> => {
+  const { id } = context.params;
+  let session: Session | null = await unstable_getServerSession(
+    context.req,
+    context.res,
+    authOptions
+  );
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  const noticeDetail: GetNoticeDetailOutput = await noticeRouter
+    .createCaller({
+      req: context.req,
+      res: context.res,
+      prisma: prisma,
+    })
+    .query("notice-detail", { id });
+
   return {
     props: {
-      id: v4(),
+      id: id,
+      useremail: session.user.email,
+      noticeDetails: noticeDetail,
     },
   };
 };
 
 interface IPropsCreateNotice {
   id: string;
+  useremail: string;
+  noticeDetails: GetNoticeDetailOutput;
 }

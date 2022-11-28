@@ -10,11 +10,14 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
+import { openConfirmModal } from "@mantine/modals";
 import { Role } from "@prisma/client";
 import { IconNotes, IconNotesOff, IconPencil, IconTrashX } from "@tabler/icons";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useBackendApiContext } from "../../context/backend.api";
-import { showCommingSoon } from "../../src/utils/constants";
+import { NoticeMetadata } from "../../src/schema/notice.schema";
+import { trpc } from "../../src/utils/trpc";
 
 function MyNotice({
   userrole,
@@ -31,16 +34,41 @@ function MyNotice({
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
   const backend = useBackendApiContext();
+  const [noticeList, setnoticeList] = useState<NoticeMetadata[]>([]);
+  const trpcContext = trpc.useContext();
 
   const userNoticesQuery = backend?.myNoticeQuery(useremail!, pageNos);
+  const updateNoticeStatus = async (
+    shouldPublish: boolean,
+    noticeId: string
+  ) => {
+    await backend?.changeNoticeStatusMutation.mutate({
+      isPublished: shouldPublish,
+      noticeId: noticeId,
+    });
+  };
+
+  useEffect(() => {
+    trpcContext.invalidateQueries("notice.my-notices");
+    trpcContext.invalidateQueries("notice.published-notice-list");
+  }, [
+    backend?.changeNoticeStatusMutation.isSuccess,
+    backend?.deleteNoticeMutation.isSuccess,
+  ]);
 
   useEffect(() => {
     if (userNoticesQuery?.isSuccess) {
+      setnoticeList(userNoticesQuery?.data?.notice!);
       let pages = Math.ceil(userNoticesQuery?.data?.count! / 10);
       if (pages == 0) pages += 1;
       settotalPages(pages);
     }
-  }, [userNoticesQuery?.isSuccess]);
+  }, [
+    userNoticesQuery?.isSuccess,
+    userNoticesQuery?.data?.notice,
+    userNoticesQuery?.data?.count,
+    userNoticesQuery?.isFetched,
+  ]);
 
   return userrole == "ADMIN" ? (
     <>
@@ -59,7 +87,7 @@ function MyNotice({
             </tr>
           </thead>
           <tbody>
-            {userNoticesQuery?.data?.notice.map((item, idx: number) => (
+            {noticeList.map((item, idx: number) => (
               <tr key={idx} style={{ cursor: "pointer" }}>
                 <td
                   onClick={() => {
@@ -90,11 +118,70 @@ function MyNotice({
                   </Badge>
                 </td>
                 <td>
-                  <UserListInfoActionMenu
-                    userrole={userrole}
-                    isPublished={item.isPublished || false}
-                    noticeId={item.id}
-                  />
+                  {userrole === "ADMIN" ? (
+                    <Group noWrap>
+                      <Tooltip
+                        label={item.isPublished ? "Draft Now" : "Publish Now"}
+                      >
+                        <ActionIcon
+                          variant="outline"
+                          color={item.isPublished ? "orange" : "violet"}
+                          onClick={() =>
+                            openConfirmModal({
+                              title: `Do you want to make this article ${
+                                item.isPublished ? "drafted?" : "published?"
+                              }`,
+                              children: (
+                                <Text size="sm">
+                                  This action is so important that you are
+                                  required to confirm it with a modal. Please
+                                  click one of these buttons to proceed.
+                                </Text>
+                              ),
+
+                              labels: { confirm: "Confirm", cancel: "Cancel" },
+                              onCancel: () => {},
+                              onConfirm: async () =>
+                                await updateNoticeStatus(
+                                  !item.isPublished,
+                                  item.id
+                                ),
+
+                              closeOnClickOutside: false,
+                            })
+                          }
+                        >
+                          {item.isPublished ? (
+                            <IconNotes size={16} />
+                          ) : (
+                            <IconNotesOff size={16} />
+                          )}
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Edit">
+                        <Link href={`notice/edit/${item.id}`}>
+                          <ActionIcon variant="outline" color="yellow">
+                            <IconPencil size={16} />
+                          </ActionIcon>
+                        </Link>
+                      </Tooltip>
+                      <Tooltip label="Delete">
+                        <ActionIcon
+                          variant="outline"
+                          color="red"
+                          onClick={() =>
+                            backend?.deleteNoticeMutation.mutate({
+                              noticeId: item.id,
+                            })
+                          }
+                        >
+                          <IconTrashX size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  ) : (
+                    <></>
+                  )}
                 </td>
               </tr>
             ))}
@@ -122,69 +209,3 @@ const useNoticeListStyle = createStyles((theme) => ({
     minHeight: 600,
   },
 }));
-
-function UserListInfoActionMenu({
-  userrole,
-  isPublished,
-  noticeId,
-}: {
-  userrole: Role;
-  isPublished: boolean;
-  noticeId: string;
-}) {
-  const backend = useBackendApiContext();
-  const updateNoticeStatus = (isPublished: boolean, noticeId: string) => {
-    backend?.changeNoticeStatusMutation.mutate({
-      isPublished: isPublished,
-      noticeId: noticeId,
-    });
-  };
-
-  return userrole === "ADMIN" ? (
-    <Group noWrap>
-      {isPublished ? (
-        <Tooltip label="Draft">
-          <ActionIcon
-            variant="outline"
-            color="orange"
-            onClick={() => updateNoticeStatus(false, noticeId)}
-          >
-            <IconNotesOff size={16} />
-          </ActionIcon>
-        </Tooltip>
-      ) : (
-        <Tooltip label="Publish">
-          <ActionIcon
-            variant="outline"
-            color="indigo"
-            onClick={() => updateNoticeStatus(true, noticeId)}
-          >
-            <IconNotes size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      <Tooltip label="Edit">
-        <ActionIcon
-          variant="outline"
-          color="yellow"
-          onClick={() => showCommingSoon()}
-        >
-          <IconPencil size={16} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label="Delete">
-        <ActionIcon
-          variant="outline"
-          color="red"
-          onClick={() =>
-            backend?.deleteNoticeMutation.mutate({ noticeId: noticeId })
-          }
-        >
-          <IconTrashX size={16} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  ) : (
-    <></>
-  );
-}

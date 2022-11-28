@@ -10,6 +10,7 @@ import {
   Space,
   Text,
   Title,
+  Tooltip,
   TypographyStylesProvider,
   useMantineTheme,
 } from "@mantine/core";
@@ -32,7 +33,8 @@ function NoticeDetailModal({
   const backend = useBackendApiContext();
   const noticeDetailQuery = backend?.noticeDetailQuery(noticeId);
   const theme = useMantineTheme();
-  const [imageOverlayVisible, setimageOverlayVisible] = useState(false);
+  const [imageOverlayVisibleFor, setimageOverlayVisibleFor] =
+    useState<string>("");
 
   const PreviewsAttachments = noticeDetailQuery?.data?.attachments.map(
     (file, index) => {
@@ -67,51 +69,66 @@ function NoticeDetailModal({
             </div>
           </Card>
         );
-      }
-      return (
-        <Card
-          key={file.name}
-          sx={{
-            border: "1px solid #ccc",
-            backgroundColor: "#fff2e5",
-            borderRadius: "0.5em",
-            cursor: "pointer",
-          }}
-          p={2}
-          m={0}
-          onClick={() => {
-            window.open(file.url, "_blank");
-          }}
-          onMouseOver={() => setimageOverlayVisible(true)}
-          onMouseLeave={() => setimageOverlayVisible(false)}
-        >
-          {imageOverlayVisible && (
-            <Overlay opacity={0.6} color="#000" zIndex={5} blur={2} />
-          )}
-          <Image
-            src={file.url}
-            alt={file.name}
-            height={150}
-            fit="none"
-            caption={
-              <Text
-                size="sm"
+      } else {
+        return (
+          <Tooltip
+            multiline
+            position="top"
+            closeDelay={120}
+            key={file.name}
+            label={file.name}
+            withinPortal
+          >
+            <Card
+              sx={{
+                border: "1px solid #ccc",
+                backgroundColor: "#fff2e5",
+                borderRadius: "0.5em",
+                cursor: "pointer",
+              }}
+              p={2}
+              m={0}
+              onClick={() => {
+                window.open(file.url, "_blank");
+              }}
+              onMouseOver={() => setimageOverlayVisibleFor(file.name)}
+              onMouseLeave={() => setimageOverlayVisibleFor("")}
+            >
+              {imageOverlayVisibleFor == file.name && (
+                <Overlay
+                  opacity={0.6}
+                  color="#000"
+                  zIndex={5}
+                  blur={2}
+                ></Overlay>
+              )}
+
+              <Image
+                src={file.url}
+                alt={file.name}
+                height={150}
+                fit="none"
+                caption={
+                  <Text
+                    size="sm"
+                    sx={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {file.name}
+                  </Text>
+                }
                 sx={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  border: "1px solid #ccc",
+                  borderRadius: "0.5em",
                 }}
-              >
-                {file.name}
-              </Text>
-            }
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: "0.5em",
-            }}
-          />
-        </Card>
-      );
+              />
+            </Card>
+          </Tooltip>
+        );
+      }
     }
   );
 

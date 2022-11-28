@@ -30,3 +30,8 @@ export let HOSTED_VERCEL_URL =
     : process.env.NEXT_PUBLIC_VERCEL_ENV == "preview"
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     : `http://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+
+
+export function createAWSFilePath(noticeId: string, filename: string): string {
+  return `${noticeId}/${filename}`;
+}

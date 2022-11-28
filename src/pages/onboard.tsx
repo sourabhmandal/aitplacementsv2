@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { Role, UserStatus } from "@prisma/client";
-import { GetStaticPropsResult, NextPage } from "next";
+import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -226,7 +226,7 @@ export default Onboard;
 
 export const getServerSideProps = async (
   context: any
-): Promise<GetStaticPropsResult<IPropsOnboard>> => {
+): Promise<GetServerSidePropsResult<IPropsOnboard>> => {
   let session = await unstable_getServerSession(
     context.req,
     context.res,

@@ -25,7 +25,7 @@ import {
 } from "@tabler/icons";
 import { debounce, DebouncedFunc } from "lodash";
 
-import { GetStaticPropsResult, NextPage } from "next";
+import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -215,7 +215,7 @@ export default Dashboard;
 
 export const getServerSideProps = async (
   context: any
-): Promise<GetStaticPropsResult<IPropsDashboard>> => {
+): Promise<GetServerSidePropsResult<IPropsDashboard>> => {
   let session = await unstable_getServerSession(
     context.req,
     context.res,

@@ -4,7 +4,7 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch"]
 }
 
@@ -60,12 +60,11 @@ model Notice {
 }
 
 model Attachments {
-  id       String @id @default(uuid())
+  filepath String @id
   notice   Notice @relation(fields: [noticeid], references: [id])
   noticeid String
   filename String
   filetype String
-  fileid   String
 
   @@map("attachments")
 }

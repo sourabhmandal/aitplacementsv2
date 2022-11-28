@@ -32,7 +32,9 @@ export const noticeRouter = createRouter()
     input: createNoticeInput,
     output: createNoticeOutput,
     async resolve({ ctx, input }) {
-      const { adminEmail, attachments, body, isPublished, tags, title } = input;
+      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+        input;
+
       let response: CreateNoticeOutput = {
         adminEmail: "",
         isPublished: false,
@@ -48,16 +50,13 @@ export const noticeRouter = createRouter()
         if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
           const dbRespNotice: Notice = await ctx?.prisma?.notice?.create({
             data: {
+              id: id,
               body: body,
               title: title,
               isPublished: isPublished,
               tags: tags,
               attachments: {
-                create: attachments.map((atth) => ({
-                  fileid: atth.fileid,
-                  filename: atth.filename,
-                  filetype: atth.filetype,
-                })),
+                create: attachments,
               },
               admin: {
                 connect: {
@@ -68,6 +67,84 @@ export const noticeRouter = createRouter()
             include: {
               admin: true,
               attachments: true,
+            },
+          })!;
+
+          response = {
+            adminEmail: dbRespNotice.adminEmailFk,
+            isPublished: dbRespNotice.isPublished,
+            title: dbRespNotice.title,
+          };
+        }
+      } catch (e) {
+        console.log(e);
+        if (e instanceof PrismaClientKnownRequestError) {
+          handlePrismaError(e);
+        }
+      }
+
+      // default response
+      return response;
+    },
+  })
+  .mutation("update-notice", {
+    input: createNoticeInput,
+    output: createNoticeOutput,
+    async resolve({ ctx, input }) {
+      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+        input;
+      let response: CreateNoticeOutput = {
+        adminEmail: "",
+        isPublished: false,
+        title: "",
+      };
+      try {
+        const dbUser = await ctx?.prisma.user.findFirst({
+          where: {
+            email: adminEmail,
+          },
+        });
+
+        if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
+
+          // upsert attachments first
+          attachments.forEach(async (atth) => {
+            await ctx?.prisma.attachments.upsert({
+              create: {
+                fileid: atth.fileid,
+                filename: atth.filename,
+                filetype: atth.filetype,
+                noticeid: id,
+              },
+              update: {
+                fileid: atth.fileid,
+                filename: atth.filename,
+                filetype: atth.filetype,
+                noticeid: id,
+              },
+              where: {
+                fileid: atth.fileid
+              },
+              select: {
+                fileid: true
+              }
+            });
+          });
+          // upsert notice
+          const dbRespNotice: Notice = await ctx?.prisma?.notice?.update({
+            where: {
+              id: id,
+            },
+            data: {
+              body: body,
+              title: title,
+              isPublished: isPublished,
+              tags: tags,
+              admin: {
+                connect: {
+                  email: adminEmail,
+                },
+              },
             },
           })!;
 
@@ -121,7 +198,6 @@ export const noticeRouter = createRouter()
             },
             attachments: {
               select: {
-                id: true,
                 fileid: true,
                 filename: true,
                 filetype: true,
@@ -327,15 +403,7 @@ export const noticeRouter = createRouter()
         ) {
           console.log("files found");
           for (let file of noticeToDelete?.attachments) {
-            await S3Instance.GetS3().deleteObject(
-              {
-                Bucket: REACT_APP_AWS_BUCKET_ID!,
-                Key: `${file.fileid}`,
-              },
-              (err, data) => {
-                console.log(data, err);
-              }
-            );
+            await S3Instance.DeleteFileByFileId(file.fileid);
           }
         }
 

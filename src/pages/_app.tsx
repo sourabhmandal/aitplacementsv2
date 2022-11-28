@@ -24,10 +24,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
-    console.log(
-      process.env.NEXT_PUBLIC_VERCEL_ENV,
-      process.env.NEXT_PUBLIC_VERCEL_URL
-    );
+
   }, [theme]);
 
   return (

@@ -22,7 +22,7 @@ import {
 import { Role } from "@prisma/client";
 import { IconSearch, IconUserCircle } from "@tabler/icons";
 import { debounce, DebouncedFunc } from "lodash";
-import { GetStaticPropsResult, NextPage } from "next";
+import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -244,7 +244,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
 
 export const getServerSideProps = async (
   context: any
-): Promise<GetStaticPropsResult<IUserProps>> => {
+): Promise<GetServerSidePropsResult<IUserProps>> => {
   let session = await unstable_getServerSession(
     context.req,
     context.res,

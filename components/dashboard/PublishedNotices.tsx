@@ -8,8 +8,8 @@ import {
   Text,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { useBackendApiContext } from "../../context/backend.api";
 import { GetNoticeListOutput } from "../../src/schema/notice.schema";
+import { trpc } from "../../src/utils/trpc";
 
 function PublishedNotices({
   setnoticeId,
@@ -18,10 +18,25 @@ function PublishedNotices({
   setnoticeId: any;
   setOpenNoticeDialog: any;
 }) {
-  const backend = useBackendApiContext();
   const [pageNos, setpageNos] = useState(1);
 
-  const publishedNoticeQueryData = backend?.publishedNoticeQuery(pageNos);
+  const publishedNoticeQueryData = trpc.useQuery([
+    "notice.published-notice-list",
+    { pageNos: pageNos },
+  ]);
+
+  const [publishedNotices, setpublishedNotices] =
+    useState<GetNoticeListOutput>();
+
+  useEffect(() => {
+    if (publishedNoticeQueryData.isSuccess)
+      setpublishedNotices(publishedNoticeQueryData.data);
+  }, [
+    publishedNoticeQueryData.data,
+    publishedNoticeQueryData.isSuccess,
+    publishedNoticeQueryData?.isRefetching,
+  ]);
+
   const userInfoListStyle = useNoticeListStyle();
   const [totalPages, settotalPages] = useState(1);
   const [fetchedNotice, setfetchedNotice] = useState<GetNoticeListOutput>({
@@ -61,7 +76,7 @@ function PublishedNotices({
           </tr>
         </thead>
         <tbody>
-          {fetchedNotice?.notices.map((item) => (
+          {publishedNotices?.notices?.map((item) => (
             <tr
               key={item.id}
               onClick={() => {

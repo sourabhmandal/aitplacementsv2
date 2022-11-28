@@ -1,5 +1,6 @@
 import {
   Avatar,
+  Button,
   Center,
   Container,
   Divider,
@@ -8,17 +9,18 @@ import {
   SimpleGrid,
   Space,
   Text,
-  Title,
+  Title
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
-import { GetStaticPropsResult, NextPage } from "next";
+import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import MyNotice from "../../components/dashboard/MyNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
+import { showCommingSoon } from "../utils/constants";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -96,12 +98,14 @@ const Profile: NextPage<IPropsOnboard> = ({
 
   return (
     <Container>
-      <Title order={3}>Your profile</Title>
+      <Title my="md" order={3}>
+        Your profile
+      </Title>
       <Divider mt="sm" mb="xl" />
       <Group spacing="sm">
         <Avatar src={"https://picsum.photos/200"} size={200} radius="md" />
         <Container>
-          <SimpleGrid cols={2}>
+          <SimpleGrid cols={2} mb="sm">
             {baseProfile.map((field, id) => (
               <div key={id}>
                 <Text size="lg" weight={900}>
@@ -111,6 +115,10 @@ const Profile: NextPage<IPropsOnboard> = ({
               </div>
             ))}
           </SimpleGrid>
+
+          <Button onClick={() => showCommingSoon()} fullWidth>
+            Edit Profile
+          </Button>
         </Container>
       </Group>
       <Divider my="lg" mb="xl" />
@@ -124,6 +132,7 @@ const Profile: NextPage<IPropsOnboard> = ({
           </div>
         ))}
       </SimpleGrid>
+
       {noticeId === "" ? (
         <></>
       ) : (
@@ -148,7 +157,7 @@ export default Profile;
 
 export const getServerSideProps = async (
   context: any
-): Promise<GetStaticPropsResult<IPropsOnboard>> => {
+): Promise<GetServerSidePropsResult<IPropsOnboard>> => {
   let session = await unstable_getServerSession(
     context.req,
     context.res,
