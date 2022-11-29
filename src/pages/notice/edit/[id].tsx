@@ -13,30 +13,27 @@ import {
   TextInput,
   useMantineTheme,
 } from "@mantine/core";
+
 import { Dropzone, FileWithPath, MIME_TYPES } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { IconFileUpload, IconNotes, IconNotesOff, IconX } from "@tabler/icons";
-import { GetServerSidePropsResult, NextPage } from "next";
+import {
+  GetServerSidePropsContext,
+  GetServerSidePropsResult,
+  NextPage,
+} from "next";
 import { Session, unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextEditor from "../../../../components/RichText";
 import { useBackendApiContext } from "../../../../context/backend.api";
-import {
-  CreateNoticeInput,
-  GetNoticeDetailOutput,
-} from "../../../schema/notice.schema";
+import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
 import { authOptions } from "../../api/auth/[...nextauth]";
-import { noticeRouter } from "../../api/server/routes/notice.router";
 
-const CreateNotice: NextPage<IPropsCreateNotice> = ({
-  id,
-  useremail,
-  noticeDetails,
-}) => {
+const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const [defaultTags, setDefaultTags] = useState<MultiSelectItem[]>([
     { value: "COMP", label: "COMP" },
     { value: "IT", label: "IT" },
@@ -48,20 +45,25 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({
   const router = useRouter();
   const theme = useMantineTheme();
   const trpcContext = trpc.useContext();
-
-  const updateNoticeMutation = trpc.useMutation("notice.update-notice");
   const noticeDetailQuery = trpc.useQuery(["notice.notice-detail", { id }]);
+  const updateNoticeMutation = trpc.useMutation("notice.update-notice");
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
-      form.setFieldValue(
-        "attachments",
-        noticeDetailQuery.data.attachments.map((f) => ({
+      form.setValues({
+        title: noticeDetailQuery.data.title,
+        id: noticeDetailQuery.data.id,
+        tags: noticeDetailQuery.data.tags,
+        isPublished: noticeDetailQuery.data.isPublished,
+        adminEmail: useremail,
+        attachments: noticeDetailQuery.data.attachments.map((f) => ({
           fileid: createAWSFilePath(id, f.name),
           filename: f.name,
           filetype: f.type,
-        }))
-      );
+        })),
+
+        body: noticeDetailQuery.data.body,
+      });
     }
   }, [
     noticeDetailQuery.isSuccess,
@@ -71,17 +73,13 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({
 
   const form = useForm<CreateNoticeInput>({
     initialValues: {
-      id: noticeDetails.id,
-      tags: noticeDetails.tags,
+      id: "",
+      tags: [""],
       adminEmail: useremail,
-      title: noticeDetails.title,
-      body: noticeDetails.body,
-      attachments: noticeDetails.attachments.map((atth) => ({
-        fileid: createAWSFilePath(noticeDetails.id, atth.name),
-        filename: atth.name,
-        filetype: atth.type,
-      })),
-      isPublished: noticeDetails.isPublished,
+      title: "",
+      body: "",
+      attachments: [],
+      isPublished: false,
     },
     validate: {
       title: (val: string) =>
@@ -196,7 +194,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({
     );
   });
 
-  const PreviewsRemoteFiles = form.values.attachments.map((file, index) => {
+  const PreviewsRemoteFiles = form.values.attachments?.map((file, index) => {
     return (
       <Card
         p={4}
@@ -265,6 +263,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({
           creatable
           searchable
           data={defaultTags}
+          defaultValue={noticeDetailQuery.data?.tags!}
           label="Tags"
           placeholder="Add tags for this post"
           mb={40}
@@ -387,9 +386,9 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({
 export default CreateNotice;
 
 export const getServerSideProps = async (
-  context: any
+  context: GetServerSidePropsContext<{ id: string }>
 ): Promise<GetServerSidePropsResult<IPropsCreateNotice>> => {
-  const { id } = context.params;
+  const id = context.params?.id as string;
   let session: Session | null = await unstable_getServerSession(
     context.req,
     context.res,
@@ -405,19 +404,11 @@ export const getServerSideProps = async (
     };
   }
 
-  const noticeDetail: GetNoticeDetailOutput = await noticeRouter
-    .createCaller({
-      req: context.req,
-      res: context.res,
-      prisma: prisma,
-    })
-    .query("notice-detail", { id });
-
+  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
     props: {
-      id: id,
       useremail: session.user.email,
-      noticeDetails: noticeDetail,
+      id: id,
     },
   };
 };
@@ -425,5 +416,4 @@ export const getServerSideProps = async (
 interface IPropsCreateNotice {
   id: string;
   useremail: string;
-  noticeDetails: GetNoticeDetailOutput;
 }
