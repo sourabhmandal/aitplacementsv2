@@ -47,6 +47,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const trpcContext = trpc.useContext();
   const noticeDetailQuery = trpc.useQuery(["notice.notice-detail", { id }]);
   const updateNoticeMutation = trpc.useMutation("notice.update-notice");
+  const [savedTags, setsavedTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
@@ -89,6 +90,14 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
       body: (val: string) => (val == "" ? "Notice body cannot be empty" : null),
     },
   });
+
+  useEffect(() => {
+    setsavedTags(noticeDetailQuery.data?.tags!);
+  }, [noticeDetailQuery.data?.tags]);
+
+  useEffect(() => {
+    form.setFieldValue("tags", savedTags);
+  }, [savedTags]);
 
   const uploadFile = async (targetFile: FileWithPath) => {
     const filepath = `${form.values.id}/${targetFile.name}`;
@@ -263,17 +272,22 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
           creatable
           searchable
           data={defaultTags}
-          defaultValue={noticeDetailQuery.data?.tags!}
+          value={savedTags}
           label="Tags"
           placeholder="Add tags for this post"
           mb={40}
           getCreateLabel={(query) => `+ Create ${query}`}
           onCreate={(query: string) => {
             setDefaultTags((current: any) => [...current, query]);
-            return query;
+            let item: MultiSelectItem = {
+              value: query,
+              label: query,
+            };
+            return item;
           }}
           onChange={(values: string[]) => {
-            console.log(form.values.tags);
+            console.log(form.values.tags, values, savedTags);
+            setsavedTags([...values]);
             return values;
           }}
           maxDropdownHeight={160}

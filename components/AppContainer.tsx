@@ -168,10 +168,13 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
       header={
         <Header height={60} mb={120}>
           <Container className={headerStyle.classes.header}>
-            <Group>
-              <Image src={Logo} alt="ait logo image" width={40} height={35} />
-              <Title order={5}>AIT Placements</Title>
-            </Group>
+            <Link href="/" style={{ cursor: "pointer" }}>
+              <Group>
+                <Image src={Logo} alt="ait logo image" width={40} height={35} />
+                <Title order={5}>AIT Placements</Title>
+              </Group>
+            </Link>
+
             <Group spacing={5} className={headerStyle.classes.links}>
               {itemsHeader}
               <ActionIcon
