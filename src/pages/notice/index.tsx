@@ -5,6 +5,7 @@ import {
   Card,
   Center,
   Container,
+  createStyles,
   Group,
   MultiSelect,
   SegmentedControl,
@@ -34,6 +35,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
     { value: "ENTC", label: "ENTC" },
     { value: "MECH", label: "MECH" },
   ]);
+  const rteStyles = useRteStyles();
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data } = useSession();
@@ -194,7 +196,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
         <RichTextEditor
           placeholder="Write your notice body here"
           controls={[
-            ["bold", "italic", "underline", "blockquote", "link", "image"],
+            ["bold", "italic", "underline", "blockquote", "link"],
             ["unorderedList", "orderedList"],
             ["h1", "h2", "h3"],
             ["alignLeft", "alignCenter", "alignRight"],
@@ -204,6 +206,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           onChange={(data) => {
             form.setFieldValue("body", data);
           }}
+          classNames={rteStyles.classes}
         />
         <Dropzone
           multiple={true}
@@ -293,11 +296,11 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
             )
           }
         /> */}
-
         <SegmentedControl
           fullWidth
           size="md"
           my="xl"
+          color={theme.fn.lighten(theme.fn.primaryColor(), 0.9)}
           value={form.values.isPublished ? "publish" : "draft"}
           onChange={(data) =>
             form.setFieldValue("isPublished", data == "publish")
@@ -325,7 +328,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           ]}
         />
         <Button type="submit" mt="md" fullWidth>
-          Publish Notice
+          Save Notice to Database
         </Button>
       </form>
     </Container>
@@ -346,3 +349,9 @@ export const getServerSideProps = async (context: any) => {
 interface IPropsCreateNotice {
   id: string;
 }
+
+const useRteStyles = createStyles(() => ({
+  root: {
+    minHeight: 150,
+  },
+}));

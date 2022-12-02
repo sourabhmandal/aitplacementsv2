@@ -5,6 +5,7 @@ import {
   Card,
   Center,
   Container,
+  createStyles,
   Group,
   MultiSelect,
   SegmentedControl,
@@ -48,6 +49,8 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const noticeDetailQuery = trpc.useQuery(["notice.notice-detail", { id }]);
   const updateNoticeMutation = trpc.useMutation("notice.update-notice");
   const [savedTags, setsavedTags] = useState<string[]>([]);
+
+  const rteStyles = useRteStyles();
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
@@ -295,7 +298,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
         <RichTextEditor
           placeholder="Write your notice body here"
           controls={[
-            ["bold", "italic", "underline", "blockquote", "link", "image"],
+            ["bold", "italic", "underline", "blockquote", "link"],
             ["unorderedList", "orderedList"],
             ["h1", "h2", "h3"],
             ["alignLeft", "alignCenter", "alignRight"],
@@ -305,6 +308,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
           onChange={(data) => {
             form.setFieldValue("body", data);
           }}
+          classNames={rteStyles.classes}
         />
         <Dropzone
           multiple={false}
@@ -363,6 +367,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
           fullWidth
           size="md"
           my="xl"
+          style={{ background: theme.fn.lighten(theme.fn.primaryColor(), 0.7) }}
           value={form.values.isPublished ? "publish" : "draft"}
           onChange={(data) =>
             form.setFieldValue("isPublished", data == "publish")
@@ -390,7 +395,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
           ]}
         />
         <Button type="submit" mt="md" fullWidth>
-          Publish Notice
+          Save Notice to Database
         </Button>
       </form>
     </Container>
@@ -431,3 +436,9 @@ interface IPropsCreateNotice {
   id: string;
   useremail: string;
 }
+
+const useRteStyles = createStyles(() => ({
+  root: {
+    minHeight: 150,
+  },
+}));

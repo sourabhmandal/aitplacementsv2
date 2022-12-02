@@ -1,4 +1,5 @@
 import { ColorScheme, MantineProvider } from "@mantine/core";
+import { useColorScheme } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 import { NotificationsProvider } from "@mantine/notifications";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
@@ -16,7 +17,7 @@ import { AppRouter } from "./api/server/routes/app.router";
 
 //@ts-ignore
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
-  const [theme, setTheme] = useState<ColorScheme>("light");
+  const [theme, setTheme] = useState<ColorScheme>(useColorScheme());
 
   useEffect(() => {
     setTheme(localStorage.getItem("theme") as ColorScheme);
@@ -24,7 +25,6 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
-
   }, [theme]);
 
   return (
