@@ -132,7 +132,6 @@ export const deleteNoticeOutput = z.object({
 export type DeleteNoticeOutput = z.TypeOf<typeof deleteNoticeOutput>;
 
 export const userNoticeInput = z.object({
-  email: z.string().email(),
   pageNos: z.number(),
 });
 export type UserNoticeInput = z.TypeOf<typeof userNoticeInput>;

@@ -1,5 +1,7 @@
 import { Notice } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { TRPCError } from "@trpc/server";
+import { unstable_getServerSession } from "next-auth";
 import {
   changeNoticeStatusInput,
   ChangeNoticeStatusOutput,
@@ -23,6 +25,7 @@ import {
   userNoticeOutput,
 } from "../../../../schema/notice.schema";
 import { REACT_APP_AWS_BUCKET_ID } from "../../../../utils/constants";
+import { authOptions } from "../../auth/[...nextauth]";
 import { createRouter } from "../createRouter";
 import { handlePrismaError } from "../errors/prisma.errors";
 import { S3Instance } from "../s3_instance";
@@ -41,40 +44,60 @@ export const noticeRouter = createRouter()
         title: "",
       };
       try {
-        const dbUser = await ctx?.prisma.user.findFirst({
-          where: {
-            email: adminEmail,
-          },
-        });
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
-          const dbRespNotice: Notice = await ctx?.prisma?.notice?.create({
-            data: {
-              id: id,
-              body: body,
-              title: title,
-              isPublished: isPublished,
-              tags: tags,
-              attachments: {
-                create: attachments,
-              },
-              admin: {
-                connect: {
-                  email: adminEmail,
+        if (
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          const dbUser = await ctx?.prisma.user.findFirst({
+            where: {
+              email: adminEmail,
+            },
+          });
+
+          if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
+            const dbRespNotice: Notice = await ctx?.prisma?.notice?.create({
+              data: {
+                id: id,
+                body: body,
+                title: title,
+                isPublished: isPublished,
+                tags: tags,
+                attachments: {
+                  create: attachments,
+                },
+                admin: {
+                  connect: {
+                    email: adminEmail,
+                  },
                 },
               },
-            },
-            include: {
-              admin: true,
-              attachments: true,
-            },
-          })!;
+              include: {
+                admin: true,
+                attachments: true,
+              },
+            })!;
 
-          response = {
-            adminEmail: dbRespNotice.adminEmailFk,
-            isPublished: dbRespNotice.isPublished,
-            title: dbRespNotice.title,
-          };
+            response = {
+              adminEmail: dbRespNotice.adminEmailFk,
+              isPublished: dbRespNotice.isPublished,
+              title: dbRespNotice.title,
+            };
+          }
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
         }
       } catch (e) {
         console.log(e);
@@ -99,59 +122,79 @@ export const noticeRouter = createRouter()
         title: "",
       };
       try {
-        const dbUser = await ctx?.prisma.user.findFirst({
-          where: {
-            email: adminEmail,
-          },
-        });
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
-          // upsert attachments first
-          attachments.forEach(async (atth) => {
-            await ctx?.prisma.attachments.upsert({
-              create: {
-                fileid: atth.fileid,
-                filename: atth.filename,
-                filetype: atth.filetype,
-                noticeid: id,
-              },
-              update: {
-                fileid: atth.fileid,
-                filename: atth.filename,
-                filetype: atth.filetype,
-                noticeid: id,
-              },
-              where: {
-                fileid: atth.fileid,
-              },
-              select: {
-                fileid: true,
-              },
-            });
-          });
-          // upsert notice
-          const dbRespNotice: Notice = await ctx?.prisma?.notice?.update({
+        if (
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          const dbUser = await ctx?.prisma.user.findFirst({
             where: {
-              id: id,
+              email: adminEmail,
             },
-            data: {
-              body: body,
-              title: title,
-              isPublished: isPublished,
-              tags: tags,
-              admin: {
-                connect: {
-                  email: adminEmail,
+          });
+
+          if (dbUser?.role == "ADMIN" || dbUser?.role == "SUPER_ADMIN") {
+            // upsert attachments first
+            attachments.forEach(async (atth) => {
+              await ctx?.prisma.attachments.upsert({
+                create: {
+                  fileid: atth.fileid,
+                  filename: atth.filename,
+                  filetype: atth.filetype,
+                  noticeid: id,
+                },
+                update: {
+                  fileid: atth.fileid,
+                  filename: atth.filename,
+                  filetype: atth.filetype,
+                  noticeid: id,
+                },
+                where: {
+                  fileid: atth.fileid,
+                },
+                select: {
+                  fileid: true,
+                },
+              });
+            });
+            // upsert notice
+            const dbRespNotice: Notice = await ctx?.prisma?.notice?.update({
+              where: {
+                id: id,
+              },
+              data: {
+                body: body,
+                title: title,
+                isPublished: isPublished,
+                tags: tags,
+                admin: {
+                  connect: {
+                    email: adminEmail,
+                  },
                 },
               },
-            },
-          })!;
+            })!;
 
-          response = {
-            adminEmail: dbRespNotice.adminEmailFk,
-            isPublished: dbRespNotice.isPublished,
-            title: dbRespNotice.title,
-          };
+            response = {
+              adminEmail: dbRespNotice.adminEmailFk,
+              isPublished: dbRespNotice.isPublished,
+              title: dbRespNotice.title,
+            };
+          }
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
         }
       } catch (e) {
         console.log(e);
@@ -184,53 +227,71 @@ export const noticeRouter = createRouter()
         attachments: atthUrls,
       };
       try {
-        const dbRespNotice = await ctx?.prisma.notice.findUnique({
-          where: {
-            id: id,
-          },
-          include: {
-            admin: {
-              select: {
-                email: true,
-                name: true,
-              },
-            },
-            attachments: {
-              select: {
-                fileid: true,
-                filename: true,
-                filetype: true,
-              },
-            },
-          },
-        });
-        if (dbRespNotice?.attachments && dbRespNotice.attachments.length > 0) {
-          for (let file of dbRespNotice.attachments) {
-            const url = await S3Instance.GetS3().getSignedUrlPromise(
-              "getObject",
-              {
-                Bucket: REACT_APP_AWS_BUCKET_ID,
-                Key: `${file.fileid}`,
-              }
-            );
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-            atthUrls.push({
-              url: url,
-              name: file.filename,
-              type: file.filetype,
-            });
+        if (session?.user.userStatus == "ACTIVE") {
+          const dbRespNotice = await ctx?.prisma.notice.findUnique({
+            where: {
+              id: id,
+            },
+            include: {
+              admin: {
+                select: {
+                  email: true,
+                  name: true,
+                },
+              },
+              attachments: {
+                select: {
+                  fileid: true,
+                  filename: true,
+                  filetype: true,
+                },
+              },
+            },
+          });
+          if (
+            dbRespNotice?.attachments &&
+            dbRespNotice.attachments.length > 0
+          ) {
+            for (let file of dbRespNotice.attachments) {
+              const url = await S3Instance.GetS3().getSignedUrlPromise(
+                "getObject",
+                {
+                  Bucket: REACT_APP_AWS_BUCKET_ID,
+                  Key: `${file.fileid}`,
+                }
+              );
+
+              atthUrls.push({
+                url: url,
+                name: file.filename,
+                type: file.filetype,
+              });
+            }
           }
-        }
 
-        if (dbRespNotice) {
-          response = {
-            id: dbRespNotice.id,
-            title: dbRespNotice.title,
-            tags: dbRespNotice.tags,
-            body: dbRespNotice.body,
-            isPublished: dbRespNotice.isPublished,
-            attachments: atthUrls,
-          };
+          if (dbRespNotice) {
+            response = {
+              id: dbRespNotice.id,
+              title: dbRespNotice.title,
+              tags: dbRespNotice.tags,
+              body: dbRespNotice.body,
+              isPublished: dbRespNotice.isPublished,
+              attachments: atthUrls,
+            };
+          }
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message: "only active users are allowed to make the request",
+          });
         }
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
@@ -253,32 +314,47 @@ export const noticeRouter = createRouter()
         totalNotice: 0,
       };
       try {
-        const noticeLenght: number = await ctx?.prisma.notice.count({
-          where: {
-            isPublished: true,
-          },
-        })!;
-        const dbResp: Notice[] = await ctx?.prisma.notice.findMany({
-          where: {
-            isPublished: true,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          skip: (pageNos - 1) * 10,
-          take: 10,
-        })!;
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        const resp: NoticeMetadata[] = dbResp.map((data) => {
-          return {
-            id: data.id,
-            title: data.title,
-            admin: data.adminEmailFk,
-            tags: data.tags,
-            updatedAt: data.updatedAt,
-          };
-        });
-        response = { totalNotice: noticeLenght, notices: resp };
+        if (session?.user.userStatus == "ACTIVE") {
+          const noticeLenght: number = await ctx?.prisma.notice.count({
+            where: {
+              isPublished: true,
+            },
+          })!;
+          const dbResp: Notice[] = await ctx?.prisma.notice.findMany({
+            where: {
+              isPublished: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            skip: (pageNos - 1) * 10,
+            take: 10,
+          })!;
+
+          const resp: NoticeMetadata[] = dbResp.map((data) => {
+            return {
+              id: data.id,
+              title: data.title,
+              admin: data.adminEmailFk,
+              tags: data.tags,
+              updatedAt: data.updatedAt,
+            };
+          });
+          response = { totalNotice: noticeLenght, notices: resp };
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message: "only active users are allowed to make the request",
+          });
+        }
       } catch (e) {
         console.log(e);
         if (e instanceof PrismaClientKnownRequestError) {
@@ -298,41 +374,61 @@ export const noticeRouter = createRouter()
         notice: [],
       };
       try {
-        const dbNoticeCount = await ctx?.prisma.notice.count({
-          where: {
-            adminEmailFk: input.email,
-          },
-        })!;
-        const dbNotice = await ctx?.prisma.notice.findMany({
-          where: {
-            adminEmailFk: input.email,
-          },
-          select: {
-            id: true,
-            isPublished: true,
-            title: true,
-            updatedAt: true,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          take: 10,
-          skip: (input.pageNos - 1) * 10,
-        });
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        const respNotice: NoticeMetadata[] = dbNotice?.map(
-          (notice): NoticeMetadata => ({
-            id: notice.id,
-            title: notice.title,
-            updatedAt: notice.updatedAt,
-            isPublished: notice.isPublished,
-          })
-        )!;
+        if (
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          const dbNoticeCount = await ctx?.prisma.notice.count({
+            where: {
+              adminEmailFk: session.user.email,
+            },
+          })!;
+          const dbNotice = await ctx?.prisma.notice.findMany({
+            where: {
+              adminEmailFk: session.user.email,
+            },
+            select: {
+              id: true,
+              isPublished: true,
+              title: true,
+              updatedAt: true,
+            },
+            orderBy: {
+              updatedAt: "desc",
+            },
+            take: 10,
+            skip: (input.pageNos - 1) * 10,
+          });
 
-        response = {
-          notice: respNotice,
-          count: dbNoticeCount,
-        };
+          const respNotice: NoticeMetadata[] = dbNotice?.map(
+            (notice): NoticeMetadata => ({
+              id: notice.id,
+              title: notice.title,
+              updatedAt: notice.updatedAt,
+              isPublished: notice.isPublished,
+            })
+          )!;
+
+          response = {
+            notice: respNotice,
+            count: dbNoticeCount,
+          };
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
+        }
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           handlePrismaError(e);
@@ -350,15 +446,35 @@ export const noticeRouter = createRouter()
         isPublished: false,
       };
       try {
-        await ctx?.prisma.notice.update({
-          data: {
-            isPublished: input.isPublished,
-          },
-          where: {
-            id: input.noticeId,
-          },
-        });
-        response = { isPublished: input.isPublished };
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
+
+        if (
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          await ctx?.prisma.notice.update({
+            data: {
+              isPublished: input.isPublished,
+            },
+            where: {
+              id: input.noticeId,
+            },
+          });
+          response = { isPublished: input.isPublished };
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
+        }
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           handlePrismaError(e);
@@ -374,49 +490,69 @@ export const noticeRouter = createRouter()
     async resolve({ ctx, input }) {
       let response: DeleteNoticeOutput = { isDeleted: false };
       try {
-        const noticeToDelete = await ctx?.prisma.notice.findFirst({
-          where: {
-            id: input.noticeId,
-          },
-          select: {
-            _count: true,
-            attachments: true,
-          },
-        });
-
-        // delete all attachment
-        await ctx?.prisma.notice.update({
-          where: {
-            id: input.noticeId,
-          },
-          data: {
-            attachments: {
-              deleteMany: {},
-            },
-          },
-        });
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
         if (
-          noticeToDelete?._count.attachments &&
-          noticeToDelete?._count.attachments > 0
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
         ) {
-          console.log("files found");
-          for (let file of noticeToDelete?.attachments) {
-            await S3Instance.DeleteFileByFileId(file.fileid);
+          const noticeToDelete = await ctx?.prisma.notice.findFirst({
+            where: {
+              id: input.noticeId,
+            },
+            select: {
+              _count: true,
+              attachments: true,
+            },
+          });
+
+          // delete all attachment
+          await ctx?.prisma.notice.update({
+            where: {
+              id: input.noticeId,
+            },
+            data: {
+              attachments: {
+                deleteMany: {},
+              },
+            },
+          });
+
+          if (
+            noticeToDelete?._count.attachments &&
+            noticeToDelete?._count.attachments > 0
+          ) {
+            console.log("files found");
+            for (let file of noticeToDelete?.attachments) {
+              await S3Instance.DeleteFileByFileId(file.fileid);
+            }
           }
+
+          await ctx?.prisma.notice.delete({
+            where: {
+              id: input.noticeId,
+            },
+            select: {
+              _count: true,
+              attachments: true,
+            },
+          });
+
+          response = { isDeleted: true };
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
         }
-
-        await ctx?.prisma.notice.delete({
-          where: {
-            id: input.noticeId,
-          },
-          select: {
-            _count: true,
-            attachments: true,
-          },
-        });
-
-        response = { isDeleted: true };
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           handlePrismaError(e);
@@ -435,36 +571,51 @@ export const noticeRouter = createRouter()
         totalNotice: 0,
       };
       try {
-        const searchProcessedString = input.searchText
-          .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
-          .replace(/ +(?= )/g, "") // remove multiple whitespace
-          .trim(); // remove starting and trailing spaces
-        //.replaceAll(" ", " | "); // add or
-        const dbNoticeSearch = await ctx?.prisma.notice.findMany({
-          where: {
-            title: {
-              contains: searchProcessedString,
-              mode: "insensitive",
-            },
-          },
-        });
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
-          (notice) => {
-            return {
-              admin: notice.adminEmailFk,
-              id: notice.id,
-              tags: notice.tags,
-              title: notice.title,
-              updatedAt: notice.updatedAt,
-            };
-          }
-        )!;
-        response = {
-          notices: metaNoticeData,
-          totalNotice: dbNoticeSearch?.length || 0,
-        };
-        return response;
+        if (session?.user.userStatus == "ACTIVE") {
+          const searchProcessedString = input.searchText
+            .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
+            .replace(/ +(?= )/g, "") // remove multiple whitespace
+            .trim(); // remove starting and trailing spaces
+          //.replaceAll(" ", " | "); // add or
+          const dbNoticeSearch = await ctx?.prisma.notice.findMany({
+            where: {
+              title: {
+                contains: searchProcessedString,
+                mode: "insensitive",
+              },
+            },
+          });
+
+          const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
+            (notice) => {
+              return {
+                admin: notice.adminEmailFk,
+                id: notice.id,
+                tags: notice.tags,
+                title: notice.title,
+                updatedAt: notice.updatedAt,
+              };
+            }
+          )!;
+          response = {
+            notices: metaNoticeData,
+            totalNotice: dbNoticeSearch?.length || 0,
+          };
+          return response;
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message: "only active users are allowed to make the request",
+          });
+        }
       } catch (e) {
         if (e instanceof PrismaClientKnownRequestError) {
           handlePrismaError(e);

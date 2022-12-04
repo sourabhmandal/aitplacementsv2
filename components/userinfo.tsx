@@ -8,7 +8,7 @@ import {
 } from "@mantine/core";
 import { openConfirmModal } from "@mantine/modals";
 import { Role } from "@prisma/client";
-import { IconAt, IconPhoneCall, IconStatusChange } from "@tabler/icons";
+import { IconAt, IconStatusChange } from "@tabler/icons";
 import { useBackendApiContext } from "../context/backend.api";
 
 interface UserInfoIconsProps {
@@ -16,7 +16,6 @@ interface UserInfoIconsProps {
   avatar: string;
   name: string;
   title: string;
-  phone: string;
   userstatus: string;
   email: string;
   sessionUserRole: Role;
@@ -26,7 +25,7 @@ export function UserInfo({
   avatar,
   name,
   title,
-  phone,
+
   userstatus,
   email,
   sessionUserRole,
@@ -70,13 +69,6 @@ export function UserInfo({
           <IconAt stroke={1.5} size={16} className={classes.icon} />
           <Text size="xs" color="dimmed">
             {email}
-          </Text>
-        </Group>
-
-        <Group noWrap spacing={10} mt={5}>
-          <IconPhoneCall stroke={1.5} size={16} className={classes.icon} />
-          <Text size="xs" color="dimmed">
-            {phone}
           </Text>
         </Group>
         <Group>

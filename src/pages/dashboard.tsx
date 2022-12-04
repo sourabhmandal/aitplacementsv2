@@ -9,6 +9,7 @@ import {
   Text,
   UnstyledButton,
 } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import {
   openSpotlight,
   registerSpotlightActions,
@@ -58,7 +59,12 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
 
   useEffect(() => {
-    if (userstatus === "INVITED") router.push("/onboard");
+    if (userstatus === "INACTIVE") {
+      showNotification({
+        message: "Your account have been deactivated, please contact admin",
+        title: "Account Inactive",
+      });
+    } else if (userstatus === "INVITED") router.push("/onboard");
   }, [router, userstatus]);
   const clientSession = useSession();
 

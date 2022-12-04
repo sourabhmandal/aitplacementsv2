@@ -33,17 +33,11 @@ export const userListOutput = z.array(
     id: z.string().uuid(),
     name: z.string(),
     email: z.string().email(),
-    phoneNo: z.string(),
     role: ACCEPTED_ROLES,
     userStatus: ACCEPTED_USER_STATUS,
   })
 );
 export type UserListOutput = z.TypeOf<typeof userListOutput>;
-
-export const userDetailsInput = z.object({
-  email: z.string().email(),
-});
-export type UserDetailsInput = z.TypeOf<typeof userDetailsInput>;
 
 export const userDetailsOutput = z.object({
   name: z.string(),

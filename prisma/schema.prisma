@@ -1,15 +1,17 @@
 datasource db {
   provider = "postgres"
   url      = env("DATABASE_URL")
+  extensions = [pgcrypto]
 }
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch"]
+  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+
 }
 
 model User {
-  id             String          @id @default(uuid())
+  id             String          @id @default(dbgenerated("(gen_random_uuid()::TEXT)"))
   name           String?
   email          String          @unique
   phoneNo        String?
@@ -60,7 +62,7 @@ model Notice {
 }
 
 model Attachments {
-  fileid String @id @unique
+  fileid   String @id @unique
   notice   Notice @relation(fields: [noticeid], references: [id])
   noticeid String
   filename String

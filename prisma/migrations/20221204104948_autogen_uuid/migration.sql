@@ -1,3 +1,6 @@
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'STUDENT');
 
@@ -6,7 +9,7 @@ CREATE TYPE "UserStatus" AS ENUM ('INACTIVE', 'ACTIVE', 'INVITED');
 
 -- CreateTable
 CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL DEFAULT (gen_random_uuid()::TEXT),
     "name" TEXT,
     "email" TEXT NOT NULL,
     "phoneNo" TEXT,

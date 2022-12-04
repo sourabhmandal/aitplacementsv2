@@ -166,7 +166,6 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
             avatar={"https://picsum.photos/200"}
             name={item.name}
             title={item.role}
-            phone={item.phoneNo}
             email={item.email}
             userstatus={item.userStatus}
             sessionUserRole={userrole}
