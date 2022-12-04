@@ -9,8 +9,10 @@ import {
   Table,
   Text,
 } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconAward, IconUserOff } from "@tabler/icons";
+import { useEffect } from "react";
 import { UserListOutput } from "../src/schema/user.schema";
 import { trpc } from "../src/utils/trpc";
 
@@ -22,7 +24,7 @@ interface IPropsUserinfoList {
 function Userinfolist({ students, userrole }: IPropsUserinfoList): JSX.Element {
   const userInfoListStyle = useUserinfoListStyle();
 
-  const rows = students?.map((item) => (
+  const rows = students?.users.map((item) => (
     <tr key={item.id}>
       <td>
         <Group spacing="sm">
@@ -86,8 +88,45 @@ function UserListInfoActionMenu({
   sessionUserRole: Role;
   id: string;
 }) {
-  const deleteUserMutation = trpc.useMutation("user.delete-user");
-  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
+  const trpcContext = trpc.useContext();
+
+  const deleteUserMutation = trpc.useMutation("user.delete-user", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Deleted",
+        message: `${data.email} deleted successfully`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Role Changed",
+        message: `${data.email} role successfully changed to ${data.role}`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
+
+  useEffect(() => {
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [deleteUserMutation.isSuccess, changeUserRoleMutation.isSuccess]);
+
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>

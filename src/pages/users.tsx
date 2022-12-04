@@ -1,18 +1,22 @@
 import {
   Button,
+  Center,
   Container,
   Divider,
   Group,
   Loader,
   Modal,
+  Pagination,
   Radio,
   SimpleGrid,
+  Space,
   Text,
   TextInput,
   Title,
   UnstyledButton,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { showNotification } from "@mantine/notifications";
 import {
   openSpotlight,
   registerSpotlightActions,
@@ -48,28 +52,54 @@ export type UsersTableProps = {
 const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [openInviteUserModal, setopenInviteUserModal] =
     useState<boolean>(false);
+  const [pageNos, setpageNos] = useState(1);
+  const [totalPages, settotalPages] = useState(1);
+  const trpcContext = trpc.useContext();
 
   const adminListQuery = trpc.useQuery([
     "user.get-user-list",
-    { role: "ADMIN" },
+    { role: "ADMIN", pageNos: pageNos },
   ]);
 
   const studentListQuery = trpc.useQuery([
     "user.get-user-list",
-    { role: "STUDENT" },
+    { role: "STUDENT", pageNos: pageNos },
   ]);
 
   const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
-  const inviteUserMutation = trpc.useMutation("user.invite-user");
-  const deleteUserMutation = trpc.useMutation("user.delete-user");
-  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
+  const inviteUserMutation = trpc.useMutation("user.invite-user", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "Invitation email sent",
+        message: `${data.email} invited to the platform`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
 
   useEffect(() => {
-    adminListQuery?.refetch();
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [inviteUserMutation.isSuccess]);
+
+  useEffect(() => {
+    if (studentListQuery?.isSuccess) {
+      // setnoticeList(studentListQuery?.data?.notice!);
+      let pages = Math.ceil(studentListQuery?.data?.count! / 10);
+      if (pages == 0) pages += 1;
+      settotalPages(pages);
+    }
   }, [
-    changeUserRoleMutation.isSuccess,
-    deleteUserMutation.isSuccess,
-    inviteUserMutation.isSuccess,
+    studentListQuery?.isSuccess,
+    studentListQuery?.data?.users,
+    studentListQuery?.data?.count,
+    studentListQuery?.isFetched,
   ]);
 
   const clientSession = useSession();
@@ -84,20 +114,22 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   // for searching
   useEffect(() => {
     if (searchUserByEmail.isSuccess) {
-      //@ts-ignore
-      const search: SpotlightAction[] = searchUserByEmail.data.map((el) => {
-        return {
-          title: el.email,
-          icon: <IconUserCircle />,
-          onTrigger: () => {
-            // TODO
-            // redirect to user profile page
-            // without showing phone number
-          },
-          description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
-        };
-      });
-      registerSpotlightActions(search);
+      const searchResult: SpotlightAction[] = searchUserByEmail.data.users.map(
+        (el, idx: number) => {
+          return {
+            id: idx.toString(),
+            title: el.email,
+            icon: <IconUserCircle />,
+            onTrigger: () => {
+              // TODO
+              // redirect to user profile page
+              // without showing phone number
+            },
+            description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
+          };
+        }
+      );
+      registerSpotlightActions(searchResult);
     }
   }, [searchUserByEmail.isSuccess, searchUserByEmail.data]);
   // debounce searching
@@ -167,7 +199,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
         <></>
       )}
       <SimpleGrid spacing="xl" cols={2}>
-        {adminListQuery?.data?.map((item) => (
+        {adminListQuery?.data?.users.map((item) => (
           <UserInfo
             key={item.id}
             id={item.id}
@@ -180,7 +212,17 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
           />
         ))}
       </SimpleGrid>
+      <Space h="lg" />
       <Userinfolist students={studentListQuery?.data} userrole={userrole} />
+
+      <Center my="md">
+        <Pagination
+          total={totalPages}
+          color="orange"
+          page={pageNos}
+          onChange={setpageNos}
+        />
+      </Center>
     </Container>
   );
 };
@@ -189,6 +231,13 @@ export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
   const inviteUserMutation = trpc.useMutation("user.invite-user");
+
+  const trpcContext = trpc.useContext();
+
+  useEffect(() => {
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [inviteUserMutation.isSuccess]);
+
   const form = useForm<InviteUserInput>({
     initialValues: {
       email: "",
@@ -223,7 +272,6 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
           placeholder="hello@gmail.com"
           value={form.values.email}
           onChange={(e) => {
-            console.log(e.target.value);
             form.setFieldValue("email", e.target.value);
           }}
           error={form.errors.email}

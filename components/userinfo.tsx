@@ -7,6 +7,7 @@ import {
   Text,
 } from "@mantine/core";
 import { openConfirmModal } from "@mantine/modals";
+import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconAt, IconStatusChange } from "@tabler/icons";
 import { trpc } from "../src/utils/trpc";
@@ -32,9 +33,40 @@ export function UserInfo({
   id,
 }: UserInfoIconsProps): JSX.Element {
   const { classes } = useStyles();
+  const trpcContext = trpc.useContext();
 
-  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
-  const deleteUserMutation = trpc.useMutation("user.delete-user");
+  const deleteUserMutation = trpc.useMutation("user.delete-user", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Deleted",
+        message: `${data.email} deleted successfully`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Role Changed",
+        message: `${data.email} role successfully changed to ${data.role}`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
 
   const openModal = (email: string) =>
     openConfirmModal({

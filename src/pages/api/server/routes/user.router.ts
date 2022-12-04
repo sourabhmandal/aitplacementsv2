@@ -187,15 +187,18 @@ export const userRouter = createRouter()
     input: userListInput,
     output: userListOutput,
     async resolve({ ctx, input }) {
-      let response: UserListOutput = [
-        {
-          email: "",
-          id: "",
-          name: "",
-          role: "STUDENT",
-          userStatus: "INACTIVE",
-        },
-      ];
+      let response: UserListOutput = {
+        users: [
+          {
+            email: "",
+            id: "",
+            name: "",
+            role: "STUDENT",
+            userStatus: "INACTIVE",
+          },
+        ],
+        count: 0,
+      };
       try {
         // only admin is allowed to invite users
         const session = await unstable_getServerSession(
@@ -205,6 +208,11 @@ export const userRouter = createRouter()
         );
 
         if (session?.user.userStatus == "ACTIVE") {
+          const userListLen: number = await ctx?.prisma.user.count({
+            where: {
+              role: input.role as ROLES,
+            },
+          })!;
           const dbStudent = await ctx?.prisma.user.findMany({
             where: {
               role: input.role as ROLES,
@@ -215,16 +223,20 @@ export const userRouter = createRouter()
               name: true,
               role: true,
               userStatus: true,
+              _count: true,
             },
+            skip: (input.pageNos - 1) * 10,
+            take: 10,
           });
 
-          response = dbStudent?.map((item) => ({
+          response.users = dbStudent?.map((item) => ({
             id: item.id,
             email: item.email,
             name: item.name || "N.A",
             role: item.role as ROLES,
             userStatus: item.userStatus as USER_STATUS,
           }))!;
+          response.count = userListLen;
         } else {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -408,7 +420,7 @@ export const userRouter = createRouter()
     input: userSearchInput,
     output: userListOutput,
     async resolve({ ctx, input }) {
-      let response: UserListOutput = [];
+      let response: UserListOutput = { users: [], count: 0 };
       try {
         // only admin is allowed to invite users
         const session = await unstable_getServerSession(
@@ -433,7 +445,7 @@ export const userRouter = createRouter()
             },
           });
 
-          response = dbUserSearch?.map((user) => {
+          response.users = dbUserSearch?.map((user) => {
             return {
               email: user.email,
               id: user.id,
@@ -443,6 +455,7 @@ export const userRouter = createRouter()
               userStatus: user.userStatus,
             };
           })!;
+          response.count = dbUserSearch?.length!;
         } else {
           throw new TRPCError({
             code: "UNAUTHORIZED",

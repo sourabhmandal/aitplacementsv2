@@ -25,18 +25,22 @@ export type UpdateUserOutput = z.TypeOf<typeof updateUserOutput>;
 
 export const userListInput = z.object({
   role: ACCEPTED_ROLES,
+  pageNos: z.number(),
 });
 export type UserListInput = z.TypeOf<typeof userListInput>;
 
-export const userListOutput = z.array(
-  z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    email: z.string().email(),
-    role: ACCEPTED_ROLES,
-    userStatus: ACCEPTED_USER_STATUS,
-  })
-);
+export const userListOutput = z.object({
+  users: z.array(
+    z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().email(),
+      role: ACCEPTED_ROLES,
+      userStatus: ACCEPTED_USER_STATUS,
+    })
+  ),
+  count: z.number(),
+});
 export type UserListOutput = z.TypeOf<typeof userListOutput>;
 
 export const userDetailsOutput = z.object({
