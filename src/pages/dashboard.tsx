@@ -35,7 +35,7 @@ import { useEffect, useState } from "react";
 import MyNotice from "../../components/dashboard/MyNotice";
 import PublishedNotices from "../../components/dashboard/PublishedNotices";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
-import { useBackendApiContext } from "../../context/backend.api";
+import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsDashboard {
@@ -54,7 +54,6 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   const searchedNotice: SpotlightAction[] = [];
   const isAdmin = userrole == "ADMIN";
   const router = useRouter();
-  const backend = useBackendApiContext();
   const [noticeId, setnoticeId] = useState<string>("");
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
 
@@ -73,11 +72,23 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     if (clientSession.status == "unauthenticated") router.push("/login");
   }, [router, clientSession.status]);
 
+  const searchNoticeByTitle = trpc.useMutation(
+    "notice.search-notice-by-title",
+    {
+      onError: (e) => {
+        showNotification({
+          message: e.message,
+          title: e.data?.code,
+        });
+      },
+    }
+  );
+
   // for searching
   useEffect(() => {
-    if (backend?.searchNoticeByTitle.isSuccess) {
-      const search: SpotlightAction[] =
-        backend?.searchNoticeByTitle.data.notices.map((el) => {
+    if (searchNoticeByTitle.isSuccess) {
+      const search: SpotlightAction[] = searchNoticeByTitle.data.notices.map(
+        (el) => {
           return {
             title: el.title,
             icon: <IconNotebook />,
@@ -87,14 +98,15 @@ const Dashboard: NextPage<IPropsDashboard> = ({
             },
             keywords: el.tags,
           };
-        });
+        }
+      );
       registerSpotlightActions(search);
     }
-  }, [backend?.searchNoticeByTitle.isSuccess]);
+  }, [searchNoticeByTitle.isSuccess, searchNoticeByTitle?.data?.notices]);
   // debounce searching
   const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
     (query) => {
-      backend?.searchNoticeByTitle.mutate({
+      searchNoticeByTitle.mutate({
         searchText: query,
       });
     },

@@ -9,7 +9,7 @@ import {
 import { openConfirmModal } from "@mantine/modals";
 import { Role } from "@prisma/client";
 import { IconAt, IconStatusChange } from "@tabler/icons";
-import { useBackendApiContext } from "../context/backend.api";
+import { trpc } from "../src/utils/trpc";
 
 interface UserInfoIconsProps {
   id: string;
@@ -32,7 +32,9 @@ export function UserInfo({
   id,
 }: UserInfoIconsProps): JSX.Element {
   const { classes } = useStyles();
-  const backend = useBackendApiContext();
+
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
+  const deleteUserMutation = trpc.useMutation("user.delete-user");
 
   const openModal = (email: string) =>
     openConfirmModal({
@@ -42,7 +44,7 @@ export function UserInfo({
       ),
       labels: { confirm: "Confirm", cancel: "Cancel" },
       onConfirm: () =>
-        backend?.changeUserRoleMutation.mutate({
+        changeUserRoleMutation.mutate({
           id: id,
           role: "STUDENT",
         }),
@@ -88,8 +90,8 @@ export function UserInfo({
                 size="xs"
                 mt={4}
                 disabled={
-                  backend?.deleteUserMutation.isLoading ||
-                  backend?.changeUserRoleMutation.isLoading ||
+                  deleteUserMutation.isLoading ||
+                  changeUserRoleMutation.isLoading ||
                   sessionUserRole !== "ADMIN"
                 }
                 onClick={() => openModal(email)}

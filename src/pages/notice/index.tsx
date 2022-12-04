@@ -24,9 +24,9 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { v4 } from "uuid";
 import RichTextEditor from "../../../components/RichText";
-import { useBackendApiContext } from "../../../context/backend.api";
 import { CreateNoticeInput } from "../../schema/notice.schema";
 import { createAWSFilePath } from "../../utils/constants";
+import { trpc } from "../../utils/trpc";
 
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   const [tags, setTags] = useState<MultiSelectItem[]>([
@@ -39,7 +39,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data } = useSession();
-  const backend = useBackendApiContext();
   const router = useRouter();
   const theme = useMantineTheme();
 
@@ -62,12 +61,16 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
     },
   });
 
+  const createPresignedUrlMutation = trpc.useMutation(
+    "attachment.create-presigned-url"
+  );
+  const createNoticeMutation = trpc.useMutation("notice.create-notice");
+
   const uploadFile = async (targetFile: FileWithPath) => {
     const filepath = `${form.values.id}/${targetFile.name}`;
-    const { url, fields } =
-      (await backend?.createPresignedUrlMutation.mutateAsync({
-        filepath: filepath,
-      })) as any;
+    const { url, fields } = (await createPresignedUrlMutation.mutateAsync({
+      filepath: filepath,
+    })) as any;
 
     const data = {
       ...fields,
@@ -104,7 +107,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
     await acceptedFileList.map((file) => uploadFile(file));
 
     // add unique ids list as attachments
-    await backend?.createNoticeMutation.mutate(formdata);
+    await createNoticeMutation.mutate(formdata);
     router.push("/dashboard");
   };
 

@@ -20,8 +20,8 @@ import { unstable_getServerSession } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { useBackendApiContext } from "../../context/backend.api";
 import { UpdateUserInput } from "../schema/user.schema";
+import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IPropsOnboard {
@@ -47,7 +47,6 @@ const Onboard: NextPage<IPropsOnboard> = ({
     } else if (userstatus === "ACTIVE") router.push("/dashboard");
   }, [userstatus, router]);
 
-  const backend = useBackendApiContext();
   const clientSession = useSession();
 
   useEffect(() => {
@@ -55,7 +54,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
     if (clientSession.status == "unauthenticated") router.push("/login");
   }, [router, clientSession.status]);
 
-  const onboardUserMutation = backend?.onboardUserMutation;
+  const onboardUserMutation = trpc.useMutation("user.onboard-user");
 
   const yearList: (string | SelectItem)[] = [
     { value: "3", label: "3rd Year" },

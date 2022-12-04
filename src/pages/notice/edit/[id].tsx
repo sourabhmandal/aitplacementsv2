@@ -28,7 +28,6 @@ import { Session, unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextEditor from "../../../../components/RichText";
-import { useBackendApiContext } from "../../../../context/backend.api";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
@@ -42,7 +41,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
     { value: "MECH", label: "MECH" },
   ]);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
-  const backend = useBackendApiContext();
   const router = useRouter();
   const theme = useMantineTheme();
   const trpcContext = trpc.useContext();
@@ -51,6 +49,9 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const [savedTags, setsavedTags] = useState<string[]>([]);
 
   const rteStyles = useRteStyles();
+  const createPresignedUrlMutation = trpc.useMutation(
+    "attachment.create-presigned-url"
+  );
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
@@ -104,10 +105,9 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
 
   const uploadFile = async (targetFile: FileWithPath) => {
     const filepath = `${form.values.id}/${targetFile.name}`;
-    const { url, fields } =
-      (await backend?.createPresignedUrlMutation.mutateAsync({
-        filepath: filepath,
-      })) as any;
+    const { url, fields } = (await createPresignedUrlMutation.mutateAsync({
+      filepath: filepath,
+    })) as any;
 
     const data = {
       ...fields,

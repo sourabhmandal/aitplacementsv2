@@ -29,9 +29,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
-import { useBackendApiContext } from "../../context/backend.api";
 import { InviteUserInput } from "../schema/admin.schema";
 import { ROLES } from "../schema/constants";
+import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IUserProps {
@@ -45,21 +45,31 @@ export type UsersTableProps = {
   role: string;
   userStatus: string;
 };
-
 const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [openInviteUserModal, setopenInviteUserModal] =
     useState<boolean>(false);
-  const backend = useBackendApiContext();
-  const adminListQuery = backend?.userListQuery("ADMIN");
-  const studentListQuery = backend?.userListQuery("STUDENT");
+
+  const adminListQuery = trpc.useQuery([
+    "user.get-user-list",
+    { role: "ADMIN" },
+  ]);
+
+  const studentListQuery = trpc.useQuery([
+    "user.get-user-list",
+    { role: "STUDENT" },
+  ]);
+
+  const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
+  const inviteUserMutation = trpc.useMutation("user.invite-user");
+  const deleteUserMutation = trpc.useMutation("user.delete-user");
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
 
   useEffect(() => {
     adminListQuery?.refetch();
-    studentListQuery?.refetch();
   }, [
-    backend?.changeUserRoleMutation.isSuccess,
-    backend?.deleteUserMutation.isSuccess,
-    backend?.inviteUserMutation.isSuccess,
+    changeUserRoleMutation.isSuccess,
+    deleteUserMutation.isSuccess,
+    inviteUserMutation.isSuccess,
   ]);
 
   const clientSession = useSession();
@@ -73,29 +83,27 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 
   // for searching
   useEffect(() => {
-    if (backend?.searchUserByEmail.isSuccess) {
+    if (searchUserByEmail.isSuccess) {
       //@ts-ignore
-      const search: SpotlightAction[] = backend?.searchUserByEmail.data.map(
-        (el) => {
-          return {
-            title: el.email,
-            icon: <IconUserCircle />,
-            onTrigger: () => {
-              // TODO
-              // redirect to user profile page
-              // without showing phone number
-            },
-            description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
-          };
-        }
-      );
+      const search: SpotlightAction[] = searchUserByEmail.data.map((el) => {
+        return {
+          title: el.email,
+          icon: <IconUserCircle />,
+          onTrigger: () => {
+            // TODO
+            // redirect to user profile page
+            // without showing phone number
+          },
+          description: `Role: ${el.role.toUpperCase()}, Status: ${el.userStatus.toUpperCase()}`,
+        };
+      });
       registerSpotlightActions(search);
     }
-  }, [backend?.searchUserByEmail.isSuccess]);
+  }, [searchUserByEmail.isSuccess, searchUserByEmail.data]);
   // debounce searching
   const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
     (query) => {
-      backend?.searchUserByEmail.mutate({
+      searchUserByEmail.mutate({
         searchText: query,
       });
     },
@@ -180,8 +188,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
-  const backend = useBackendApiContext();
-
+  const inviteUserMutation = trpc.useMutation("user.invite-user");
   const form = useForm<InviteUserInput>({
     initialValues: {
       email: "",
@@ -197,7 +204,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
   });
   const handleInviteSubmit = (data: InviteUserInput) => {
     // call query to invite user
-    backend?.inviteUserMutation.mutate(data);
+    inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
     setopenInviteUserModal(false);
   };
@@ -234,7 +241,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
           <Radio value={"ADMIN"} label="Admin" />
         </Radio.Group>
         <Button fullWidth type="submit" mt="md">
-          {backend?.inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
+          {inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
         </Button>
       </form>
     </Modal>

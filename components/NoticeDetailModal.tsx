@@ -18,7 +18,7 @@ import { IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useMediaQuery } from "@mantine/hooks";
 import { IconFileUpload } from "@tabler/icons";
 import { Dispatch, SetStateAction, useState } from "react";
-import { useBackendApiContext } from "../context/backend.api";
+import { trpc } from "../src/utils/trpc";
 
 function NoticeDetailModal({
   noticeId,
@@ -30,8 +30,10 @@ function NoticeDetailModal({
   setOpenNoticeDialog: Dispatch<SetStateAction<boolean>>;
 }): JSX.Element {
   const matches = useMediaQuery("(min-width: 600px)");
-  const backend = useBackendApiContext();
-  const noticeDetailQuery = backend?.noticeDetailQuery(noticeId);
+  const noticeDetailQuery = trpc.useQuery([
+    "notice.notice-detail",
+    { id: noticeId },
+  ]);
   const theme = useMantineTheme();
   const [imageOverlayVisibleFor, setimageOverlayVisibleFor] =
     useState<string>("");

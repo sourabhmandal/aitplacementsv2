@@ -11,7 +11,6 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import superjson from "superjson";
 import AppContainer from "../../components/AppContainer";
-import { BackendApi } from "../../context/backend.api";
 import { HOSTED_VERCEL_URL } from "../utils/constants";
 import { AppRouter } from "./api/server/routes/app.router";
 
@@ -49,11 +48,9 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
         >
           <ModalsProvider>
             <NotificationsProvider limit={3}>
-              <BackendApi>
-                <AppContainer theme={theme} setTheme={setTheme}>
-                  <Component {...pageProps} />
-                </AppContainer>
-              </BackendApi>
+              <AppContainer theme={theme} setTheme={setTheme}>
+                <Component {...pageProps} />
+              </AppContainer>
             </NotificationsProvider>
           </ModalsProvider>
         </MantineProvider>

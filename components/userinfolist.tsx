@@ -11,8 +11,8 @@ import {
 } from "@mantine/core";
 import { Role } from "@prisma/client";
 import { IconAward, IconUserOff } from "@tabler/icons";
-import { useBackendApiContext } from "../context/backend.api";
 import { UserListOutput } from "../src/schema/user.schema";
+import { trpc } from "../src/utils/trpc";
 
 interface IPropsUserinfoList {
   students: UserListOutput | undefined;
@@ -86,14 +86,15 @@ function UserListInfoActionMenu({
   sessionUserRole: Role;
   id: string;
 }) {
-  const backend = useBackendApiContext();
+  const deleteUserMutation = trpc.useMutation("user.delete-user");
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role");
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
         <Button
           disabled={
-            backend?.deleteUserMutation.isLoading ||
-            backend?.changeUserRoleMutation.isLoading ||
+            deleteUserMutation.isLoading ||
+            changeUserRoleMutation.isLoading ||
             sessionUserRole == "STUDENT"
           }
         >
@@ -107,7 +108,7 @@ function UserListInfoActionMenu({
           <Menu.Item
             icon={<IconAward size={14} />}
             onClick={() =>
-              backend?.changeUserRoleMutation.mutate({
+              changeUserRoleMutation.mutate({
                 id: id,
                 role: "ADMIN",
               })
@@ -125,7 +126,7 @@ function UserListInfoActionMenu({
         {sessionUserRole == "ADMIN" ? (
           <>
             <Menu.Item
-              onClick={() => backend?.deleteUserMutation.mutate({ id: id })}
+              onClick={() => deleteUserMutation.mutate({ id: id })}
               color="red"
               icon={<IconUserOff size={14} />}
             >

@@ -15,7 +15,6 @@ import { Role } from "@prisma/client";
 import { IconNotes, IconNotesOff, IconPencil, IconTrashX } from "@tabler/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useBackendApiContext } from "../../context/backend.api";
 import { NoticeMetadata } from "../../src/schema/notice.schema";
 import { trpc } from "../../src/utils/trpc";
 
@@ -33,16 +32,22 @@ function MyNotice({
   const userInfoListStyle = useNoticeListStyle();
   const [pageNos, setpageNos] = useState(1);
   const [totalPages, settotalPages] = useState(1);
-  const backend = useBackendApiContext();
   const [noticeList, setnoticeList] = useState<NoticeMetadata[]>([]);
   const trpcContext = trpc.useContext();
 
-  const userNoticesQuery = backend?.myNoticeQuery(useremail!, pageNos);
+  const changeNoticeStatusMutation = trpc.useMutation(
+    "notice.change-notice-status"
+  );
+  const deleteNoticeMutation = trpc.useMutation("notice.delete-notice");
+  const userNoticesQuery = trpc.useQuery([
+    "notice.my-notices",
+    { pageNos: pageNos },
+  ]);
   const updateNoticeStatus = async (
     shouldPublish: boolean,
     noticeId: string
   ) => {
-    await backend?.changeNoticeStatusMutation.mutate({
+    await changeNoticeStatusMutation.mutate({
       isPublished: shouldPublish,
       noticeId: noticeId,
     });
@@ -51,10 +56,7 @@ function MyNotice({
   useEffect(() => {
     trpcContext.invalidateQueries("notice.my-notices");
     trpcContext.invalidateQueries("notice.published-notice-list");
-  }, [
-    backend?.changeNoticeStatusMutation.isSuccess,
-    backend?.deleteNoticeMutation.isSuccess,
-  ]);
+  }, [changeNoticeStatusMutation.isSuccess, deleteNoticeMutation.isSuccess]);
 
   useEffect(() => {
     if (userNoticesQuery?.isSuccess) {
@@ -170,7 +172,7 @@ function MyNotice({
                           variant="outline"
                           color="red"
                           onClick={() =>
-                            backend?.deleteNoticeMutation.mutate({
+                            deleteNoticeMutation.mutate({
                               noticeId: item.id,
                             })
                           }
