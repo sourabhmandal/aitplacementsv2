@@ -24,4 +24,14 @@ export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID;
 
 export const JWT_TOKEN = process.env.JWT_TOKEN!;
 
-export let HOSTED_VERCEL_URL = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+export let HOSTED_VERCEL_URL =
+  process.env.NEXT_PUBLIC_VERCEL_ENV == "production"
+    ? `https://v2.aitplacements.in`
+    : process.env.NEXT_PUBLIC_VERCEL_ENV == "preview"
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : `http://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+
+
+export function createAWSFilePath(noticeId: string, filename: string): string {
+  return `${noticeId}/${filename}`;
+}

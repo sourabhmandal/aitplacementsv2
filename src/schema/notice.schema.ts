@@ -93,6 +93,21 @@ export const createPresignedUrlInput = z.object({
 });
 export type CreatePresignedUrlInput = z.TypeOf<typeof createPresignedUrlInput>;
 
+export const deleteNoticeByFileIdInput = z.object({
+  noticeId: z.string().uuid(),
+  filename: z.string(),
+});
+export type DeleteNoticeByFileIdInput = z.TypeOf<
+  typeof deleteNoticeByFileIdInput
+>;
+
+export const deleteNoticeByFileIdOutput = z.object({
+  isDeleted: z.boolean(),
+});
+export type DeleteNoticeByFileIdOutput = z.TypeOf<
+  typeof deleteNoticeByFileIdOutput
+>;
+
 export const changeNoticeStatusInput = z.object({
   noticeId: z.string().uuid(),
   isPublished: z.boolean(),
@@ -117,7 +132,6 @@ export const deleteNoticeOutput = z.object({
 export type DeleteNoticeOutput = z.TypeOf<typeof deleteNoticeOutput>;
 
 export const userNoticeInput = z.object({
-  email: z.string().email(),
   pageNos: z.number(),
 });
 export type UserNoticeInput = z.TypeOf<typeof userNoticeInput>;

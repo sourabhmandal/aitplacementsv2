@@ -1,13 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../utils/prisma";
 
-export function createContext({
-  req,
-  res,
-}: {
+interface ICreateContext {
   req: NextApiRequest;
   res: NextApiResponse;
-}) {
+}
+export function createContext({ req, res }: ICreateContext) {
   // enable CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
   // another common pattern

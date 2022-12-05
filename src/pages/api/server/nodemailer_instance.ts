@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { HOSTED_VERCEL_URL } from "../../../utils/constants";
 
 class NodeMailerInstance {
   private transporter: Transporter<SMTPTransport.SentMessageInfo> | null;
@@ -20,12 +21,12 @@ class NodeMailerInstance {
 
     // create reusable transporter object using the default SMTP transport
     this.transporter = await nodemailer.createTransport({
-      host: "smtp.ethereal.email",
+      host: "smtp.office365.com",
       port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: testAccount.user, // generated ethereal user
-        pass: testAccount.pass, // generated ethereal password
+        user: process.env.OUTLOOK_EMAIL, // generated ethereal user
+        pass: process.env.OUTLOOK_PASSWORD, // generated ethereal password
       },
     });
 
@@ -33,50 +34,22 @@ class NodeMailerInstance {
     return this.transporter;
   }
 
-  async SendVerifyEmail(verifyToken: string, userEmail: string) {
-    if (this.transporter) {
-      const verifyUrl = new URL(
-        `verify/${verifyToken}`,
-        "http://localhost:3000/"
-      );
-      // send mail with defined transport object
-      let info = await this.transporter.sendMail({
-        from: '"Ait Placements 👻" <aitplacements@gmail.com>', // sender address
-        to: userEmail, // list of receivers
-        subject: "Verify registration to ait-placements portal", // Subject line
-        html: `<b>Welcome to AIT Placements</b></br>
-        Please click on the link to register into AIT placement link: <a target="_blank" href="${verifyUrl.href}">${verifyUrl.href}</a>`, // html body
-      });
-
-      console.log("Message sent: %s", info.messageId);
-      // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-      // Preview only available when sending through an Ethereal account
-      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-      // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-    } else {
-      console.log("Email transporter not instantiated");
-    }
-  }
   async SendUserInviteEmail(email: string, role: string) {
-    let onboardUrl = new URL("/login", "http://localhost:3000");
+    let onboardUrl = new URL("/auth/login", HOSTED_VERCEL_URL);
     if (this.transporter) {
       // send mail with defined transport object
       let info = await this.transporter.sendMail({
-        from: '"Ait Placements 👻" <aitplacements@gmail.com>', // sender address
+        from: "Ait Placements Invitation", // sender address
         to: email, // list of receivers
         subject: "Invitation for onboarding on AIT Placements", // Subject line
         html: `<b>Welcome to AIT Placements</b></br>
           <p>You have been invited as an <b>${role}</b> in ait placements</p></br></br>
-          Please click on the link to onboard yourself into AIT placement link: <a target="_blank" href="${onboardUrl.href}">${onboardUrl.href}</a>`, // html body
+          Please follow the link to login to the platform: <a target="_blank" href="${onboardUrl.href}">${onboardUrl.href}</a>
+          and onboard yourself into AIT placement`, // html body
       });
 
       console.log("Message sent: %s", info.messageId);
       // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-      // Preview only available when sending through an Ethereal account
-      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-      // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
     } else {
       console.log("Email transporter not instantiated");
     }

@@ -6,7 +6,9 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
-import Ait1Image from "../../assets/ait1.jpg";
+import Ait1Image1 from "../../assets/ait1.jpg";
+import Ait1Image2 from "../../assets/ait2.jpg";
+import Ait1Image3 from "../../assets/ait3.png";
 
 const Home: NextPage = () => {
   const autoplay = useRef(Autoplay({ delay: 2000 }));
@@ -23,7 +25,7 @@ const Home: NextPage = () => {
   return (
     <Carousel
       withIndicators
-      height={600}
+      height={800}
       loop
       draggable
       plugins={[autoplay.current]}
@@ -32,10 +34,13 @@ const Home: NextPage = () => {
       classNames={carouselStyle.classes}
     >
       <Carousel.Slide>
-        <Image src={Ait1Image} height={830} alt="ait" />
+        <Image src={Ait1Image1} layout="fill" objectFit="cover" alt="ait" />
       </Carousel.Slide>
       <Carousel.Slide>
-        <Image src={Ait1Image} height={830} alt="ait" />
+        <Image src={Ait1Image2} layout="fill" objectFit="cover" alt="ait" />
+      </Carousel.Slide>
+      <Carousel.Slide>
+        <Image src={Ait1Image3} layout="fill" objectFit="cover" alt="ait" />
       </Carousel.Slide>
     </Carousel>
   );
@@ -56,7 +61,6 @@ const useCarouselStyle = createStyles((_theme, _params, getRef) => ({
         opacity: 1,
       },
     },
-    backgroundColor: "#D4F1F4",
   },
   indicator: {
     width: 12,

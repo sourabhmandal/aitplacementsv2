@@ -1,18 +1,22 @@
 import {
   Button,
+  Center,
   Container,
   Divider,
   Group,
   Loader,
   Modal,
+  Pagination,
   Radio,
   SimpleGrid,
+  Space,
   Text,
   TextInput,
   Title,
   UnstyledButton,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { showNotification } from "@mantine/notifications";
 import {
   openSpotlight,
   registerSpotlightActions,
@@ -22,16 +26,16 @@ import {
 import { Role } from "@prisma/client";
 import { IconSearch, IconUserCircle } from "@tabler/icons";
 import { debounce, DebouncedFunc } from "lodash";
-import { GetStaticPropsResult, NextPage } from "next";
+import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../../components/userinfo";
 import Userinfolist from "../../components/userinfolist";
-import { useBackendApiContext } from "../../context/backend.api";
 import { InviteUserInput } from "../schema/admin.schema";
 import { ROLES } from "../schema/constants";
+import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 interface IUserProps {
@@ -45,21 +49,57 @@ export type UsersTableProps = {
   role: string;
   userStatus: string;
 };
-
 const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [openInviteUserModal, setopenInviteUserModal] =
     useState<boolean>(false);
-  const backend = useBackendApiContext();
-  const adminListQuery = backend?.userListQuery("ADMIN");
-  const studentListQuery = backend?.userListQuery("STUDENT");
+  const [pageNos, setpageNos] = useState(1);
+  const [totalPages, settotalPages] = useState(1);
+  const trpcContext = trpc.useContext();
+
+  const adminListQuery = trpc.useQuery([
+    "user.get-user-list",
+    { role: "ADMIN", pageNos: pageNos },
+  ]);
+
+  const studentListQuery = trpc.useQuery([
+    "user.get-user-list",
+    { role: "STUDENT", pageNos: pageNos },
+  ]);
+
+  const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
+  const inviteUserMutation = trpc.useMutation("user.invite-user", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "Invitation email sent",
+        message: `${data.email} invited to the platform`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
 
   useEffect(() => {
-    adminListQuery?.refetch();
-    studentListQuery?.refetch();
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [inviteUserMutation.isSuccess]);
+
+  useEffect(() => {
+    if (studentListQuery?.isSuccess) {
+      // setnoticeList(studentListQuery?.data?.notice!);
+      let pages = Math.ceil(studentListQuery?.data?.count! / 10);
+      if (pages == 0) pages += 1;
+      settotalPages(pages);
+    }
   }, [
-    backend?.changeUserRoleMutation.isSuccess,
-    backend?.deleteUserMutation.isSuccess,
-    backend?.inviteUserMutation.isSuccess,
+    studentListQuery?.isSuccess,
+    studentListQuery?.data?.users,
+    studentListQuery?.data?.count,
+    studentListQuery?.isFetched,
   ]);
 
   const clientSession = useSession();
@@ -68,16 +108,16 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 
   useEffect(() => {
     if (clientSession.status == "loading") return;
-    if (clientSession.status == "unauthenticated") router.push("/login");
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
   // for searching
   useEffect(() => {
-    if (backend?.searchUserByEmail.isSuccess) {
-      //@ts-ignore
-      const search: SpotlightAction[] = backend?.searchUserByEmail.data.map(
-        (el) => {
+    if (searchUserByEmail.isSuccess) {
+      const searchResult: SpotlightAction[] = searchUserByEmail.data.users.map(
+        (el, idx: number) => {
           return {
+            id: idx.toString(),
             title: el.email,
             icon: <IconUserCircle />,
             onTrigger: () => {
@@ -89,13 +129,13 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
           };
         }
       );
-      registerSpotlightActions(search);
+      registerSpotlightActions(searchResult);
     }
-  }, [backend?.searchUserByEmail.isSuccess]);
+  }, [searchUserByEmail.isSuccess, searchUserByEmail.data]);
   // debounce searching
   const handleTextSearch: DebouncedFunc<(query: string) => void> = debounce(
     (query) => {
-      backend?.searchUserByEmail.mutate({
+      searchUserByEmail.mutate({
         searchText: query,
       });
     },
@@ -159,21 +199,29 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
         <></>
       )}
       <SimpleGrid spacing="xl" cols={2}>
-        {adminListQuery?.data?.map((item) => (
+        {adminListQuery?.data?.users.map((item) => (
           <UserInfo
             key={item.id}
             id={item.id}
-            avatar={"https://picsum.photos/200"}
             name={item.name}
             title={item.role}
-            phone={item.phoneNo}
             email={item.email}
             userstatus={item.userStatus}
             sessionUserRole={userrole}
           />
         ))}
       </SimpleGrid>
+      <Space h="lg" />
       <Userinfolist students={studentListQuery?.data} userrole={userrole} />
+
+      <Center my="md">
+        <Pagination
+          total={totalPages}
+          color="orange"
+          page={pageNos}
+          onChange={setpageNos}
+        />
+      </Center>
     </Container>
   );
 };
@@ -181,7 +229,13 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
-  const backend = useBackendApiContext();
+  const inviteUserMutation = trpc.useMutation("user.invite-user");
+
+  const trpcContext = trpc.useContext();
+
+  useEffect(() => {
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [inviteUserMutation.isSuccess]);
 
   const form = useForm<InviteUserInput>({
     initialValues: {
@@ -198,7 +252,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
   });
   const handleInviteSubmit = (data: InviteUserInput) => {
     // call query to invite user
-    backend?.inviteUserMutation.mutate(data);
+    inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
     setopenInviteUserModal(false);
   };
@@ -217,7 +271,6 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
           placeholder="hello@gmail.com"
           value={form.values.email}
           onChange={(e) => {
-            console.log(e.target.value);
             form.setFieldValue("email", e.target.value);
           }}
           error={form.errors.email}
@@ -235,7 +288,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
           <Radio value={"ADMIN"} label="Admin" />
         </Radio.Group>
         <Button fullWidth type="submit" mt="md">
-          {backend?.inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
+          {inviteUserMutation.isLoading ? <Loader /> : "Send Invite"}
         </Button>
       </form>
     </Modal>
@@ -244,7 +297,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
 
 export const getServerSideProps = async (
   context: any
-): Promise<GetStaticPropsResult<IUserProps>> => {
+): Promise<GetServerSidePropsResult<IUserProps>> => {
   let session = await unstable_getServerSession(
     context.req,
     context.res,
@@ -253,11 +306,20 @@ export const getServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: "/auth/login",
         permanent: false,
       },
     };
   }
+
+  if (session.user.userStatus == "INVITED")
+    return {
+      redirect: {
+        destination: "/onboard",
+        permanent: false,
+      },
+    };
+    
   return {
     props: {
       userrole: session.user.role,

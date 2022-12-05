@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Badge,
   Button,
   createStyles,
@@ -9,10 +8,13 @@ import {
   Table,
   Text,
 } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconAward, IconUserOff } from "@tabler/icons";
-import { useBackendApiContext } from "../context/backend.api";
+import Avatar from "boring-avatars";
+import { useEffect } from "react";
 import { UserListOutput } from "../src/schema/user.schema";
+import { trpc } from "../src/utils/trpc";
 
 interface IPropsUserinfoList {
   students: UserListOutput | undefined;
@@ -22,11 +24,16 @@ interface IPropsUserinfoList {
 function Userinfolist({ students, userrole }: IPropsUserinfoList): JSX.Element {
   const userInfoListStyle = useUserinfoListStyle();
 
-  const rows = students?.map((item) => (
+  const rows = students?.users.map((item) => (
     <tr key={item.id}>
       <td>
         <Group spacing="sm">
-          <Avatar size={40} src={"https://picsum.photos/200"} radius={40} />
+          <Avatar
+            size={40}
+            name={item.email}
+            variant="beam"
+            colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+          />
           <div>
             <Text size="sm" weight={500}>
               {item.name}
@@ -86,14 +93,52 @@ function UserListInfoActionMenu({
   sessionUserRole: Role;
   id: string;
 }) {
-  const backend = useBackendApiContext();
+  const trpcContext = trpc.useContext();
+
+  const deleteUserMutation = trpc.useMutation("user.delete-user", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Deleted",
+        message: `${data.email} deleted successfully`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
+  const changeUserRoleMutation = trpc.useMutation("user.change-user-role", {
+    onSuccess: (data) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: "User Role Changed",
+        message: `${data.email} role successfully changed to ${data.role}`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.invalidateQueries("user.get-user-list");
+      return showNotification({
+        title: error.data?.code,
+        message: error.message,
+      });
+    },
+  });
+
+  useEffect(() => {
+    trpcContext.invalidateQueries("user.get-user-list");
+  }, [deleteUserMutation.isSuccess, changeUserRoleMutation.isSuccess]);
+
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
         <Button
           disabled={
-            backend?.deleteUserMutation.isLoading ||
-            backend?.changeUserRoleMutation.isLoading ||
+            deleteUserMutation.isLoading ||
+            changeUserRoleMutation.isLoading ||
             sessionUserRole == "STUDENT"
           }
         >
@@ -107,7 +152,7 @@ function UserListInfoActionMenu({
           <Menu.Item
             icon={<IconAward size={14} />}
             onClick={() =>
-              backend?.changeUserRoleMutation.mutate({
+              changeUserRoleMutation.mutate({
                 id: id,
                 role: "ADMIN",
               })
@@ -125,7 +170,7 @@ function UserListInfoActionMenu({
         {sessionUserRole == "ADMIN" ? (
           <>
             <Menu.Item
-              onClick={() => backend?.deleteUserMutation.mutate({ id: id })}
+              onClick={() => deleteUserMutation.mutate({ id: id })}
               color="red"
               icon={<IconUserOff size={14} />}
             >

@@ -1,4 +1,5 @@
 import { ColorScheme, MantineProvider } from "@mantine/core";
+import { useColorScheme } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 import { NotificationsProvider } from "@mantine/notifications";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
@@ -10,13 +11,12 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import superjson from "superjson";
 import AppContainer from "../../components/AppContainer";
-import { BackendApi } from "../../context/backend.api";
 import { HOSTED_VERCEL_URL } from "../utils/constants";
 import { AppRouter } from "./api/server/routes/app.router";
 
 //@ts-ignore
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
-  const [theme, setTheme] = useState<ColorScheme>("light");
+  const [theme, setTheme] = useState<ColorScheme>(useColorScheme());
 
   useEffect(() => {
     setTheme(localStorage.getItem("theme") as ColorScheme);
@@ -29,8 +29,8 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <>
       <Head>
-        <title>Page title</title>
-        <link rel="shortcut icon" href="/favicon.svg" />
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
         <meta
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width"
@@ -48,11 +48,9 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
         >
           <ModalsProvider>
             <NotificationsProvider limit={3}>
-              <BackendApi>
-                <AppContainer theme={theme} setTheme={setTheme}>
-                  <Component {...pageProps} />
-                </AppContainer>
-              </BackendApi>
+              <AppContainer theme={theme} setTheme={setTheme}>
+                <Component {...pageProps} />
+              </AppContainer>
             </NotificationsProvider>
           </ModalsProvider>
         </MantineProvider>

@@ -1,6 +1,7 @@
 import aws from "aws-sdk";
 import {
   REACT_APP_AWS_ACCESS_KEY,
+  REACT_APP_AWS_BUCKET_ID,
   REACT_APP_AWS_REGION,
   REACT_APP_AWS_SECRET_ACCESS_KEY,
 } from "../../../utils/constants";
@@ -46,6 +47,30 @@ class AwsLibInstance {
   //     } else console.log(err);
   //   }
   // }
+
+  async DeleteFileByFileId(fileid: string) {
+    this.s3_instance.deleteObject(
+      {
+        Bucket: REACT_APP_AWS_BUCKET_ID!,
+        Key: `${fileid}`,
+      },
+      (err, data) => {
+        console.log(data, err);
+      }
+    );
+  }
+
+  async UploadFile(fileid: string) {
+    this.s3_instance.deleteObject(
+      {
+        Bucket: REACT_APP_AWS_BUCKET_ID!,
+        Key: `${fileid}`,
+      },
+      (err, data) => {
+        console.log(data, err);
+      }
+    );
+  }
 }
 
 export const S3Instance = new AwsLibInstance();
