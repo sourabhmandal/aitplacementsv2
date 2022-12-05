@@ -101,7 +101,7 @@ const Profile: NextPage<IPropsOnboard> = ({
       <Group spacing="sm">
         <Avatar
           size={120}
-          name={useremail}
+          name={useremail?.toString()}
           variant="beam"
           square
           colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
