@@ -5,7 +5,6 @@ import {
   NumberInput,
   Paper,
   Select,
-  SelectItem,
   Space,
   Stack,
   Text,
@@ -20,7 +19,8 @@ import { unstable_getServerSession } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { UpdateUserInput } from "../schema/user.schema";
+import { branchList, yearList } from "../constants";
+import { OnboardUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -51,49 +51,40 @@ const Onboard: NextPage<IPropsOnboard> = ({
 
   useEffect(() => {
     if (clientSession.status == "loading") return;
-    if (clientSession.status == "unauthenticated") router.push("/login");
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
   const onboardUserMutation = trpc.useMutation("user.onboard-user");
 
-  const yearList: (string | SelectItem)[] = [
-    { value: "3", label: "3rd Year" },
-    { value: "4", label: "4th Year" },
-  ];
-  const branchList: (string | SelectItem)[] = [
-    { value: "COMP", label: "Computer Science" },
-    { value: "IT", label: "Information Technology" },
-    { value: "ENTC", label: "Electronics and Telecommunication" },
-    { value: "MECH", label: "Mechanical" },
-    { value: "MECH-ME", label: "Mechnical (Masters)" },
-  ];
-  const { values, errors, setFieldValue, onSubmit } = useForm<UpdateUserInput>({
-    initialValues: {
-      name: "",
-      email: useremail || "",
-      regNo: undefined,
-      year: "3",
-      branch: "COMP",
-      phoneNo: undefined,
-    },
-
-    validate: {
-      name: (val: string) =>
-        /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-      regNo: (val: number) => {
-        if (val < 10000 && val > 99999)
-          return "please enter your valid 5 digit registration number";
-        else "";
+  const { values, errors, setFieldValue, onSubmit } = useForm<OnboardUserInput>(
+    {
+      initialValues: {
+        name: "",
+        email: useremail || "",
+        regNo: undefined,
+        year: "3",
+        branch: "COMP",
+        phoneNo: undefined,
       },
-      phoneNo: (val: number) =>
-        /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
-          ? null
-          : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
-    },
-  });
 
-  const handleFormSubmit = async (data: UpdateUserInput) => {
-    const reqData: UpdateUserInput = {
+      validate: {
+        name: (val: string) =>
+          /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
+        regNo: (val: number) => {
+          if (val < 10000 && val > 99999)
+            return "please enter your valid 5 digit registration number";
+          else "";
+        },
+        phoneNo: (val: string) =>
+          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
+            ? null
+            : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
+      },
+    }
+  );
+
+  const handleFormSubmit = async (data: OnboardUserInput) => {
+    const reqData: OnboardUserInput = {
       name: data.name,
       email: useremail || "",
       year: data.year,
@@ -132,7 +123,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
           <Space h={"md"} />
 
           <form
-            onSubmit={onSubmit((data: UpdateUserInput) =>
+            onSubmit={onSubmit((data: OnboardUserInput) =>
               handleFormSubmit(data)
             )}
           >
@@ -194,7 +185,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
               <NumberInput
                 label="Phone Number"
                 placeholder="93797-39879"
-                value={values.phoneNo}
+                value={parseInt(values.phoneNo!)}
                 icon={
                   <Text size={13.7} ml={8} mt={0.3}>
                     +91
@@ -208,7 +199,9 @@ const Onboard: NextPage<IPropsOnboard> = ({
                     : ""
                 }
                 hideControls
-                onChange={(event: number) => setFieldValue("phoneNo", event)}
+                onChange={(event: number) =>
+                  setFieldValue("phoneNo", event.toString())
+                }
                 error={errors.phoneNo}
               />
             </Stack>
@@ -249,7 +242,7 @@ export const getServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: "/auth/login",
         permanent: false,
       },
     };

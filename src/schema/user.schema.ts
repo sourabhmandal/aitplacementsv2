@@ -6,13 +6,29 @@ import {
   ACCEPTED_YEAR,
 } from "./constants";
 
-export const updateUserInput = z.object({
+export const onboardUserInput = z.object({
   email: z.string().email(), // to search the user to update
   name: z.string(),
   regNo: z.number().optional(),
   year: ACCEPTED_YEAR.optional(),
   branch: ACCEPTED_BRANCHES.optional(),
-  phoneNo: z.number().optional(),
+  phoneNo: z.string().optional(),
+});
+export type OnboardUserInput = z.TypeOf<typeof onboardUserInput>;
+
+export const onboardUserOutput = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  role: ACCEPTED_ROLES,
+});
+export type OnboardUserOutput = z.TypeOf<typeof onboardUserOutput>;
+
+export const updateUserInput = z.object({
+  name: z.string(),
+  regNo: z.number().optional(),
+  year: ACCEPTED_YEAR.optional(),
+  branch: ACCEPTED_BRANCHES.optional(),
+  phoneNo: z.string().optional(),
 });
 export type UpdateUserInput = z.TypeOf<typeof updateUserInput>;
 
@@ -54,7 +70,7 @@ export const userDetailsOutput = z.object({
     .object({
       branch: z.string(),
       registrationNumber: z.number(),
-      year: z.number(),
+      year: ACCEPTED_YEAR,
     })
     .optional(),
 });

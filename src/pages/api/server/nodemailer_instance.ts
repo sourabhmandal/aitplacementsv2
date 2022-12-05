@@ -59,7 +59,7 @@ class NodeMailerInstance {
     }
   }
   async SendUserInviteEmail(email: string, role: string) {
-    let onboardUrl = new URL("/login", "http://localhost:3000");
+    let onboardUrl = new URL("/auth/login", "http://localhost:3000");
     if (this.transporter) {
       // send mail with defined transport object
       let info = await this.transporter.sendMail({

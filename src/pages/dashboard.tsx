@@ -67,9 +67,11 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   }, [router, userstatus]);
   const clientSession = useSession();
 
+  const getUserProfile = trpc.useQuery(["user.get-user-profile-details"]);
+
   useEffect(() => {
     if (clientSession.status == "loading") return;
-    if (clientSession.status == "unauthenticated") router.push("/login");
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
   const searchNoticeByTitle = trpc.useMutation(
@@ -127,7 +129,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
       )}
       <Box py="lg">
         <Text weight="bolder" size={25}>
-          Welcome, {username}
+          Welcome, {getUserProfile.data?.name || username}
         </Text>
         <Text size={"xs"} color="dimmed">
           {useremail}
@@ -242,7 +244,7 @@ export const getServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: "/auth/login",
         permanent: false,
       },
     };

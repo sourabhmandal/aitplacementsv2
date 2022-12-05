@@ -121,7 +121,7 @@ const AuthError: NextPage<{}> = () => {
           {displayedError?.message}
         </Text>
         <Group position="center">
-          <Link href="/login" passHref>
+          <Link href="/auth/login" passHref>
             <Button size="md" variant="white">
               Try Login again
             </Button>

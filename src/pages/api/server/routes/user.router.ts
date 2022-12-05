@@ -5,8 +5,9 @@ import {
   inviteUserInput,
   inviteUserOutput,
 } from "../../../../schema/admin.schema";
-import { ROLES, USER_STATUS } from "../../../../schema/constants";
+import { ROLES, USER_STATUS, YEAR } from "../../../../schema/constants";
 import {
+  OnboardUserOutput,
   updateUserInput,
   UpdateUserOutput,
   updateUserOutput,
@@ -33,80 +34,80 @@ export const userRouter = createRouter()
     input: updateUserInput,
     output: updateUserOutput,
     async resolve({ ctx, input }) {
-      let response: UpdateUserOutput = {
+      let response: OnboardUserOutput = {
         email: "",
         name: "",
         role: "STUDENT",
       };
 
       try {
-                // only admin is allowed to invite users
-                const session = await unstable_getServerSession(
-                  ctx?.req!,
-                  ctx?.res!,
-                  authOptions
-                );
-        
-                if (session?.user.userStatus !== "INACTIVE") {
-        const updatedDBUser = await ctx?.prisma.user.update({
-          where: {
-            email: input.email,
-          },
-          data: {
-            name: input.name,
-            phoneNo: input.phoneNo?.toString(),
-            userStatus: "ACTIVE",
-          },
-        })!;
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
 
-        response = {
-          email: updatedDBUser.email,
-          name: updatedDBUser.name!,
-          role: updatedDBUser.role,
-        };
-        if (updatedDBUser?.role == "ADMIN") {
-          await ctx?.prisma.adminDetails.upsert({
+        if (session?.user.userStatus !== "INACTIVE") {
+          const updatedDBUser = await ctx?.prisma.user.update({
             where: {
-              basicDetailsFk: updatedDBUser.id,
+              email: session?.user.email!,
             },
-            update: {},
-            create: {
-              basicDetails: {
-                connect: {
-                  email: input.email,
+            data: {
+              name: input.name,
+              phoneNo: input.phoneNo?.toString(),
+              userStatus: "ACTIVE",
+            },
+          })!;
+
+          response = {
+            email: updatedDBUser.email,
+            name: updatedDBUser.name!,
+            role: updatedDBUser.role,
+          };
+          if (updatedDBUser?.role == "ADMIN") {
+            await ctx?.prisma.adminDetails.upsert({
+              where: {
+                basicDetailsFk: updatedDBUser.id,
+              },
+              update: {},
+              create: {
+                basicDetails: {
+                  connect: {
+                    email: session?.user.email,
+                  },
                 },
               },
-            },
-          });
-        } else if (updatedDBUser?.role == "STUDENT") {
-          await ctx?.prisma.studentDetails.upsert({
-            where: {
-              basicDetailsFk: updatedDBUser.id,
-            },
-            update: {
-              branch: input.branch,
-              registrationNumber: input.regNo,
-              year: parseInt(input.year || "0"),
-            },
-            create: {
-              basicDetails: {
-                connect: {
-                  email: input.email,
-                },
+            });
+          } else if (updatedDBUser?.role == "STUDENT") {
+            await ctx?.prisma.studentDetails.upsert({
+              where: {
+                basicDetailsFk: updatedDBUser.id,
               },
-              branch: input.branch,
-              registrationNumber: input.regNo,
-              year: parseInt(input.year || "0"),
-            },
+              update: {
+                branch: input.branch,
+                registrationNumber: input.regNo,
+                year: parseInt(input.year || "0"),
+              },
+              create: {
+                basicDetails: {
+                  connect: {
+                    email: session?.user.email,
+                  },
+                },
+                branch: input.branch,
+                registrationNumber: input.regNo,
+                year: parseInt(input.year || "0"),
+              },
+            });
+          }
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message: "inactive users are not allowed to make the request",
           });
         }
-      } else {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          cause: "Improper authorization",
-          message: "inactive users are not allowed to make the request",
-        });
-      }
       } catch (err) {
         if (err instanceof PrismaClientKnownRequestError)
           handlePrismaError(err);
@@ -301,7 +302,7 @@ export const userRouter = createRouter()
             response.studentDetails = {
               branch: dbUser.StudentDetails.branch!,
               registrationNumber: dbUser.StudentDetails.registrationNumber,
-              year: dbUser.StudentDetails.year!,
+              year: dbUser.StudentDetails.year?.toString() as YEAR,
             };
           }
         } else {
@@ -399,6 +400,83 @@ export const userRouter = createRouter()
           return {
             email: dbUser.email,
           };
+        } else {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            cause: "Improper authorization",
+            message:
+              "only admins and super admins are allowed to make the request",
+          });
+        }
+      } catch (e) {
+        if (e instanceof PrismaClientKnownRequestError) {
+          handlePrismaError(e);
+        }
+        console.log(e);
+      }
+      return response;
+    },
+  })
+  .mutation("update-user-profile", {
+    input: updateUserInput,
+    output: updateUserOutput,
+    async resolve({ ctx, input }) {
+      let response: UpdateUserOutput = {
+        name: "",
+        role: "STUDENT",
+        email: "",
+      };
+
+      try {
+        // only admin is allowed to invite users
+        const session = await unstable_getServerSession(
+          ctx?.req!,
+          ctx?.res!,
+          authOptions
+        );
+
+        if (
+          (session?.user.role == "ADMIN" ||
+            session?.user.role == "SUPER_ADMIN") &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          await ctx?.prisma.user.update({
+            where: {
+              email: session.user.email,
+            },
+            data: {
+              name: input.name,
+              phoneNo: input.phoneNo,
+            },
+          });
+          response.email = session.user.email;
+          response.role = session.user.role;
+          response.name = input.name;
+          return response;
+        } else if (
+          session?.user.role == "STUDENT" &&
+          session?.user.userStatus == "ACTIVE"
+        ) {
+          await ctx?.prisma.user.update({
+            where: {
+              email: session.user.email,
+            },
+            data: {
+              name: input.name,
+              phoneNo: input.phoneNo,
+              StudentDetails: {
+                update: {
+                  branch: input.branch,
+                  registrationNumber: input.regNo,
+                  year: parseInt(input.year!),
+                },
+              },
+            },
+          });
+          response.email = session.user.email;
+          response.role = session.user.role;
+          response.name = input.name;
+          return response;
         } else {
           throw new TRPCError({
             code: "UNAUTHORIZED",

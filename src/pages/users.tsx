@@ -108,7 +108,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 
   useEffect(() => {
     if (clientSession.status == "loading") return;
-    if (clientSession.status == "unauthenticated") router.push("/login");
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
   // for searching
@@ -307,7 +307,7 @@ export const getServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: "/auth/login",
         permanent: false,
       },
     };

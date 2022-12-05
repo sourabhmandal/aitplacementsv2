@@ -16,11 +16,13 @@ const Login: NextPage = (props: PaperProps) => {
   const [buttonLoading, setButtonLoading] = useState<boolean>(false);
   const { status } = useSession();
 
+  const queryCallbackUrl: string =
+    router.query.callbackUrl?.toString() || "/dashboard";
+
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
+      router.push(queryCallbackUrl);
     }
-    return () => {};
   }, [status, router]);
 
   return (
@@ -46,7 +48,7 @@ const Login: NextPage = (props: PaperProps) => {
             setButtonLoading(true);
             await signIn("azure-ad", {
               redirect: true,
-              callbackUrl: "/login",
+              callbackUrl: "/auth/login",
             });
             setButtonLoading(false);
           }}
@@ -61,6 +63,6 @@ const Login: NextPage = (props: PaperProps) => {
       </Paper>
     </Container>
   );
-};;
+};
 
 export default Login;

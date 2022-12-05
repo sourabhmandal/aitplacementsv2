@@ -115,7 +115,7 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
               icon={<IconArrowBarLeft size={14} />}
               onClick={async () => {
                 await signOut({
-                  callbackUrl: "/login",
+                  callbackUrl: "/auth/login",
                   redirect: false,
                 });
               }}
@@ -138,7 +138,7 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
             Home
           </Button>
         </Link>
-        <Link href={"/login"}>
+        <Link href={"/auth/login"}>
           <Button
             color="orange"
             variant="subtle"
@@ -168,8 +168,8 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
       header={
         <Header height={60} mb={120}>
           <Container className={headerStyle.classes.header}>
-            <Link href="/" style={{ cursor: "pointer" }}>
-              <Group>
+            <Link href="/">
+              <Group style={{ cursor: "pointer" }}>
                 <Image src={Logo} alt="ait logo image" width={40} height={35} />
                 <Title order={5}>AIT Placements</Title>
               </Group>

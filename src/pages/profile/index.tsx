@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   Space,
   Text,
-  Title
+  Title,
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
@@ -18,11 +18,10 @@ import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import MyNotice from "../../components/dashboard/MyNotice";
-import NoticeDetailModal from "../../components/NoticeDetailModal";
-import { showCommingSoon } from "../utils/constants";
-import { trpc } from "../utils/trpc";
-import { authOptions } from "./api/auth/[...nextauth]";
+import MyNotice from "../../../components/dashboard/MyNotice";
+import NoticeDetailModal from "../../../components/NoticeDetailModal";
+import { trpc } from "../../utils/trpc";
+import { authOptions } from "../api/auth/[...nextauth]";
 
 interface IPropsOnboard {
   username: string | null;
@@ -44,6 +43,7 @@ const Profile: NextPage<IPropsOnboard> = ({
   const [baseProfile, setBasicProfile] = useState<ProfileFields[]>([]);
   const [studentProfile, setStudentProfile] = useState<ProfileFields[]>([]);
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
+  const router = useRouter();
 
   const userDetailsQuery = trpc.useQuery(["user.get-user-profile-details"], {
     onError: (err) => {
@@ -79,11 +79,10 @@ const Profile: NextPage<IPropsOnboard> = ({
   });
 
   const clientSession = useSession();
-  const router = useRouter();
 
   useEffect(() => {
     if (clientSession.status == "loading") return;
-    if (clientSession.status == "unauthenticated") router.push("/login");
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
   if (userDetailsQuery.status == "loading")
@@ -113,7 +112,7 @@ const Profile: NextPage<IPropsOnboard> = ({
             ))}
           </SimpleGrid>
 
-          <Button onClick={() => showCommingSoon()} fullWidth>
+          <Button onClick={() => router.push("/profile/edit")} fullWidth>
             Edit Profile
           </Button>
         </Container>
@@ -163,7 +162,7 @@ export const getServerSideProps = async (
   if (!session) {
     return {
       redirect: {
-        destination: "/login",
+        destination: "/auth/login",
         permanent: false,
       },
     };

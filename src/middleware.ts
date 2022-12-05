@@ -8,6 +8,5 @@ export const config = {
     "/users",
     "/notice",
     "/notice/:id",
-    "/((?!api|_next/static|favicon.ico).*)",
   ],
 };
