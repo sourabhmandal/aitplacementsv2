@@ -10,6 +10,7 @@ import {
   NumberInput,
   Paper,
   Select,
+  Space,
   Text,
   TextInput,
   Title,
@@ -192,45 +193,46 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
             defaultValue={userDetailsQuery.data?.role}
             disabled
           />
-
-          {userrole == "STUDENT" && userDetailsQuery.data?.studentDetails ? (
-            <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
-              <Title>Aditional Details</Title>
-              <NumberInput
-                required
-                maxLength={5}
-                hideControls
-                label="Registration Number"
-                placeholder="18255"
-                parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-                value={values.regNo}
-                onChange={(event: number) => setFieldValue("regno", event)}
-                error={errors.regNo}
-              />
-              <Select
-                label="Year"
-                placeholder="Current year"
-                value={values.year}
-                onChange={(val: AvailableYear) => setFieldValue("year", val)}
-                data={yearList}
-                required
-              />
-
-              <Select
-                label="Branch"
-                placeholder="Current Branch"
-                value={values.branch}
-                onChange={(val: AvailableBranch) =>
-                  setFieldValue("branch", val)
-                }
-                data={branchList}
-                required
-              />
-            </Paper>
-          ) : (
-            <></>
-          )}
         </Paper>
+        <Space h="sm" />
+        {userrole == "STUDENT" && userDetailsQuery.data?.studentDetails ? (
+          <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
+            <Title>Aditional Details</Title>
+            <NumberInput
+              required
+              maxLength={5}
+              hideControls
+              label="Registration Number"
+              placeholder="18255"
+              parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
+              value={values.regNo}
+              onChange={(event: number) => setFieldValue("regno", event)}
+              error={errors.regNo}
+              my="lg"
+            />
+            <Select
+              label="Year"
+              placeholder="Current year"
+              value={values.year}
+              onChange={(val: AvailableYear) => setFieldValue("year", val)}
+              data={yearList}
+              required
+              my="lg"
+            />
+
+            <Select
+              label="Branch"
+              placeholder="Current Branch"
+              value={values.branch}
+              onChange={(val: AvailableBranch) => setFieldValue("branch", val)}
+              data={branchList}
+              required
+              my="lg"
+            />
+          </Paper>
+        ) : (
+          <></>
+        )}
         <Center my="xl">
           <Button
             type="submit"
@@ -269,6 +271,14 @@ export const getServerSideProps = async (
       },
     };
   }
+
+  if (session.user.userStatus == "INVITED")
+    return {
+      redirect: {
+        destination: "/onboard",
+        permanent: false,
+      },
+    };
 
   return {
     props: {

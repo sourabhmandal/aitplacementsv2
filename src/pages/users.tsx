@@ -312,6 +312,15 @@ export const getServerSideProps = async (
       },
     };
   }
+
+  if (session.user.userStatus == "INVITED")
+    return {
+      redirect: {
+        destination: "/onboard",
+        permanent: false,
+      },
+    };
+    
   return {
     props: {
       userrole: session.user.role,
