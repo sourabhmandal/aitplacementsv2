@@ -1,20 +1,13 @@
-import {
-  Avatar,
-  Button,
-  createStyles,
-  Group,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Button, createStyles, Group, Stack, Text } from "@mantine/core";
 import { openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconAt, IconStatusChange } from "@tabler/icons";
+import Avatar from "boring-avatars";
 import { trpc } from "../src/utils/trpc";
 
 interface UserInfoIconsProps {
   id: string;
-  avatar: string;
   name: string;
   title: string;
   userstatus: string;
@@ -23,7 +16,6 @@ interface UserInfoIconsProps {
 }
 
 export function UserInfo({
-  avatar,
   name,
   title,
 
@@ -84,7 +76,13 @@ export function UserInfo({
 
   return (
     <Group>
-      <Avatar src={avatar} size={94} radius="md" />
+      <Avatar
+        size={120}
+        name={email}
+        variant="beam"
+        square
+        colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+      />
       <Stack spacing={0}>
         <Text
           size="xs"

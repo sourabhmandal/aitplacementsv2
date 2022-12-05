@@ -36,6 +36,7 @@
     "@trpc/react": "^9.27.4",
     "@trpc/server": "^9.27.4",
     "aws-sdk": "^2.1232.0",
+    "boring-avatars": "^1.7.0",
     "cors": "^2.8.5",
     "dayjs": "^1.11.5",
     "embla-carousel-autoplay": "^7.0.3",

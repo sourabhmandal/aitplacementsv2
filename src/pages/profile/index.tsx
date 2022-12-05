@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Button,
   Center,
   Container,
@@ -13,6 +12,7 @@ import {
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
+import Avatar from "boring-avatars";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
@@ -99,7 +99,13 @@ const Profile: NextPage<IPropsOnboard> = ({
       </Title>
       <Divider mt="sm" mb="xl" />
       <Group spacing="sm">
-        <Avatar src={"https://picsum.photos/200"} size={200} radius="md" />
+        <Avatar
+          size={120}
+          name={useremail}
+          variant="beam"
+          square
+          colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+        />{" "}
         <Container>
           <SimpleGrid cols={2} mb="sm">
             {baseProfile.map((field, id) => (

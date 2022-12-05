@@ -203,7 +203,6 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
           <UserInfo
             key={item.id}
             id={item.id}
-            avatar={"https://picsum.photos/200"}
             name={item.name}
             title={item.role}
             email={item.email}

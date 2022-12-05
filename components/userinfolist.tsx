@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Badge,
   Button,
   createStyles,
@@ -12,6 +11,7 @@ import {
 import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconAward, IconUserOff } from "@tabler/icons";
+import Avatar from "boring-avatars";
 import { useEffect } from "react";
 import { UserListOutput } from "../src/schema/user.schema";
 import { trpc } from "../src/utils/trpc";
@@ -28,7 +28,12 @@ function Userinfolist({ students, userrole }: IPropsUserinfoList): JSX.Element {
     <tr key={item.id}>
       <td>
         <Group spacing="sm">
-          <Avatar size={40} src={"https://picsum.photos/200"} radius={40} />
+          <Avatar
+            size={40}
+            name={item.email}
+            variant="beam"
+            colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+          />
           <div>
             <Text size="sm" weight={500}>
               {item.name}
