@@ -70,11 +70,10 @@ const Onboard: NextPage<IPropsOnboard> = ({
       validate: {
         name: (val: string) =>
           /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-        regNo: (val: number) => {
-          if (val < 10000 && val > 99999)
-            return "please enter your valid 5 digit registration number";
-          else "";
-        },
+        regNo: (val: number) =>
+          val < 10000 && val > 99999
+            ? "please enter your valid 5 digit registration number"
+            : null,
         phoneNo: (val: string) =>
           /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
             ? null
@@ -92,15 +91,12 @@ const Onboard: NextPage<IPropsOnboard> = ({
       regNo: data.regNo,
       phoneNo: data.phoneNo,
     };
+    console.log(data);
     onboardUserMutation?.mutate(reqData);
     await signIn("update-user", {
       email: useremail,
     });
   };
-
-  useEffect(() => {
-    console.log(values.phoneNo);
-  }, [values]);
 
   return (
     <Container
@@ -149,7 +145,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
                   placeholder="18255"
                   parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
                   value={values.regNo}
-                  onChange={(event: number) => setFieldValue("regno", event)}
+                  onChange={(event: number) => setFieldValue("regNo", event)}
                   error={errors.regNo}
                 />
               ) : (
@@ -200,7 +196,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
                 }
                 hideControls
                 onChange={(event: number) =>
-                  setFieldValue("phoneNo", event.toString())
+                  setFieldValue("phoneNo", event ? event.toString() : "")
                 }
                 error={errors.phoneNo}
               />

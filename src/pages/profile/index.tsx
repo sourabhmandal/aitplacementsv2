@@ -138,12 +138,16 @@ const Profile: NextPage<IPropsOnboard> = ({
           setOpenNoticeDialog={setOpenNoticeDialog}
         />
       )}
-      <MyNotice
-        userrole={userrole}
-        useremail={useremail}
-        setnoticeId={setnoticeId}
-        setOpenNoticeDialog={setOpenNoticeDialog}
-      />
+      {userrole == "ADMIN" || userrole == "SUPER_ADMIN" ? (
+        <MyNotice
+          userrole={userrole}
+          useremail={useremail}
+          setnoticeId={setnoticeId}
+          setOpenNoticeDialog={setOpenNoticeDialog}
+        />
+      ) : (
+        <></>
+      )}
       <Space h="xl" />
     </Container>
   );
