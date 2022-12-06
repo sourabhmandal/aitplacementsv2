@@ -35,7 +35,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
   useremail,
   userstatus,
   userrole,
-}) => {
+}: IPropsOnboard) => {
   const router = useRouter();
 
   useEffect(() => {
@@ -70,12 +70,12 @@ const Onboard: NextPage<IPropsOnboard> = ({
       validate: {
         name: (val: string) =>
           /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-        regNo: (val: number) =>
-          val < 10000 && val > 99999
-            ? "please enter your valid 5 digit registration number"
-            : null,
-        phoneNo: (val: string) =>
-          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
+        regNo: (val: number | undefined) => {
+          if (val! < 10000 && val! > 99999)
+            return "please enter your valid 5 digit registration number";
+        },
+        phoneNo: (val: string | undefined) =>
+          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val?.toString()!)
             ? null
             : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
       },
@@ -118,11 +118,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
           </Text>
           <Space h={"md"} />
 
-          <form
-            onSubmit={onSubmit((data: OnboardUserInput) =>
-              handleFormSubmit(data)
-            )}
-          >
+          <form onSubmit={onSubmit((val, event) => handleFormSubmit(val))}>
             <Stack>
               <TextInput
                 required
