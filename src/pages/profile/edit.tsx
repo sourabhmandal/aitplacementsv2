@@ -90,13 +90,13 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
       validate: {
         name: (val: string) =>
           /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-        regNo: (val: number) => {
-          if (val < 10000 && val > 99999)
+        regNo: (val: number | undefined) => {
+          if (val! < 10000 && val! > 99999)
             return "please enter your valid 5 digit registration number";
           else "";
         },
-        phoneNo: (val: string) =>
-          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val.toString())
+        phoneNo: (val: string | undefined) =>
+          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val?.toString()!)
             ? null
             : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
       },
