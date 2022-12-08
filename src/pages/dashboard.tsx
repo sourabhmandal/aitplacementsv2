@@ -79,8 +79,8 @@ const Dashboard: NextPage<IPropsDashboard> = ({
     {
       onError: (e) => {
         showNotification({
+          title: e.message,
           message: e.message,
-          title: e.data?.code,
         });
       },
     }
@@ -90,7 +90,7 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   useEffect(() => {
     if (searchNoticeByTitle.isSuccess) {
       const search: SpotlightAction[] = searchNoticeByTitle.data.notices.map(
-        (el) => {
+        (el: any) => {
           return {
             title: el.title,
             icon: <IconNotebook />,
