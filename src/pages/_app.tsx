@@ -7,11 +7,9 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import AppContainer from "../components/AppContainer";
+import { trpc } from "../utils/trpc";
 
-export default function App({
-  Component,
-  pageProps: { session, ...pageProps },
-}: AppProps) {
+function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>(useColorScheme());
 
   useEffect(() => {
@@ -53,3 +51,5 @@ export default function App({
     </>
   );
 }
+
+export default trpc.withTRPC(App);
