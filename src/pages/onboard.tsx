@@ -11,6 +11,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
@@ -19,12 +20,7 @@ import { unstable_getServerSession } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import {
-  AvailableBranch,
-  AvailableYear,
-  branchList,
-  yearList,
-} from "../constants";
+import { BRANCHES, branchList, YEAR, yearList } from "../schema/constants";
 import { OnboardUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
@@ -92,7 +88,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
       name: data.name,
       email: useremail || "",
       year: data.year,
-      branch: data.branch as AvailableBranch,
+      branch: data.branch as BRANCHES,
       regNo: data.regNo,
       phoneNo: data.phoneNo,
     };
@@ -158,7 +154,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
                   label="Year"
                   placeholder="Current year"
                   value={values.year}
-                  onChange={(val: AvailableYear) => setFieldValue("year", val)}
+                  onChange={(val: YEAR) => setFieldValue("year", val)}
                   data={yearList}
                   required
                 />
@@ -170,9 +166,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
                   label="Branch"
                   placeholder="Current Branch"
                   value={values.branch}
-                  onChange={(val: AvailableBranch) =>
-                    setFieldValue("branch", val)
-                  }
+                  onChange={(val: BRANCHES) => setFieldValue("branch", val)}
                   data={branchList}
                   required
                 />

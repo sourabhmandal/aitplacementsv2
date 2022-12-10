@@ -23,13 +23,7 @@ import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import {
-  AvailableBranch,
-  AvailableYear,
-  branchList,
-  yearList,
-} from "../../constants";
-import { BRANCHES } from "../../schema/constants";
+import { BRANCHES, branchList, YEAR, yearList } from "../../schema/constants";
 import { UpdateUserInput } from "../../schema/user.schema";
 import { trpc } from "../../utils/trpc";
 import { authOptions } from "../api/auth/[...nextauth]";
@@ -41,96 +35,94 @@ interface IPropsOnboard {
 }
 
 const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
-    const userDetailsQuery = trpc.user["getUserProfileDetails"].useQuery(
-      undefined,
-      {
-        onError: (err) => {
-          showNotification({
-            title: "Error Occured",
-            message: err.message,
-            color: "red",
-          });
-        },
-      }
-    );
-
-    const trpcContext = trpc.useContext();
-    const clientSession = useSession();
-    const router = useRouter();
-    const updateUserMutation = trpc.user["updateUserProfile"].useMutation({
-      onSuccess(data, variables, context) {
+  const userDetailsQuery = trpc.user["getUserProfileDetails"].useQuery(
+    undefined,
+    {
+      onError: (err) => {
         showNotification({
-          title: "User data updated",
-          message: `data for ${data.name} updated`,
+          title: "Error Occured",
+          message: err.message,
+          color: "red",
         });
+      },
+    }
+  );
+
+  const trpcContext = trpc.useContext();
+  const clientSession = useSession();
+  const router = useRouter();
+  const updateUserMutation = trpc.user["updateUserProfile"].useMutation({
+    onSuccess(data, variables, context) {
+      showNotification({
+        title: "User data updated",
+        message: `data for ${data.name} updated`,
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (clientSession.status == "loading") return;
+    if (clientSession.status == "unauthenticated") router.push("/auth/login");
+  }, [router, clientSession.status]);
+
+  useEffect(() => {
+    setValues({
+      name: userDetailsQuery.data?.name,
+      phoneNo: userDetailsQuery.data?.phoneNo,
+    });
+    if (userDetailsQuery.data?.studentDetails) {
+      setValues({
+        branch: userDetailsQuery.data?.studentDetails?.branch! as BRANCHES,
+        regNo: userDetailsQuery.data?.studentDetails?.registrationNumber,
+        year: userDetailsQuery.data?.studentDetails?.year,
+      });
+    }
+  }, [userDetailsQuery.data, userDetailsQuery.isSuccess]);
+
+  const { values, errors, setValues, setFieldValue, onSubmit } =
+    useForm<UpdateUserInput>({
+      initialValues: {
+        name: "",
+        regNo: undefined,
+        year: "3",
+        branch: "COMP",
+        phoneNo: undefined,
+      },
+
+      validate: {
+        name: (val: string) =>
+          /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
+        regNo: (val: number | undefined) => {
+          if (val! < 10000 && val! > 99999)
+            return "please enter your valid 5 digit registration number";
+          else "";
+        },
+        phoneNo: (val: string | undefined) =>
+          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val?.toString()!)
+            ? null
+            : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
       },
     });
 
-    useEffect(() => {
-      if (clientSession.status == "loading") return;
-      if (clientSession.status == "unauthenticated") router.push("/auth/login");
-    }, [router, clientSession.status]);
-
-    useEffect(() => {
-      setValues({
-        name: userDetailsQuery.data?.name,
-        phoneNo: userDetailsQuery.data?.phoneNo,
-      });
-      if (userDetailsQuery.data?.studentDetails) {
-        setValues({
-          branch: userDetailsQuery.data?.studentDetails?.branch! as BRANCHES,
-          regNo: userDetailsQuery.data?.studentDetails?.registrationNumber,
-          year: userDetailsQuery.data?.studentDetails?.year,
-        });
-      }
-    }, [userDetailsQuery.data, userDetailsQuery.isSuccess]);
-
-    const { values, errors, setValues, setFieldValue, onSubmit } =
-      useForm<UpdateUserInput>({
-        initialValues: {
-          name: "",
-          regNo: undefined,
-          year: "3",
-          branch: "COMP",
-          phoneNo: undefined,
-        },
-
-        validate: {
-          name: (val: string) =>
-            /^[a-z A-Z]+$/i.test(val) ? null : "Name cannot have numbers",
-          regNo: (val: number | undefined) => {
-            if (val! < 10000 && val! > 99999)
-              return "please enter your valid 5 digit registration number";
-            else "";
-          },
-          phoneNo: (val: string | undefined) =>
-            /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(
-              val?.toString()!
-            )
-              ? null
-              : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
-        },
-      });
-
-    const handleFormSubmit = async (data: UpdateUserInput) => {
-      let reqData: UpdateUserInput;
-      if (userrole == "ADMIN") {
-        reqData = {
-          name: data.name,
-          phoneNo: data.phoneNo,
-        };
-      } else {
-        reqData = {
-          name: data.name,
-          year: data.year,
-          branch: data.branch as AvailableBranch,
-          regNo: data.regNo,
-          phoneNo: data.phoneNo,
-        };
-      }
-      updateUserMutation?.mutate(reqData);
-      trpcContext.user["getUserProfileDetails"].invalidate();
-    };
+  const handleFormSubmit = async (data: UpdateUserInput) => {
+    let reqData: UpdateUserInput;
+    if (userrole == "ADMIN") {
+      reqData = {
+        name: data.name,
+        phoneNo: data.phoneNo,
+      };
+    } else {
+      reqData = {
+        name: data.name,
+        year: data.year,
+        branch: data.branch as BRANCHES,
+        regNo: data.regNo,
+        phoneNo: data.phoneNo,
+      };
+    }
+    updateUserMutation?.mutate(reqData);
+    trpcContext.user["getUserProfileDetails"].invalidate();
+  };
 
   if (userDetailsQuery.status == "loading")
     return (
@@ -224,7 +216,7 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
               label="Year"
               placeholder="Current year"
               value={values.year}
-              onChange={(val: AvailableYear) => setFieldValue("year", val)}
+              onChange={(val: YEAR) => setFieldValue("year", val)}
               data={yearList}
               required
               my="lg"
@@ -234,7 +226,7 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
               label="Branch"
               placeholder="Current Branch"
               value={values.branch}
-              onChange={(val: AvailableBranch) => setFieldValue("branch", val)}
+              onChange={(val: BRANCHES) => setFieldValue("branch", val)}
               data={branchList}
               required
               my="lg"

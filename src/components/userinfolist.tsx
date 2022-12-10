@@ -13,8 +13,8 @@ import { Role } from "@prisma/client";
 import { IconAward, IconUserOff } from "@tabler/icons";
 import Avatar from "boring-avatars";
 import { useEffect } from "react";
-import { UserListOutput } from "../src/schema/user.schema";
-import { trpc } from "../src/utils/trpc";
+import { UserListOutput } from "../schema/user.schema";
+import { trpc } from "../utils/trpc";
 
 interface IPropsUserinfoList {
   students: UserListOutput | undefined;

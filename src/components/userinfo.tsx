@@ -3,7 +3,7 @@ import { openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { IconAt, IconStatusChange } from "@tabler/icons";
 import Avatar from "boring-avatars";
-import { trpc } from "../src/utils/trpc";
+import { trpc } from "../utils/trpc";
 
 interface UserInfoIconsProps {
   id: string;
@@ -26,7 +26,7 @@ export function UserInfo({
   const { classes } = useStyles();
   const trpcContext = trpc.useContext();
 
-  const deleteUserMutation = trpc.user["deleteUser"].useMutation({
+  const deleteUserMutation = trpc.user.deleteUser.useMutation({
     onSuccess: (data) => {
       trpcContext.user["getUserList"].invalidate();
       return showNotification({
@@ -42,7 +42,7 @@ export function UserInfo({
       });
     },
   });
-  const changeUserRoleMutation = trpc.user["changeUserRole"].useMutation({
+  const changeUserRoleMutation = trpc.user.changeUserRole.useMutation({
     onSuccess: (data) => {
       trpcContext.user["getUserList"].invalidate();
       return showNotification({

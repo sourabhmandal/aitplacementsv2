@@ -27,7 +27,7 @@ import {
 import { Session, unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import RichTextEditor from "../../../../components/RichText";
+import RichTextEditor from "../../../components/RichText";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
@@ -44,13 +44,13 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const router = useRouter();
   const theme = useMantineTheme();
   const trpcContext = trpc.useContext();
-  const noticeDetailQuery = trpc.notice["notice-detail"].useQuery({ id });
-  const updateNoticeMutation = trpc.notice["update-notice"].useMutation();
+  const noticeDetailQuery = trpc.notice.noticeDetail.useQuery({ id });
+  const updateNoticeMutation = trpc.notice.updateNotice.useMutation();
   const [savedTags, setsavedTags] = useState<string[]>([]);
 
   const rteStyles = useRteStyles();
   const createPresignedUrlMutation =
-    trpc.attachment["create-presigned-url"].useMutation();
+    trpc.attachment.createPresignedUrl.useMutation();
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
@@ -154,13 +154,13 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
     // add unique ids list as attachments
     await updateNoticeMutation.mutate(formdata);
 
-    trpcContext.notice["published-notice-list"].invalidate();
-    trpcContext.notice["my-notices"].invalidate();
+    trpcContext.notice.publishedNoticeList.invalidate();
+    trpcContext.notice.myNotices.invalidate();
     router.push("/dashboard");
   };
 
   const deleteNoticeByFileId =
-    trpc.attachment["delete-attachment-by-fileid"].useMutation();
+    trpc.attachment.deleteAttachmentByFileid.useMutation();
 
   const PreviewsLocalFiles = acceptedFileList.map((file, index) => {
     return (
@@ -239,7 +239,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
                   showNotification({
                     message: `${context.filename} deleted`,
                   });
-                  trpcContext.notice["notice-detail"].invalidate();
+                  trpcContext.notice.noticeDetail.invalidate();
                 },
               }
             );
