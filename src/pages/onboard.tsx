@@ -18,6 +18,7 @@ import { Role, UserStatus } from "@prisma/client";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { BRANCHES, branchList, YEAR, yearList } from "../schema/constants";
@@ -107,123 +108,133 @@ const Onboard: NextPage<IPropsOnboard> = ({
   };
 
   return (
-    <Container
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        margin: "auto",
-        minHeight: "100vh",
-      }}
-    >
-      {userstatus === "INVITED" ? (
-        <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
-          <Text size="lg" weight={700}>
-            Welcome to Ait Placements
-          </Text>
-          <Text size="sm" color="dimmed" weight={300}>
-            please register yourself as {useremail} before you proceed
-          </Text>
-          <Space h={"md"} />
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Container
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "auto",
+          minHeight: "100vh",
+        }}
+      >
+        {userstatus === "INVITED" ? (
+          <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
+            <Text size="lg" weight={700}>
+              Welcome to Ait Placements
+            </Text>
+            <Text size="sm" color="dimmed" weight={300}>
+              please register yourself as {useremail} before you proceed
+            </Text>
+            <Space h={"md"} />
 
-          <form onSubmit={onSubmit((val, event) => handleFormSubmit(val))}>
-            <Stack>
-              <TextInput
-                required
-                label="Full Name"
-                placeholder="john doe"
-                value={values.name}
-                onChange={(event) =>
-                  setFieldValue("name", event.currentTarget.value)
-                }
-                error={errors.name}
-              />
+            <form onSubmit={onSubmit((val, event) => handleFormSubmit(val))}>
+              <Stack>
+                <TextInput
+                  required
+                  label="Full Name"
+                  placeholder="john doe"
+                  value={values.name}
+                  onChange={(event) =>
+                    setFieldValue("name", event.currentTarget.value)
+                  }
+                  error={errors.name}
+                />
 
-              {userrole == "STUDENT" ? (
+                {userrole == "STUDENT" ? (
+                  <NumberInput
+                    //@ts-ignore
+                    required
+                    maxLength={5}
+                    hideControls
+                    label="Registration Number"
+                    placeholder="18255"
+                    parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
+                    value={values.regNo}
+                    onChange={(event: number) => setFieldValue("regNo", event)}
+                    error={errors.regNo}
+                  />
+                ) : (
+                  <></>
+                )}
+
+                {userrole == "STUDENT" ? (
+                  <Select
+                    label="Year"
+                    placeholder="Current year"
+                    value={values.year}
+                    onChange={(val: YEAR) => setFieldValue("year", val)}
+                    data={yearList}
+                    required
+                  />
+                ) : (
+                  <></>
+                )}
+                {userrole == "STUDENT" ? (
+                  <Select
+                    label="Branch"
+                    placeholder="Current Branch"
+                    value={values.branch}
+                    onChange={(val: BRANCHES) => setFieldValue("branch", val)}
+                    data={branchList}
+                    required
+                  />
+                ) : (
+                  <></>
+                )}
                 <NumberInput
-                  //@ts-ignore
-                  required
-                  maxLength={5}
-                  hideControls
-                  label="Registration Number"
-                  placeholder="18255"
+                  label="Phone Number"
+                  placeholder="93797-39879"
+                  value={parseInt(values.phoneNo!)}
+                  icon={
+                    <Text size={13.7} ml={8} mt={0.3}>
+                      +91
+                    </Text>
+                  }
+                  maxLength={11}
                   parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-                  value={values.regNo}
-                  onChange={(event: number) => setFieldValue("regNo", event)}
-                  error={errors.regNo}
+                  formatter={(value) =>
+                    !Number.isNaN(parseInt(value!))
+                      ? `${value}`.replace(/\B(?=(\d{5})+(?!\d))/g, " ")
+                      : ""
+                  }
+                  hideControls
+                  onChange={(event: number) =>
+                    setFieldValue("phoneNo", event ? event.toString() : "")
+                  }
+                  error={errors.phoneNo}
                 />
-              ) : (
-                <></>
-              )}
-
-              {userrole == "STUDENT" ? (
-                <Select
-                  label="Year"
-                  placeholder="Current year"
-                  value={values.year}
-                  onChange={(val: YEAR) => setFieldValue("year", val)}
-                  data={yearList}
-                  required
-                />
-              ) : (
-                <></>
-              )}
-              {userrole == "STUDENT" ? (
-                <Select
-                  label="Branch"
-                  placeholder="Current Branch"
-                  value={values.branch}
-                  onChange={(val: BRANCHES) => setFieldValue("branch", val)}
-                  data={branchList}
-                  required
-                />
-              ) : (
-                <></>
-              )}
-              <NumberInput
-                label="Phone Number"
-                placeholder="93797-39879"
-                value={parseInt(values.phoneNo!)}
-                icon={
-                  <Text size={13.7} ml={8} mt={0.3}>
-                    +91
-                  </Text>
-                }
-                maxLength={11}
-                parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-                formatter={(value) =>
-                  !Number.isNaN(parseInt(value!))
-                    ? `${value}`.replace(/\B(?=(\d{5})+(?!\d))/g, " ")
-                    : ""
-                }
-                hideControls
-                onChange={(event: number) =>
-                  setFieldValue("phoneNo", event ? event.toString() : "")
-                }
-                error={errors.phoneNo}
-              />
-            </Stack>
-            <Button
-              type="submit"
-              my="xl"
-              fullWidth
-              color={"orange"}
-              disabled={onboardUserMutation?.isLoading}
-            >
-              {onboardUserMutation?.isLoading ? (
-                <Loader size={"sm"} color="yellow" />
-              ) : (
-                "SAVE"
-              )}
-            </Button>
-          </form>
-        </Paper>
-      ) : (
-        <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
-          <Title align="center">Account Deactivated</Title>
-        </Paper>
-      )}
-    </Container>
+              </Stack>
+              <Button
+                type="submit"
+                my="xl"
+                fullWidth
+                color={"orange"}
+                disabled={onboardUserMutation?.isLoading}
+              >
+                {onboardUserMutation?.isLoading ? (
+                  <Loader size={"sm"} color="yellow" />
+                ) : (
+                  "SAVE"
+                )}
+              </Button>
+            </form>
+          </Paper>
+        ) : (
+          <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
+            <Title align="center">Account Deactivated</Title>
+          </Paper>
+        )}
+      </Container>
+    </>
   );
 };
 

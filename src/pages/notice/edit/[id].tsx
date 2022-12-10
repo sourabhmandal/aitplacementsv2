@@ -25,6 +25,7 @@ import {
   NextPage,
 } from "next";
 import { Session, unstable_getServerSession } from "next-auth";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextEditor from "../../../components/RichText";
@@ -270,150 +271,162 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   });
 
   return (
-    <Container>
-      <form
-        onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
-      >
-        <TextInput
-          required
-          label="Notice Title"
-          mb={10}
-          placeholder="Set a notice title"
-          onChange={(e) => {
-            form.setFieldValue("title", e.target.value);
-          }}
-          value={form.values.title}
-          error={form.errors.title && "Invalid title"}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-
-        <MultiSelect
-          creatable
-          searchable
-          data={defaultTags}
-          value={savedTags}
-          label="Tags"
-          placeholder="Add tags for this post"
-          mb={40}
-          getCreateLabel={(query) => `+ Create ${query}`}
-          onCreate={(query: string) => {
-            setDefaultTags((current: any) => [...current, query]);
-            let item: any = {
-              value: query,
-              label: query,
-            };
-            return item;
-          }}
-          onChange={(values: string[]) => {
-            console.log(form.values.tags, values, savedTags);
-            setsavedTags([...values]);
-            return values;
-          }}
-          maxDropdownHeight={160}
-        />
-        <RichTextEditor
-          placeholder="Write your notice body here"
-          controls={[
-            ["bold", "italic", "underline", "blockquote", "link"],
-            ["unorderedList", "orderedList"],
-            ["h1", "h2", "h3"],
-            ["alignLeft", "alignCenter", "alignRight"],
-          ]}
-          key="jkhdkjh"
-          value={form.values.body}
-          onChange={(data) => {
-            form.setFieldValue("body", data);
-          }}
-          classNames={rteStyles.classes}
-        />
-        <Dropzone
-          multiple={false}
-          useFsAccessApi={false}
-          onDrop={(files) => {
-            setacceptedFileList((prev) => [...prev, ...files]);
-          }}
-          onReject={() =>
-            showNotification({
-              message: `file type not accepted`,
-              title: "Unsupported file",
-              color: "red",
-            })
-          }
-          maxSize={20 * 1024 ** 2} // 20 mb
-          accept={[
-            MIME_TYPES.csv,
-            MIME_TYPES.doc,
-            MIME_TYPES.docx,
-            MIME_TYPES.gif,
-            MIME_TYPES.jpeg,
-            MIME_TYPES.mp4,
-            MIME_TYPES.pdf,
-            MIME_TYPES.png,
-            MIME_TYPES.ppt,
-            MIME_TYPES.pptx,
-            MIME_TYPES.svg,
-            MIME_TYPES.webp,
-            MIME_TYPES.xls,
-            MIME_TYPES.xlsx,
-            MIME_TYPES.zip,
-          ]}
+      </Head>
+      <Container>
+        <form
+          onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
         >
-          <Group
-            position="center"
-            spacing="xl"
-            style={{ minHeight: 120, pointerEvents: "none" }}
-          >
-            <div>
-              <Text size="xl" inline>
-                Drag files here or click to select files
-              </Text>
-              <Text size="sm" color="dimmed" inline mt={7}>
-                Attach as many files as you like, each file should not exceed
-                20mb
-              </Text>
-            </div>
-          </Group>
-        </Dropzone>
-        <SimpleGrid cols={3} mt={8}>
-          {PreviewsLocalFiles}
-          {PreviewsRemoteFiles}
-        </SimpleGrid>
+          <TextInput
+            required
+            label="Notice Title"
+            mb={10}
+            placeholder="Set a notice title"
+            onChange={(e) => {
+              form.setFieldValue("title", e.target.value);
+            }}
+            value={form.values.title}
+            error={form.errors.title && "Invalid title"}
+          />
 
-        <SegmentedControl
-          fullWidth
-          size="md"
-          my="xl"
-          style={{ background: theme.fn.lighten(theme.fn.primaryColor(), 0.7) }}
-          value={form.values.isPublished ? "publish" : "draft"}
-          onChange={(data) =>
-            form.setFieldValue("isPublished", data == "publish")
-          }
-          radius="md"
-          data={[
-            {
-              value: "draft",
-              label: (
-                <Center>
-                  <IconNotesOff size={18} />
-                  <Box ml={10}>Draft</Box>
-                </Center>
-              ),
-            },
-            {
-              label: (
-                <Center>
-                  <IconNotes size={18} />
-                  <Box ml={10}>Publish</Box>
-                </Center>
-              ),
-              value: "publish",
-            },
-          ]}
-        />
-        <Button type="submit" mt="md" fullWidth>
-          Save Notice to Database
-        </Button>
-      </form>
-    </Container>
+          <MultiSelect
+            creatable
+            searchable
+            data={defaultTags}
+            value={savedTags}
+            label="Tags"
+            placeholder="Add tags for this post"
+            mb={40}
+            getCreateLabel={(query) => `+ Create ${query}`}
+            onCreate={(query: string) => {
+              setDefaultTags((current: any) => [...current, query]);
+              let item: any = {
+                value: query,
+                label: query,
+              };
+              return item;
+            }}
+            onChange={(values: string[]) => {
+              console.log(form.values.tags, values, savedTags);
+              setsavedTags([...values]);
+              return values;
+            }}
+            maxDropdownHeight={160}
+          />
+          <RichTextEditor
+            placeholder="Write your notice body here"
+            controls={[
+              ["bold", "italic", "underline", "blockquote", "link"],
+              ["unorderedList", "orderedList"],
+              ["h1", "h2", "h3"],
+              ["alignLeft", "alignCenter", "alignRight"],
+            ]}
+            key="jkhdkjh"
+            value={form.values.body}
+            onChange={(data) => {
+              form.setFieldValue("body", data);
+            }}
+            classNames={rteStyles.classes}
+          />
+          <Dropzone
+            multiple={false}
+            useFsAccessApi={false}
+            onDrop={(files) => {
+              setacceptedFileList((prev) => [...prev, ...files]);
+            }}
+            onReject={() =>
+              showNotification({
+                message: `file type not accepted`,
+                title: "Unsupported file",
+                color: "red",
+              })
+            }
+            maxSize={20 * 1024 ** 2} // 20 mb
+            accept={[
+              MIME_TYPES.csv,
+              MIME_TYPES.doc,
+              MIME_TYPES.docx,
+              MIME_TYPES.gif,
+              MIME_TYPES.jpeg,
+              MIME_TYPES.mp4,
+              MIME_TYPES.pdf,
+              MIME_TYPES.png,
+              MIME_TYPES.ppt,
+              MIME_TYPES.pptx,
+              MIME_TYPES.svg,
+              MIME_TYPES.webp,
+              MIME_TYPES.xls,
+              MIME_TYPES.xlsx,
+              MIME_TYPES.zip,
+            ]}
+          >
+            <Group
+              position="center"
+              spacing="xl"
+              style={{ minHeight: 120, pointerEvents: "none" }}
+            >
+              <div>
+                <Text size="xl" inline>
+                  Drag files here or click to select files
+                </Text>
+                <Text size="sm" color="dimmed" inline mt={7}>
+                  Attach as many files as you like, each file should not exceed
+                  20mb
+                </Text>
+              </div>
+            </Group>
+          </Dropzone>
+          <SimpleGrid cols={3} mt={8}>
+            {PreviewsLocalFiles}
+            {PreviewsRemoteFiles}
+          </SimpleGrid>
+
+          <SegmentedControl
+            fullWidth
+            size="md"
+            my="xl"
+            style={{
+              background: theme.fn.lighten(theme.fn.primaryColor(), 0.7),
+            }}
+            value={form.values.isPublished ? "publish" : "draft"}
+            onChange={(data) =>
+              form.setFieldValue("isPublished", data == "publish")
+            }
+            radius="md"
+            data={[
+              {
+                value: "draft",
+                label: (
+                  <Center>
+                    <IconNotesOff size={18} />
+                    <Box ml={10}>Draft</Box>
+                  </Center>
+                ),
+              },
+              {
+                label: (
+                  <Center>
+                    <IconNotes size={18} />
+                    <Box ml={10}>Publish</Box>
+                  </Center>
+                ),
+                value: "publish",
+              },
+            ]}
+          />
+          <Button type="submit" mt="md" fullWidth>
+            Save Notice to Database
+          </Button>
+        </form>
+      </Container>
+    </>
   );
 };
 

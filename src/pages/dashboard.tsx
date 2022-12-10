@@ -29,6 +29,7 @@ import { debounce, DebouncedFunc } from "lodash";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -114,117 +115,137 @@ const Dashboard: NextPage<IPropsDashboard> = ({
   );
 
   return userstatus === "ACTIVE" ? (
-    <Container>
-      {noticeId === "" ? (
-        <></>
-      ) : (
-        <NoticeDetailModal
-          noticeId={noticeId}
-          openNoticeDialog={openNoticeDialog}
-          setOpenNoticeDialog={setOpenNoticeDialog}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-      )}
-      <Box py="lg">
-        <Text weight="bolder" size={25}>
-          Welcome, {getUserProfile.data?.name || username}
-        </Text>
-        <Text size={"xs"} color="dimmed">
-          {useremail}
-        </Text>
-      </Box>
-      {isAdmin ? (
-        <Button fullWidth onClick={() => router.push(`/notice/`)}>
-          Create a Notice
+      </Head>
+      <Container>
+        {noticeId === "" ? (
+          <></>
+        ) : (
+          <NoticeDetailModal
+            noticeId={noticeId}
+            openNoticeDialog={openNoticeDialog}
+            setOpenNoticeDialog={setOpenNoticeDialog}
+          />
+        )}
+        <Box py="lg">
+          <Text weight="bolder" size={25}>
+            Welcome, {getUserProfile.data?.name || username}
+          </Text>
+          <Text size={"xs"} color="dimmed">
+            {useremail}
+          </Text>
+        </Box>
+        {isAdmin ? (
+          <Button fullWidth onClick={() => router.push(`/notice/`)}>
+            Create a Notice
+          </Button>
+        ) : (
+          <></>
+        )}
+        <Button
+          fullWidth
+          onClick={() => router.push(`https://anubhav.aitoss.club/`)}
+          color="blue"
+          variant="outline"
+          my={16}
+        >
+          AIT Interview Experience
         </Button>
-      ) : (
-        <></>
-      )}
-      <Button
-        fullWidth
-        onClick={() => router.push(`https://anubhav.aitoss.club/`)}
-        color="blue"
-        variant="outline"
-        my={16}
-      >
-        AIT Interview Experience
-      </Button>
-      <Space h="xl" />
+        <Space h="xl" />
 
-      <SpotlightProvider
-        actions={searchedNotice}
-        searchIcon={<IconSearch size={18} />}
-        searchPlaceholder="Search..."
-        shortcut="mod + ctrl + F"
-        nothingFoundMessage="Nothing found..."
-        onQueryChange={(query) => handleTextSearch(query)}
-        highlightQuery
-        limit={100}
-      >
-        <Group position="center">
-          <UnstyledButton
-            sx={{
-              border: 1,
-              borderRadius: "0.5em",
-              borderStyle: "solid",
-              borderColor: "#ddd",
-              marginTop: 15,
-              marginBottom: 15,
-              width: "100%",
-            }}
-            onClick={() => openSpotlight()}
-          >
-            <Group p={10}>
-              <IconSearch size={16} style={{ color: "#ddd" }} />
-              <Text color="dimmed" size="sm">
-                Search
-              </Text>
-            </Group>
-          </UnstyledButton>
-        </Group>
-      </SpotlightProvider>
+        <SpotlightProvider
+          actions={searchedNotice}
+          searchIcon={<IconSearch size={18} />}
+          searchPlaceholder="Search..."
+          shortcut="mod + ctrl + F"
+          nothingFoundMessage="Nothing found..."
+          onQueryChange={(query) => handleTextSearch(query)}
+          highlightQuery
+          limit={100}
+        >
+          <Group position="center">
+            <UnstyledButton
+              sx={{
+                border: 1,
+                borderRadius: "0.5em",
+                borderStyle: "solid",
+                borderColor: "#ddd",
+                marginTop: 15,
+                marginBottom: 15,
+                width: "100%",
+              }}
+              onClick={() => openSpotlight()}
+            >
+              <Group p={10}>
+                <IconSearch size={16} style={{ color: "#ddd" }} />
+                <Text color="dimmed" size="sm">
+                  Search
+                </Text>
+              </Group>
+            </UnstyledButton>
+          </Group>
+        </SpotlightProvider>
 
-      {userrole == "ADMIN" ? (
-        <Tabs defaultValue="published">
-          <Tabs.List>
-            <Tabs.Tab value="published" icon={<IconClipboard size={14} />}>
-              Published
-            </Tabs.Tab>
-            <Tabs.Tab value="drafted" icon={<IconMailbox size={14} />}>
-              My Notices
-            </Tabs.Tab>
-          </Tabs.List>
+        {userrole == "ADMIN" ? (
+          <Tabs defaultValue="published">
+            <Tabs.List>
+              <Tabs.Tab value="published" icon={<IconClipboard size={14} />}>
+                Published
+              </Tabs.Tab>
+              <Tabs.Tab value="drafted" icon={<IconMailbox size={14} />}>
+                My Notices
+              </Tabs.Tab>
+            </Tabs.List>
 
-          <Tabs.Panel value="published" pt="xs">
-            <PublishedNotices
-              setnoticeId={setnoticeId}
-              setOpenNoticeDialog={setOpenNoticeDialog}
-            />
-          </Tabs.Panel>
-          <Tabs.Panel value="drafted" pt="xs">
-            <MyNotice
-              userrole={userrole}
-              useremail={useremail}
-              setnoticeId={setnoticeId}
-              setOpenNoticeDialog={setOpenNoticeDialog}
-            />
-          </Tabs.Panel>
-        </Tabs>
-      ) : (
-        <PublishedNotices
-          setnoticeId={setnoticeId}
-          setOpenNoticeDialog={setOpenNoticeDialog}
-        />
-      )}
-    </Container>
+            <Tabs.Panel value="published" pt="xs">
+              <PublishedNotices
+                setnoticeId={setnoticeId}
+                setOpenNoticeDialog={setOpenNoticeDialog}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="drafted" pt="xs">
+              <MyNotice
+                userrole={userrole}
+                useremail={useremail}
+                setnoticeId={setnoticeId}
+                setOpenNoticeDialog={setOpenNoticeDialog}
+              />
+            </Tabs.Panel>
+          </Tabs>
+        ) : (
+          <PublishedNotices
+            setnoticeId={setnoticeId}
+            setOpenNoticeDialog={setOpenNoticeDialog}
+          />
+        )}
+      </Container>
+    </>
   ) : (
-    <Stack
-      justify="center"
-      align="center"
-      style={{ height: "100%", textAlign: "center" }}
-    >
-      <Text>you are not onboarded yet, please complete your profile</Text>
-      <Link href="/onboard">Register yourself</Link>
-    </Stack>
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Stack
+        justify="center"
+        align="center"
+        style={{ height: "100%", textAlign: "center" }}
+      >
+        <Text>you are not onboarded yet, please complete your profile</Text>
+        <Link href="/onboard">Register yourself</Link>
+      </Stack>
+    </>
   );
 };
 

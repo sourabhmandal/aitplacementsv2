@@ -20,6 +20,7 @@ import { showNotification } from "@mantine/notifications";
 import { IconFileUpload, IconNotes, IconNotesOff, IconX } from "@tabler/icons";
 import { NextPage } from "next";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { v4 } from "uuid";
@@ -170,126 +171,135 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   });
 
   return (
-    <Container>
-      <form
-        onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
-      >
-        <TextInput
-          required
-          label="Notice Title"
-          mb={10}
-          placeholder="Set a notice title"
-          onChange={(e) => {
-            form.setFieldValue("title", e.target.value);
-          }}
-          value={form.values.title}
-          error={form.errors.title && "Invalid title"}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-
-        <MultiSelect
-          creatable
-          searchable
-          data={tags}
-          label="Tags"
-          placeholder="Add tags for this post"
-          mb={40}
-          getCreateLabel={(query) => `+ Create ${query}`}
-          onCreate={(query: string) => {
-            setTags((current: any) => [...current, query]);
-            setSelectedTags((current: any) => [...current, query]);
-            return query;
-          }}
-          onChange={(values: string[]) => {
-            setSelectedTags(values);
-            return values;
-          }}
-          maxDropdownHeight={160}
-        />
-        <RichTextEditor
-          placeholder="Write your notice body here"
-          controls={[
-            ["bold", "italic", "underline", "blockquote", "link"],
-            ["unorderedList", "orderedList"],
-            ["h1", "h2", "h3"],
-            ["alignLeft", "alignCenter", "alignRight"],
-          ]}
-          key="jkhdkjh"
-          value={form.values.body}
-          onChange={(data) => {
-            form.setFieldValue("body", data);
-          }}
-          classNames={rteStyles.classes}
-        />
-        <Dropzone
-          multiple={true}
-          useFsAccessApi={false}
-          onDrop={(files) => {
-            files.map((file) => {
-              if (
-                form.values.attachments.findIndex(
-                  (f) => f.filename === file.name
-                ) >= 0
-              ) {
-                return;
-              }
-              setacceptedFileList((prev) => [...prev, ...files]);
-
-              form.setFieldValue("attachments", [
-                ...form.values.attachments,
-                {
-                  fileid: createAWSFilePath(id, file.name),
-                  filename: file.name,
-                  filetype: file.type,
-                },
-              ]);
-            });
-          }}
-          onReject={() =>
-            showNotification({
-              message: `file type not accepted`,
-              title: "Unsupported file",
-              color: "red",
-            })
-          }
-          maxSize={20 * 1024 ** 2} // 20 mb
-          accept={[
-            MIME_TYPES.csv,
-            MIME_TYPES.doc,
-            MIME_TYPES.docx,
-            MIME_TYPES.gif,
-            MIME_TYPES.jpeg,
-            MIME_TYPES.mp4,
-            MIME_TYPES.pdf,
-            MIME_TYPES.png,
-            MIME_TYPES.ppt,
-            MIME_TYPES.pptx,
-            MIME_TYPES.svg,
-            MIME_TYPES.webp,
-            MIME_TYPES.xls,
-            MIME_TYPES.xlsx,
-            MIME_TYPES.zip,
-          ]}
+      </Head>
+      <Container>
+        <form
+          onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
         >
-          <Group
-            position="center"
-            spacing="xl"
-            style={{ minHeight: 120, pointerEvents: "none" }}
+          <TextInput
+            required
+            label="Notice Title"
+            mb={10}
+            placeholder="Set a notice title"
+            onChange={(e) => {
+              form.setFieldValue("title", e.target.value);
+            }}
+            value={form.values.title}
+            error={form.errors.title && "Invalid title"}
+          />
+
+          <MultiSelect
+            creatable
+            searchable
+            data={tags}
+            label="Tags"
+            placeholder="Add tags for this post"
+            mb={40}
+            getCreateLabel={(query) => `+ Create ${query}`}
+            onCreate={(query: string) => {
+              setTags((current: any) => [...current, query]);
+              setSelectedTags((current: any) => [...current, query]);
+              return query;
+            }}
+            onChange={(values: string[]) => {
+              setSelectedTags(values);
+              return values;
+            }}
+            maxDropdownHeight={160}
+          />
+          <RichTextEditor
+            placeholder="Write your notice body here"
+            controls={[
+              ["bold", "italic", "underline", "blockquote", "link"],
+              ["unorderedList", "orderedList"],
+              ["h1", "h2", "h3"],
+              ["alignLeft", "alignCenter", "alignRight"],
+            ]}
+            key="jkhdkjh"
+            value={form.values.body}
+            onChange={(data) => {
+              form.setFieldValue("body", data);
+            }}
+            classNames={rteStyles.classes}
+          />
+          <Dropzone
+            multiple={true}
+            useFsAccessApi={false}
+            onDrop={(files) => {
+              files.map((file) => {
+                if (
+                  form.values.attachments.findIndex(
+                    (f) => f.filename === file.name
+                  ) >= 0
+                ) {
+                  return;
+                }
+                setacceptedFileList((prev) => [...prev, ...files]);
+
+                form.setFieldValue("attachments", [
+                  ...form.values.attachments,
+                  {
+                    fileid: createAWSFilePath(id, file.name),
+                    filename: file.name,
+                    filetype: file.type,
+                  },
+                ]);
+              });
+            }}
+            onReject={() =>
+              showNotification({
+                message: `file type not accepted`,
+                title: "Unsupported file",
+                color: "red",
+              })
+            }
+            maxSize={20 * 1024 ** 2} // 20 mb
+            accept={[
+              MIME_TYPES.csv,
+              MIME_TYPES.doc,
+              MIME_TYPES.docx,
+              MIME_TYPES.gif,
+              MIME_TYPES.jpeg,
+              MIME_TYPES.mp4,
+              MIME_TYPES.pdf,
+              MIME_TYPES.png,
+              MIME_TYPES.ppt,
+              MIME_TYPES.pptx,
+              MIME_TYPES.svg,
+              MIME_TYPES.webp,
+              MIME_TYPES.xls,
+              MIME_TYPES.xlsx,
+              MIME_TYPES.zip,
+            ]}
           >
-            <div>
-              <Text size="xl" inline>
-                Drag files here or click to select files
-              </Text>
-              <Text size="sm" color="dimmed" inline mt={7}>
-                Attach as many files as you like, each file should not exceed
-                20mb
-              </Text>
-            </div>
-          </Group>
-        </Dropzone>
-        <SimpleGrid cols={3} mt={8}>
-          {PreviewsImage}
-        </SimpleGrid>
-        {/* 
+            <Group
+              position="center"
+              spacing="xl"
+              style={{ minHeight: 120, pointerEvents: "none" }}
+            >
+              <div>
+                <Text size="xl" inline>
+                  Drag files here or click to select files
+                </Text>
+                <Text size="sm" color="dimmed" inline mt={7}>
+                  Attach as many files as you like, each file should not exceed
+                  20mb
+                </Text>
+              </div>
+            </Group>
+          </Dropzone>
+          <SimpleGrid cols={3} mt={8}>
+            {PreviewsImage}
+          </SimpleGrid>
+          {/* 
         <Switch
           size="lg"
           my="lg"
@@ -316,42 +326,43 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
             )
           }
         /> */}
-        <SegmentedControl
-          fullWidth
-          size="md"
-          my="xl"
-          color={theme.fn.lighten(theme.fn.primaryColor(), 0.9)}
-          value={form.values.isPublished ? "publish" : "draft"}
-          onChange={(data) =>
-            form.setFieldValue("isPublished", data == "publish")
-          }
-          radius="md"
-          data={[
-            {
-              value: "draft",
-              label: (
-                <Center>
-                  <IconNotesOff size={18} />
-                  <Box ml={10}>Draft</Box>
-                </Center>
-              ),
-            },
-            {
-              label: (
-                <Center>
-                  <IconNotes size={18} />
-                  <Box ml={10}>Publish</Box>
-                </Center>
-              ),
-              value: "publish",
-            },
-          ]}
-        />
-        <Button type="submit" mt="md" fullWidth>
-          Save Notice to Database
-        </Button>
-      </form>
-    </Container>
+          <SegmentedControl
+            fullWidth
+            size="md"
+            my="xl"
+            color={theme.fn.lighten(theme.fn.primaryColor(), 0.9)}
+            value={form.values.isPublished ? "publish" : "draft"}
+            onChange={(data) =>
+              form.setFieldValue("isPublished", data == "publish")
+            }
+            radius="md"
+            data={[
+              {
+                value: "draft",
+                label: (
+                  <Center>
+                    <IconNotesOff size={18} />
+                    <Box ml={10}>Draft</Box>
+                  </Center>
+                ),
+              },
+              {
+                label: (
+                  <Center>
+                    <IconNotes size={18} />
+                    <Box ml={10}>Publish</Box>
+                  </Center>
+                ),
+                value: "publish",
+              },
+            ]}
+          />
+          <Button type="submit" mt="md" fullWidth>
+            Save Notice to Database
+          </Button>
+        </form>
+      </Container>
+    </>
   );
 };
 

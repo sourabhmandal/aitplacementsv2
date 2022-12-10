@@ -29,6 +29,7 @@ import { debounce, DebouncedFunc } from "lodash";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { UserInfo } from "../components/userinfo";
@@ -151,85 +152,95 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   );
 
   return (
-    <Container>
-      <Title order={3}>People in the Platform</Title>
-      <SpotlightProvider
-        actions={searchedNotice}
-        searchIcon={<IconSearch size={18} />}
-        searchPlaceholder="Search..."
-        shortcut="mod + ctrl + F"
-        nothingFoundMessage="Nothing found..."
-        onQueryChange={(query) => handleTextSearch(query)}
-        highlightQuery
-        limit={100}
-      >
-        <Group position="center">
-          <UnstyledButton
-            sx={{
-              border: 1,
-              borderRadius: "0.5em",
-              borderStyle: "solid",
-              borderColor: "#ddd",
-              marginTop: 15,
-              marginBottom: 15,
-              width: "100%",
-            }}
-            onClick={() => openSpotlight()}
-          >
-            <Group p={10}>
-              <IconSearch size={16} style={{ color: "#ddd" }} />
-              <Text color="dimmed" size="sm">
-                Search
-              </Text>
-            </Group>
-          </UnstyledButton>
-        </Group>
-      </SpotlightProvider>
-      <Divider mt="sm" mb="xl" />
-      {userrole == "ADMIN" ? (
-        <>
-          <Button
-            onClick={() => setopenInviteUserModal(true)}
-            fullWidth
-            my="xl"
-          >
-            ADD MORE USERS
-          </Button>
-          <InviteUserModal
-            openInviteUserModal={openInviteUserModal}
-            setopenInviteUserModal={setopenInviteUserModal}
-          />
-
-          <Divider my="lg" variant="dashed" />
-        </>
-      ) : (
-        <></>
-      )}
-      <SimpleGrid spacing="xl" cols={2}>
-        {adminListQuery?.data?.users.map((item) => (
-          <UserInfo
-            key={item.id}
-            id={item.id}
-            name={item.name}
-            title={item.role}
-            email={item.email}
-            userstatus={item.userStatus}
-            sessionUserRole={userrole}
-          />
-        ))}
-      </SimpleGrid>
-      <Space h="lg" />
-      <Userinfolist students={studentListQuery?.data} userrole={userrole} />
-
-      <Center my="md">
-        <Pagination
-          total={totalPages}
-          color="orange"
-          page={pageNos}
-          onChange={setpageNos}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-      </Center>
-    </Container>
+      </Head>
+      <Container>
+        <Title order={3}>People in the Platform</Title>
+        <SpotlightProvider
+          actions={searchedNotice}
+          searchIcon={<IconSearch size={18} />}
+          searchPlaceholder="Search..."
+          shortcut="mod + ctrl + F"
+          nothingFoundMessage="Nothing found..."
+          onQueryChange={(query) => handleTextSearch(query)}
+          highlightQuery
+          limit={100}
+        >
+          <Group position="center">
+            <UnstyledButton
+              sx={{
+                border: 1,
+                borderRadius: "0.5em",
+                borderStyle: "solid",
+                borderColor: "#ddd",
+                marginTop: 15,
+                marginBottom: 15,
+                width: "100%",
+              }}
+              onClick={() => openSpotlight()}
+            >
+              <Group p={10}>
+                <IconSearch size={16} style={{ color: "#ddd" }} />
+                <Text color="dimmed" size="sm">
+                  Search
+                </Text>
+              </Group>
+            </UnstyledButton>
+          </Group>
+        </SpotlightProvider>
+        <Divider mt="sm" mb="xl" />
+        {userrole == "ADMIN" ? (
+          <>
+            <Button
+              onClick={() => setopenInviteUserModal(true)}
+              fullWidth
+              my="xl"
+            >
+              ADD MORE USERS
+            </Button>
+            <InviteUserModal
+              openInviteUserModal={openInviteUserModal}
+              setopenInviteUserModal={setopenInviteUserModal}
+            />
+
+            <Divider my="lg" variant="dashed" />
+          </>
+        ) : (
+          <></>
+        )}
+        <SimpleGrid spacing="xl" cols={2}>
+          {adminListQuery?.data?.users.map((item) => (
+            <UserInfo
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              title={item.role}
+              email={item.email}
+              userstatus={item.userStatus}
+              sessionUserRole={userrole}
+            />
+          ))}
+        </SimpleGrid>
+        <Space h="lg" />
+        <Userinfolist students={studentListQuery?.data} userrole={userrole} />
+
+        <Center my="md">
+          <Pagination
+            total={totalPages}
+            color="orange"
+            page={pageNos}
+            onChange={setpageNos}
+          />
+        </Center>
+      </Container>
+    </>
   );
 };
 

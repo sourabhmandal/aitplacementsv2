@@ -8,6 +8,7 @@ import {
   Title,
 } from "@mantine/core";
 import { NextPage } from "next";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
@@ -114,21 +115,31 @@ const AuthError: NextPage<{}> = () => {
   }, [errorQuery, autherror]);
 
   return (
-    <Container fluid className={classes.root}>
-      <Stack justify="center" align="center" style={{ height: "100%" }}>
-        <Title className={classes.title}>{displayedError?.error}</Title>
-        <Text size="lg" align="center" className={classes.description}>
-          {displayedError?.message}
-        </Text>
-        <Group position="center">
-          <Link href="/auth/login" passHref>
-            <Button size="md" variant="white">
-              Try Login again
-            </Button>
-          </Link>
-        </Group>
-      </Stack>
-    </Container>
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Container fluid className={classes.root}>
+        <Stack justify="center" align="center" style={{ height: "100%" }}>
+          <Title className={classes.title}>{displayedError?.error}</Title>
+          <Text size="lg" align="center" className={classes.description}>
+            {displayedError?.message}
+          </Text>
+          <Group position="center">
+            <Link href="/auth/login" passHref>
+              <Button size="md" variant="white">
+                Try Login again
+              </Button>
+            </Link>
+          </Group>
+        </Stack>
+      </Container>
+    </>
   );
 };
 export default AuthError;

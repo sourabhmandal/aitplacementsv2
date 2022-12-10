@@ -2,6 +2,7 @@ import { Carousel, Embla } from "@mantine/carousel";
 import { createStyles } from "@mantine/core";
 import type { NextPage } from "next";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
@@ -38,6 +39,14 @@ const Home: NextPage = () => {
 
   return (
     <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
       <Carousel
         dragFree
         slideSize="70%"
