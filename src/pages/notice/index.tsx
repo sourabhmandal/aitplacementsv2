@@ -58,8 +58,22 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   });
 
   const createPresignedUrlMutation =
-    trpc.attachment.createPresignedUrl.useMutation();
-  const createNoticeMutation = trpc.notice.createNotice.useMutation();
+    trpc.attachment.createPresignedUrl.useMutation({
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    });
+  const createNoticeMutation = trpc.notice.createNotice.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
 
   const uploadFile = async (targetFile: FileWithPath) => {
     const filepath = `${form.values.id}/${targetFile.name}`;

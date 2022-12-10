@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { openConfirmModal } from "@mantine/modals";
+import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import { IconNotes, IconNotesOff, IconPencil, IconTrashX } from "@tabler/icons";
 import Link from "next/link";
@@ -33,9 +34,24 @@ function MyNotice({
   const [totalPages, settotalPages] = useState(1);
   const trpcContext = trpc.useContext();
 
-  const changeNoticeStatusMutation =
-    trpc.notice.changeNoticeStatus.useMutation();
-  const deleteNoticeMutation = trpc.notice.deleteNotice.useMutation();
+  const changeNoticeStatusMutation = trpc.notice.changeNoticeStatus.useMutation(
+    {
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    }
+  );
+  const deleteNoticeMutation = trpc.notice.deleteNotice.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
   const userNoticesQuery = trpc.notice.myNotices.useQuery({ pageNos });
   const updateNoticeStatus = async (
     shouldPublish: boolean,
@@ -199,7 +215,7 @@ function MyNotice({
 
 export default MyNotice;
 
-const useNoticeListStyle = createStyles((theme) => ({
+const useNoticeListStyle: any = createStyles((theme) => ({
   viewport: {
     minHeight: 600,
   },

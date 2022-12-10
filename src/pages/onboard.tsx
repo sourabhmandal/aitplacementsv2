@@ -55,7 +55,14 @@ const Onboard: NextPage<IPropsOnboard> = ({
     if (clientSession.status == "unauthenticated") router.push("/auth/login");
   }, [router, clientSession.status]);
 
-  const onboardUserMutation = trpc.user["onboardUser"].useMutation();
+  const onboardUserMutation = trpc.user.onboardUser.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
 
   const { values, errors, setFieldValue, onSubmit } = useForm<OnboardUserInput>(
     {

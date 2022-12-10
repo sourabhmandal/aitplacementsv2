@@ -56,27 +56,34 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [totalPages, settotalPages] = useState(1);
   const trpcContext = trpc.useContext();
 
-  const adminListQuery = trpc.user["getUserList"].useQuery({
+  const adminListQuery = trpc.user.getUserList.useQuery({
     role: "ADMIN",
     pageNos: pageNos,
   });
 
-  const studentListQuery = trpc.user["getUserList"].useQuery({
+  const studentListQuery = trpc.user.getUserList.useQuery({
     role: "STUDENT",
     pageNos: pageNos,
   });
 
-  const searchUserByEmail = trpc.user["searchUserByEmail"].useMutation();
-  const inviteUserMutation = trpc.user["inviteUser"].useMutation({
+  const searchUserByEmail = trpc.user.searchUserByEmail.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
+  const inviteUserMutation = trpc.user.inviteUser.useMutation({
     onSuccess: (data) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: "Invitation email sent",
         message: `${data.email} invited to the platform`,
       });
     },
     onError: (error) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: error.data?.code,
         message: error.message,
@@ -85,7 +92,7 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   });
 
   useEffect(() => {
-    trpcContext.user["getUserList"].invalidate();
+    trpcContext.user.getUserList.invalidate();
   }, [inviteUserMutation.isSuccess]);
 
   useEffect(() => {
@@ -229,12 +236,19 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
-  const inviteUserMutation = trpc.user["inviteUser"].useMutation();
+  const inviteUserMutation = trpc.user.inviteUser.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
 
   const trpcContext = trpc.useContext();
 
   useEffect(() => {
-    trpcContext.user["getUserList"].invalidate();
+    trpcContext.user.getUserList.invalidate();
   }, [inviteUserMutation.isSuccess]);
 
   const form = useForm<InviteUserInput>({

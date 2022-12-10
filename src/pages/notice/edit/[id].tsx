@@ -42,12 +42,26 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const theme = useMantineTheme();
   const trpcContext = trpc.useContext();
   const noticeDetailQuery = trpc.notice.noticeDetail.useQuery({ id });
-  const updateNoticeMutation = trpc.notice.updateNotice.useMutation();
+  const updateNoticeMutation = trpc.notice.updateNotice.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
   const [savedTags, setsavedTags] = useState<string[]>([]);
 
   const rteStyles = useRteStyles();
   const createPresignedUrlMutation =
-    trpc.attachment.createPresignedUrl.useMutation();
+    trpc.attachment.createPresignedUrl.useMutation({
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    });
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
@@ -157,7 +171,14 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   };
 
   const deleteNoticeByFileId =
-    trpc.attachment.deleteAttachmentByFileid.useMutation();
+    trpc.attachment.deleteAttachmentByFileid.useMutation({
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    });
 
   const PreviewsLocalFiles = acceptedFileList.map((file, index) => {
     return (

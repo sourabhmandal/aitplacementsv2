@@ -45,41 +45,38 @@ const Profile: NextPage<IPropsOnboard> = ({
   const [openNoticeDialog, setOpenNoticeDialog] = useState(false);
   const router = useRouter();
 
-  const userDetailsQuery = trpc.user["getUserProfileDetails"].useQuery(
-    undefined,
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-      onSuccess(data) {
-        setBasicProfile([
-          { fieldName: "Full Name", fieldValue: data.name },
-          { fieldName: "Email", fieldValue: data.email },
-          { fieldName: "Phone No.", fieldValue: data.phoneNo },
-          { fieldName: "Role", fieldValue: data.role },
-        ]);
+  const userDetailsQuery = trpc.user.getUserProfileDetails.useQuery(undefined, {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+    onSuccess(data) {
+      setBasicProfile([
+        { fieldName: "Full Name", fieldValue: data.name },
+        { fieldName: "Email", fieldValue: data.email },
+        { fieldName: "Phone No.", fieldValue: data.phoneNo },
+        { fieldName: "Role", fieldValue: data.role },
+      ]);
 
-        if (data?.studentDetails) {
-          const { studentDetails } = data;
-          setStudentProfile([
-            { fieldName: "Branch", fieldValue: studentDetails.branch },
-            {
-              fieldName: "Student Registration Number",
-              fieldValue: studentDetails.registrationNumber.toString(),
-            },
-            {
-              fieldName: "Year of Study",
-              fieldValue: studentDetails.year.toString(),
-            },
-          ]);
-        }
-      },
-    }
-  );
+      if (data?.studentDetails) {
+        const { studentDetails } = data;
+        setStudentProfile([
+          { fieldName: "Branch", fieldValue: studentDetails.branch },
+          {
+            fieldName: "Student Registration Number",
+            fieldValue: studentDetails.registrationNumber.toString(),
+          },
+          {
+            fieldName: "Year of Study",
+            fieldValue: studentDetails.year.toString(),
+          },
+        ]);
+      }
+    },
+  });
 
   const clientSession = useSession();
 

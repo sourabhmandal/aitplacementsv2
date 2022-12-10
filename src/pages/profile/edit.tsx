@@ -35,23 +35,20 @@ interface IPropsOnboard {
 }
 
 const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
-  const userDetailsQuery = trpc.user["getUserProfileDetails"].useQuery(
-    undefined,
-    {
-      onError: (err) => {
-        showNotification({
-          title: "Error Occured",
-          message: err.message,
-          color: "red",
-        });
-      },
-    }
-  );
+  const userDetailsQuery = trpc.user.getUserProfileDetails.useQuery(undefined, {
+    onError: (err) => {
+      showNotification({
+        title: "Error Occured",
+        message: err.message,
+        color: "red",
+      });
+    },
+  });
 
   const trpcContext = trpc.useContext();
   const clientSession = useSession();
   const router = useRouter();
-  const updateUserMutation = trpc.user["updateUserProfile"].useMutation({
+  const updateUserMutation = trpc.user.updateUserProfile.useMutation({
     onSuccess(data, variables, context) {
       showNotification({
         title: "User data updated",
@@ -121,7 +118,7 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
       };
     }
     updateUserMutation?.mutate(reqData);
-    trpcContext.user["getUserProfileDetails"].invalidate();
+    trpcContext.user.getUserProfileDetails.invalidate();
   };
 
   if (userDetailsQuery.status == "loading")

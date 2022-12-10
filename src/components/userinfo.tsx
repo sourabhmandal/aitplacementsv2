@@ -28,14 +28,14 @@ export function UserInfo({
 
   const deleteUserMutation = trpc.user.deleteUser.useMutation({
     onSuccess: (data) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: "User Deleted",
         message: `${data.email} deleted successfully`,
       });
     },
     onError: (error) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: error.message,
         message: error.message,
@@ -44,14 +44,14 @@ export function UserInfo({
   });
   const changeUserRoleMutation = trpc.user.changeUserRole.useMutation({
     onSuccess: (data) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: "User Role Changed",
         message: `${data.email} role successfully changed to ${data.role}`,
       });
     },
     onError: (error) => {
-      trpcContext.user["getUserList"].invalidate();
+      trpcContext.user.getUserList.invalidate();
       return showNotification({
         title: error.message,
         message: error.message,
