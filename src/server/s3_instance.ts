@@ -4,7 +4,7 @@ import {
   REACT_APP_AWS_BUCKET_ID,
   REACT_APP_AWS_REGION,
   REACT_APP_AWS_SECRET_ACCESS_KEY,
-} from "../../../utils/constants";
+} from "../utils/constants";
 
 class AwsLibInstance {
   private s3_instance: aws.S3;

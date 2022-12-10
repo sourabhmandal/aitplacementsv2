@@ -1,6 +1,6 @@
 import nodemailer, { Transporter } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import { HOSTED_VERCEL_URL } from "../../../utils/constants";
+import { getBaseUrl } from "../utils/trpc";
 
 class NodeMailerInstance {
   private transporter: Transporter<SMTPTransport.SentMessageInfo> | null;
@@ -35,7 +35,7 @@ class NodeMailerInstance {
   }
 
   async SendUserInviteEmail(email: string, role: string) {
-    let onboardUrl = new URL("/auth/login", HOSTED_VERCEL_URL);
+    let onboardUrl = new URL("/auth/login", getBaseUrl());
     if (this.transporter) {
       // send mail with defined transport object
       let info = await this.transporter.sendMail({
