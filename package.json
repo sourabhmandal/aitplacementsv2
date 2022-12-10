@@ -11,7 +11,7 @@
     "pfmt": "prisma format",
     "pmigdev": "prisma migrate dev",
     "pgen": "prisma generate --schema ./prisma/schema.prisma",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
