@@ -28,18 +28,15 @@ import { Session, unstable_getServerSession } from "next-auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextEditor from "../../../components/RichText";
+import { defaultTagsList, MultiSelectItem } from "../../../schema/constants";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
 import { authOptions } from "../../api/auth/[...nextauth]";
 
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
-  const [defaultTags, setDefaultTags] = useState<any[]>([
-    { value: "COMP", label: "COMP" },
-    { value: "IT", label: "IT" },
-    { value: "ENTC", label: "ENTC" },
-    { value: "MECH", label: "MECH" },
-  ]);
+  const [defaultTags, setDefaultTags] =
+    useState<MultiSelectItem[]>(defaultTagsList);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const router = useRouter();
   const theme = useMantineTheme();

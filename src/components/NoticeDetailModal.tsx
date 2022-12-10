@@ -29,7 +29,7 @@ function NoticeDetailModal({
   openNoticeDialog: boolean;
   setOpenNoticeDialog: Dispatch<SetStateAction<boolean>>;
 }): JSX.Element {
-  const matches = useMediaQuery("(min-width: 600px)");
+  const matches = useMediaQuery("(min-width: 800px)");
   const noticeDetailQuery = trpc.notice.noticeDetail.useQuery({
     id: noticeId,
   });
@@ -142,7 +142,7 @@ function NoticeDetailModal({
       onClose={() => {
         setOpenNoticeDialog(false);
       }}
-      size="xl"
+      size={1300}
       radius="md"
       title={
         <>

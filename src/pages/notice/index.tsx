@@ -24,22 +24,13 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { v4 } from "uuid";
 import RichTextEditor from "../../components/RichText";
+import { defaultTagsList, MultiSelectItem } from "../../schema/constants";
 import { CreateNoticeInput } from "../../schema/notice.schema";
 import { createAWSFilePath } from "../../utils/constants";
 import { trpc } from "../../utils/trpc";
 
-interface MultiSelectItem {
-  value: string;
-  label: string;
-}
-
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
-  const [tags, setTags] = useState<MultiSelectItem[]>([
-    { value: "COMP", label: "COMP" },
-    { value: "IT", label: "IT" },
-    { value: "ENTC", label: "ENTC" },
-    { value: "MECH", label: "MECH" },
-  ]);
+  const [tags, setTags] = useState<MultiSelectItem[]>(defaultTagsList);
   const rteStyles = useRteStyles();
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -219,8 +210,16 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           multiple={true}
           useFsAccessApi={false}
           onDrop={(files) => {
-            setacceptedFileList((prev) => [...prev, ...files]);
-            files.map((file) =>
+            files.map((file) => {
+              if (
+                form.values.attachments.findIndex(
+                  (f) => f.filename === file.name
+                ) >= 0
+              ) {
+                return;
+              }
+              setacceptedFileList((prev) => [...prev, ...files]);
+
               form.setFieldValue("attachments", [
                 ...form.values.attachments,
                 {
@@ -228,8 +227,8 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
                   filename: file.name,
                   filetype: file.type,
                 },
-              ])
-            );
+              ]);
+            });
           }}
           onReject={() =>
             showNotification({
