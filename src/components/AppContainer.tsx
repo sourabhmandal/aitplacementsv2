@@ -1,6 +1,5 @@
 import {
   ActionIcon,
-  Anchor,
   AppShell,
   Box,
   Burger,
@@ -99,12 +98,7 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
 
             <Menu.Item
               icon={<IconBrandGithub size={14} />}
-              onClick={() =>
-                window.open(
-                  "https://github.com/aitoss/aitplacements-v2",
-                  "_blank"
-                )
-              }
+              onClick={showCommingSoon}
             >
               Contributors
             </Menu.Item>
@@ -150,16 +144,11 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
       </>
     );
   const itemsFooter = footerLinks.map((link) => (
-    <Anchor<"a">
-      color="orange"
-      key={link.label}
-      href={link.link}
-      sx={{ lineHeight: 1 }}
-      onClick={(event) => event.preventDefault()}
-      size="sm"
-    >
-      {link.label}
-    </Anchor>
+    <Link color="orange" href={link.link} key={link.link}>
+      <Text color="orange" style={{ textDecoration: "none" }}>
+        {link.label}
+      </Text>
+    </Link>
   ));
 
   return (
@@ -214,7 +203,14 @@ const AppContainer: React.FunctionComponent<IAppContainerProps> = ({
               <Group className={footerStyle.classes.links}>{itemsFooter}</Group>
 
               <Group spacing="xs" position="right" noWrap>
-                <ActionIcon size="lg" variant="default" radius="xl">
+                <ActionIcon
+                  onClick={() =>
+                    window.open("https://github.com/sourabhmandal", "_blank")
+                  }
+                  size="lg"
+                  variant="default"
+                  radius="xl"
+                >
                   <IconBrandGithub size={18} stroke={1.5} />
                 </ActionIcon>
               </Group>
