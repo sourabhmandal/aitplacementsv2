@@ -49,9 +49,9 @@ const Home: NextPage = () => {
       </Head>
       <Carousel
         dragFree
-        slideSize="70%"
+        slideSize="100%"
         slideGap="sm"
-        height={600}
+        height={1000}
         getEmblaApi={setEmbla}
         initialSlide={0}
         loop={true}
