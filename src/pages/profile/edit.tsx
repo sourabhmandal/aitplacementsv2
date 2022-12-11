@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Badge,
   Button,
   Center,
@@ -18,6 +17,7 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
+import Avatar from "boring-avatars";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
@@ -159,9 +159,14 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
             </Title>
             <Badge size="lg">{userDetailsQuery.data?.userStatus}</Badge>
           </Group>
-
           <Divider mb="lg" />
-          <Avatar src={"https://picsum.photos/200"} size={200} radius="md" />
+          <Avatar
+            size={120}
+            name={useremail?.toString()}
+            variant="beam"
+            square
+            colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+          />{" "}
           <Divider my="lg" />
           <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
             <Title>Basic Details</Title>

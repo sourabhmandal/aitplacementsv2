@@ -115,7 +115,7 @@ const Profile: NextPage<IPropsOnboard> = ({
             variant="beam"
             square
             colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
-          />{" "}
+          />
           <Container>
             <SimpleGrid cols={2} mb="sm">
               {baseProfile.map((field, id) => (
