@@ -75,30 +75,9 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
       });
     },
   });
-  const inviteUserMutation = trpc.user.inviteUser.useMutation({
-    onSuccess: (data) => {
-      trpcContext.user.getUserList.invalidate();
-      return showNotification({
-        title: "Invitation email sent",
-        message: `${data.email} invited to the platform`,
-      });
-    },
-    onError: (error) => {
-      trpcContext.user.getUserList.invalidate();
-      return showNotification({
-        title: error.data?.code,
-        message: error.message,
-      });
-    },
-  });
-
-  useEffect(() => {
-    trpcContext.user.getUserList.invalidate();
-  }, [inviteUserMutation.isSuccess]);
 
   useEffect(() => {
     if (studentListQuery?.isSuccess) {
-      // setnoticeList(studentListQuery?.data?.notice!);
       let pages = Math.ceil(studentListQuery?.data?.count! / 10);
       if (pages == 0) pages += 1;
       settotalPages(pages);
@@ -247,20 +226,25 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
+  const trpcContext = trpc.useContext();
+
   const inviteUserMutation = trpc.user.inviteUser.useMutation({
+    onSuccess: (data) => {
+      trpcContext.user.getUserList.invalidate();
+      setopenInviteUserModal(false);
+      return showNotification({
+        title: "Invitation email sent",
+        message: `${data.email} invited to the platform`,
+      });
+    },
     onError: (error) => {
+      trpcContext.user.getUserList.invalidate();
       showNotification({
         message: error.message,
         title: error.data?.code,
       });
     },
   });
-
-  const trpcContext = trpc.useContext();
-
-  useEffect(() => {
-    trpcContext.user.getUserList.invalidate();
-  }, [inviteUserMutation.isSuccess]);
 
   const form = useForm<InviteUserInput>({
     initialValues: {
@@ -279,7 +263,6 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
     // call query to invite user
     inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
-    setopenInviteUserModal(false);
   };
 
   return (
