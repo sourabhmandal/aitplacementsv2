@@ -83,10 +83,17 @@ const Onboard: NextPage<IPropsOnboard> = ({
           if (val! < 10000 && val! > 99999)
             return "please enter your valid 5 digit registration number";
         },
-        phoneNo: (val: string | undefined) =>
-          /^\+?([789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(val?.toString()!)
-            ? null
-            : "Please enter a valid 10 digit phone number starting with 7, 8 or 9",
+        phoneNo: (val: string | undefined) => {
+          if (val == "" || val == undefined) return null;
+          else if (
+            /^\+?([6789]{1})\)?([0-9]{4})[-. ]?([0-9]{5})$/.test(
+              val?.toString()!
+            )
+          ) {
+            return null;
+          } else
+            return "Please enter a valid 10 digit phone number starting with 6, 7, 8 or 9";
+        },
       },
     }
   );
@@ -192,6 +199,7 @@ const Onboard: NextPage<IPropsOnboard> = ({
                 )}
                 <NumberInput
                   label="Phone Number"
+                  required={false}
                   placeholder="93797-39879"
                   value={parseInt(values.phoneNo!)}
                   icon={
