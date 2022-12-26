@@ -2,6 +2,7 @@
   "name": "aitplacementsv2",
   "version": "0.1.0",
   "private": true,
+  "node": ">=18.12.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
