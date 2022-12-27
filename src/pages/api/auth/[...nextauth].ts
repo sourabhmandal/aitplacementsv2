@@ -4,10 +4,6 @@ import AzureADProvider from "next-auth/providers/azure-ad";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "../../../utils/prisma";
 
-export const config = {
-  runtime: "experimental-edge",
-};
-
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
