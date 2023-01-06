@@ -21,7 +21,6 @@ import {
   userSearchInput,
 } from "../../schema/user.schema";
 import { handlePrismaError } from "../../utils/prisma.errors";
-import { NodemailerInstance } from "../nodemailer_instance";
 import { publicProcedure, router } from "../trpc";
 
 export const userRouter = router({
@@ -135,11 +134,11 @@ export const userRouter = router({
           });
           if (user) {
             // nodemailer
-            await NodemailerInstance.GetNodemailer();
-            await NodemailerInstance.SendUserInviteEmail(
-              input.email,
-              input.role
-            );
+            // await NodemailerInstance.GetNodemailer();
+            // await NodemailerInstance.SendUserInviteEmail(
+            //   input.email,
+            //   input.role
+            // );
             return {
               email: user.email,
               role: user.role as ROLES,
