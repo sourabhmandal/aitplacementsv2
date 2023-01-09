@@ -15,7 +15,14 @@ function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>(useColorScheme());
 
   useEffect(() => {
-    setTheme(localStorage.getItem("theme") as ColorScheme);
+    if (window !== undefined) {
+      const savedTheme = localStorage.getItem("theme") as ColorScheme;
+      setTheme(savedTheme);
+
+      if (savedTheme == undefined || savedTheme == null) {
+        localStorage.setItem("theme", theme);
+      }
+    }
   }, []);
 
   useEffect(() => {

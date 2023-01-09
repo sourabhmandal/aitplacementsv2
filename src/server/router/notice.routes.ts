@@ -22,7 +22,7 @@ import {
   UserNoticeOutput,
   userNoticeOutput,
 } from "../../schema/notice.schema";
-import { AWS_BUCKET_ID } from "../../utils/constants";
+import { AIT_AWS_BUCKET_ID } from "../../utils/constants";
 import { handlePrismaError } from "../../utils/prisma.errors";
 import { S3Instance } from "../s3_instance";
 import { publicProcedure, router } from "../trpc";
@@ -238,7 +238,7 @@ export const noticeRouter = router({
               const url = await S3Instance.GetS3().getSignedUrlPromise(
                 "getObject",
                 {
-                  Bucket: AWS_BUCKET_ID,
+                  Bucket: AIT_AWS_BUCKET_ID,
                   Key: `${file.fileid}`,
                 }
               );

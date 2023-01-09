@@ -1,15 +1,14 @@
 import {
   ActionIcon,
-  Box,
   Button,
   Card,
   Center,
   Container,
-  createStyles,
   Group,
   MultiSelect,
-  SegmentedControl,
+  Radio,
   SimpleGrid,
+  Space,
   Text,
   TextInput,
   useMantineTheme,
@@ -17,14 +16,23 @@ import {
 import { Dropzone, FileWithPath, MIME_TYPES } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
-import { IconFileUpload, IconNotes, IconNotesOff, IconX } from "@tabler/icons";
+import { Link } from "@mantine/tiptap";
+import { IconFileUpload, IconX } from "@tabler/icons";
+import Highlight from "@tiptap/extension-highlight";
+import Placeholder from "@tiptap/extension-placeholder";
+import SubScript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
+import TextAlign from "@tiptap/extension-text-align";
+import Underline from "@tiptap/extension-underline";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import { NextPage } from "next";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { v4 } from "uuid";
-import RichTextEditor from "../../components/RichText";
+import RichTextNoticeEditor from "../../components/RichText";
 import { defaultTagsList, MultiSelectItem } from "../../schema/constants";
 import { CreateNoticeInput } from "../../schema/notice.schema";
 import { createAWSFilePath } from "../../utils/constants";
@@ -32,9 +40,7 @@ import { trpc } from "../../utils/trpc";
 
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   const [tags, setTags] = useState<MultiSelectItem[]>(defaultTagsList);
-  const rteStyles = useRteStyles();
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data } = useSession();
   const router = useRouter();
   const theme = useMantineTheme();
@@ -44,7 +50,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
       id: id,
       tags: [],
       adminEmail: data?.user?.email!,
-      isPublished: true,
+      isPublished: false,
       title: "",
       body: "",
       attachments: [],
@@ -54,7 +60,8 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
         val.length > 80
           ? "Title too large, keep title less than 80 letters"
           : null,
-      body: (val: string) => (val == "" ? "Notice body cannot be empty" : null),
+      body: (val: string) =>
+        val == "<p></p>" ? "Notice body cannot be empty" : null,
     },
   });
 
@@ -113,7 +120,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   };
 
   const savePost = async (formdata: CreateNoticeInput) => {
-    formdata.tags = selectedTags;
+    console.log(formdata);
     await acceptedFileList.map((file) => uploadFile(file));
 
     // add unique ids list as attachments
@@ -170,6 +177,23 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
     );
   });
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Link,
+      Superscript,
+      SubScript,
+      Highlight,
+      Placeholder.configure({ placeholder: "Create a notice body here" }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+    ],
+    content: "",
+    onUpdate({ editor }) {
+      form.setFieldValue("body", editor.getHTML());
+    },
+  });
+
   return (
     <>
       <Head>
@@ -180,6 +204,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           content="minimum-scale=1, initial-scale=1, width=device-width"
         />
       </Head>
+      <Space h="lg" />
       <Container>
         <form
           onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
@@ -206,30 +231,16 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
             getCreateLabel={(query) => `+ Create ${query}`}
             onCreate={(query: string) => {
               setTags((current: any) => [...current, query]);
-              setSelectedTags((current: any) => [...current, query]);
               return query;
             }}
             onChange={(values: string[]) => {
-              setSelectedTags(values);
               return values;
             }}
             maxDropdownHeight={160}
           />
-          <RichTextEditor
-            placeholder="Write your notice body here"
-            controls={[
-              ["bold", "italic", "underline", "blockquote", "link"],
-              ["unorderedList", "orderedList"],
-              ["h1", "h2", "h3"],
-              ["alignLeft", "alignCenter", "alignRight"],
-            ]}
-            key="jkhdkjh"
-            value={form.values.body}
-            onChange={(data) => {
-              form.setFieldValue("body", data);
-            }}
-            classNames={rteStyles.classes}
-          />
+
+          <RichTextNoticeEditor editor={editor} key="jkhdkjh" />
+
           <Dropzone
             multiple={true}
             useFsAccessApi={false}
@@ -299,77 +310,37 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
           <SimpleGrid cols={3} mt={8}>
             {PreviewsImage}
           </SimpleGrid>
-          {/* 
-        <Switch
-          size="lg"
-          my="lg"
-          mx="sm"
-          onLabel="PUBLISH"
-          offLabel="DRAFT"
-          checked={form.values.isPublished}
-          onChange={(event) =>
-            form.setFieldValue("isPublished", event.currentTarget.checked)
-          }
-          thumbIcon={
-            form.values.isPublished ? (
-              <IconCheck
-                size={12}
-                color={theme.colors.teal[theme.fn.primaryShade()]}
-                stroke={3}
-              />
-            ) : (
-              <IconX
-                size={12}
-                color={theme.colors.red[theme.fn.primaryShade()]}
-                stroke={3}
-              />
-            )
-          }
-        /> */}
-          <SegmentedControl
-            fullWidth
-            size="md"
-            my="xl"
-            color={theme.fn.lighten(theme.fn.primaryColor(), 0.9)}
-            value={form.values.isPublished ? "publish" : "draft"}
-            onChange={(data) =>
-              form.setFieldValue("isPublished", data == "publish")
-            }
-            radius="md"
-            data={[
-              {
-                value: "draft",
-                label: (
-                  <Center>
-                    <IconNotesOff size={18} />
-                    <Box ml={10}>Draft</Box>
-                  </Center>
-                ),
-              },
-              {
-                label: (
-                  <Center>
-                    <IconNotes size={18} />
-                    <Box ml={10}>Publish</Box>
-                  </Center>
-                ),
-                value: "publish",
-              },
-            ]}
-          />
+
+          <Center p="lg">
+            <Radio.Group
+              name="favoriteFramework"
+              label="How should his notice be saved?"
+              description="Save it as drafted or published"
+              withAsterisk
+              defaultValue="draft"
+              onChange={(data) =>
+                form.setFieldValue("isPublished", data == "publish")
+              }
+              size="lg"
+              spacing={180}
+            >
+              <Radio value="draft" label="Save as Drafted" />
+              <Radio value="publish" label="Save as Published" />
+            </Radio.Group>
+          </Center>
           <Button type="submit" mt="md" fullWidth>
             Save Notice to Database
           </Button>
         </form>
       </Container>
+      <Space h="lg" />
     </>
   );
 };
 
 export default CreateNotice;
 
-export const getServerSideProps = async (context: any) => {
-  console.log(context.params);
+export const getServerSideProps = async () => {
   return {
     props: {
       id: v4(),
@@ -380,9 +351,3 @@ export const getServerSideProps = async (context: any) => {
 interface IPropsCreateNotice {
   id: string;
 }
-
-const useRteStyles = createStyles(() => ({
-  root: {
-    minHeight: 150,
-  },
-}));

@@ -1,9 +1,9 @@
 import aws from "aws-sdk";
 import {
-  AWS_ACCESS_KEY,
-  AWS_BUCKET_ID,
-  AWS_REGION,
-  AWS_SECRET_ACCESS_KEY,
+  AIT_AWS_ACCESS_KEY,
+  AIT_AWS_BUCKET_ID,
+  AIT_AWS_REGION,
+  AIT_AWS_SECRET_ACCESS_KEY,
 } from "../utils/constants";
 
 class AwsLibInstance {
@@ -12,10 +12,10 @@ class AwsLibInstance {
   constructor() {
     this.s3_instance = new aws.S3({
       credentials: {
-        accessKeyId: AWS_ACCESS_KEY!,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: AIT_AWS_ACCESS_KEY!,
+        secretAccessKey: AIT_AWS_SECRET_ACCESS_KEY!,
       },
-      region: AWS_REGION,
+      region: AIT_AWS_REGION,
     });
   }
 
@@ -51,7 +51,7 @@ class AwsLibInstance {
   async DeleteFileByFileId(fileid: string) {
     this.s3_instance.deleteObject(
       {
-        Bucket: AWS_BUCKET_ID!,
+        Bucket: AIT_AWS_BUCKET_ID!,
         Key: `${fileid}`,
       },
       (err, data) => {
@@ -63,7 +63,7 @@ class AwsLibInstance {
   async UploadFile(fileid: string) {
     this.s3_instance.deleteObject(
       {
-        Bucket: AWS_BUCKET_ID!,
+        Bucket: AIT_AWS_BUCKET_ID!,
         Key: `${fileid}`,
       },
       (err, data) => {
