@@ -2,9 +2,11 @@ name: Build and Push to GCR
 
 on:
   push:
+    branches: 
+      - main
+      - ci
     tags:
-      - "main"
-      - "ci"
+      - v*
 
 # Environment variables available to all jobs and steps in this workflow
 #  SA_EMAIL: ${{ secrets.SA_EMAIL }}
