@@ -10,7 +10,7 @@ jobs:
     name: Build and Push to GCP
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ${{github.repository}}
+      IMAGE_NAME: ${{ github.event.repository.name }}
       PROJECT_ID: test-30059
     steps:
       - name: Checkout
