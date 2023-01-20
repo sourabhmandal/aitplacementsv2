@@ -2,10 +2,6 @@
   "name": "aitplacementsv2",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": ">=16.18.0",
-    "npm": ">=8.19.2"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
