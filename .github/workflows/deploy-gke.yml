@@ -20,11 +20,11 @@ on:
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
-  GAR_LOCATION: asia # TODO: update region of the Artifact Registry
+  GAR_LOCATION: aitpune-repository # TODO: update region of the Artifact Registry
   GKE_CLUSTER: aitpune-k8s-prod # TODO: update to cluster name
   GKE_ZONE: us-central1 # TODO: update to cluster zone
   DEPLOYMENT_NAME: gke-test # TODO: update to deployment name
-  REPOSITORY: asia-docker.pkg.dev # TODO: update to Artifact Registry docker repository
+  REPOSITORY: test-30059/aitpune-repository # TODO: update to Artifact Registry docker repository
   IMAGE: aitplacement-frontend
 
 jobs:
