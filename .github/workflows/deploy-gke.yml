@@ -24,8 +24,8 @@ env:
   GKE_CLUSTER: aitpune-k8s-prod # TODO: update to cluster name
   GKE_ZONE: us-central1 # TODO: update to cluster zone
   DEPLOYMENT_NAME: gke-test # TODO: update to deployment name
-  REPOSITORY: test-30059/aitpune-repository # TODO: update to Artifact Registry docker repository
-  IMAGE: aitplacement-frontend
+  REPOSITORY: aitpune-repository # TODO: update to Artifact Registry docker repository
+  IMAGE: aitplacements-frontend
 
 jobs:
   setup-build-publish-deploy:
