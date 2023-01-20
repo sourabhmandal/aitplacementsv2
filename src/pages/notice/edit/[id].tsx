@@ -478,7 +478,6 @@ export const getServerSideProps = async (
     };
   }
 
-  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
     props: {
       id: id,

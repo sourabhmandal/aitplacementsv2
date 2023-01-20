@@ -8,6 +8,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
+import { NoticeMetadata } from "../../schema/notice.schema";
 import { trpc } from "../../utils/trpc";
 
 function PublishedNotices({
@@ -54,36 +55,38 @@ function PublishedNotices({
           </tr>
         </thead>
         <tbody>
-          {publishedNoticeQueryData.data?.notices?.map((item) => (
-            <tr
-              key={item.id}
-              onClick={() => {
-                setnoticeId(item.id);
-                setOpenNoticeDialog(true);
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <td>
-                <Text size="sm" weight="bolder">
-                  {item.title}
-                </Text>
-                {item.tags?.map((item, idx) => (
-                  <Badge key={idx} variant="outline" color={"orange"} mr={4}>
-                    {item}
-                  </Badge>
-                ))}
-              </td>
+          {publishedNoticeQueryData.data?.notices?.map(
+            (item: NoticeMetadata) => (
+              <tr
+                key={item.id}
+                onClick={() => {
+                  setnoticeId(item.id);
+                  setOpenNoticeDialog(true);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <td>
+                  <Text size="sm" weight="bolder">
+                    {item.title}
+                  </Text>
+                  {item.tags?.map((item, idx) => (
+                    <Badge key={idx} variant="outline" color={"orange"} mr={4}>
+                      {item}
+                    </Badge>
+                  ))}
+                </td>
 
-              <td>
-                <Text size="xs" weight={"bolder"}>
-                  {item.admin}
-                </Text>
-                <Text size="xs" color="dimmed">
-                  {item.updatedAt}
-                </Text>
-              </td>
-            </tr>
-          ))}
+                <td>
+                  <Text size="xs" weight={"bolder"}>
+                    {item.admin}
+                  </Text>
+                  <Text size="xs" color="dimmed">
+                    {item.updatedAt}
+                  </Text>
+                </td>
+              </tr>
+            )
+          )}
         </tbody>
       </Table>
       <Center my={10}>

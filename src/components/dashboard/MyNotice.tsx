@@ -13,9 +13,16 @@ import {
 import { openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
-import { IconNotes, IconNotesOff, IconPencil, IconTrashX } from "@tabler/icons";
+import {
+  IconDots,
+  IconNotes,
+  IconNotesOff,
+  IconPencil,
+  IconTrashX,
+} from "@tabler/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { NoticeMetadata } from "../../schema/notice.schema";
 import { trpc } from "../../utils/trpc";
 
 function MyNotice({
@@ -98,104 +105,118 @@ function MyNotice({
             </tr>
           </thead>
           <tbody>
-            {userNoticesQuery.data?.notice.map((item, idx: number) => (
-              <tr key={idx} style={{ cursor: "pointer" }}>
-                <td
-                  onClick={() => {
-                    setnoticeId(item.id);
-                    setOpenNoticeDialog(true);
-                  }}
+            {userNoticesQuery.data?.notice.map(
+              (item: NoticeMetadata, idx: number) => (
+                <tr
+                  key={item.id + idx.toString()}
+                  style={{ cursor: "pointer" }}
                 >
-                  <Text size="sm" weight="bolder">
-                    {item.title}
-                  </Text>
-                  <Text size="xs" color="dimmed">
-                    {item.updatedAt}
-                  </Text>
-                </td>
-
-                <td
-                  onClick={() => {
-                    setnoticeId(item.id);
-                    setOpenNoticeDialog(true);
-                  }}
-                  style={{ textAlign: "center" }}
-                >
-                  <Badge
-                    variant="outline"
-                    color={item.isPublished ? "orange" : "violet"}
+                  <td
+                    onClick={() => {
+                      setnoticeId(item.id);
+                      setOpenNoticeDialog(true);
+                    }}
                   >
-                    {item.isPublished ? "Published" : "Drafted"}
-                  </Badge>
-                </td>
-                <td>
-                  {userrole === "ADMIN" ? (
-                    <Group noWrap>
-                      <Tooltip
-                        label={item.isPublished ? "Draft Now" : "Publish Now"}
-                      >
-                        <ActionIcon
-                          variant="outline"
-                          color={item.isPublished ? "orange" : "violet"}
-                          onClick={() =>
-                            openConfirmModal({
-                              title: `Do you want to make this article ${
-                                item.isPublished ? "drafted?" : "published?"
-                              }`,
-                              children: (
-                                <Text size="sm">
-                                  This action is so important that you are
-                                  required to confirm it with a modal. Please
-                                  click one of these buttons to proceed.
-                                </Text>
-                              ),
+                    <Text size="sm" weight="bolder">
+                      {item.title}
+                    </Text>
+                    <Text size="xs" color="dimmed">
+                      {item.updatedAt}
+                    </Text>
+                  </td>
 
-                              labels: { confirm: "Confirm", cancel: "Cancel" },
-                              onCancel: () => {},
-                              onConfirm: async () =>
-                                await updateNoticeStatus(
-                                  !item.isPublished,
-                                  item.id
+                  <td
+                    onClick={() => {
+                      setnoticeId(item.id);
+                      setOpenNoticeDialog(true);
+                    }}
+                    style={{ textAlign: "center" }}
+                  >
+                    <Badge
+                      variant="outline"
+                      color={item.isPublished ? "orange" : "violet"}
+                    >
+                      {item.isPublished ? "Published" : "Drafted"}
+                    </Badge>
+                  </td>
+                  <td>
+                    {userrole === "ADMIN" ? (
+                      <Group noWrap>
+                        <Tooltip
+                          label={item.isPublished ? "Draft Now" : "Publish Now"}
+                        >
+                          <ActionIcon
+                            variant="outline"
+                            color={item.isPublished ? "orange" : "violet"}
+                            disabled={changeNoticeStatusMutation.isLoading}
+                            onClick={() =>
+                              openConfirmModal({
+                                title: `Do you want to make this article ${
+                                  item.isPublished ? "drafted?" : "published?"
+                                }`,
+                                children: (
+                                  <Text size="sm">
+                                    This action is so important that you are
+                                    required to confirm it with a modal. Please
+                                    click one of these buttons to proceed.
+                                  </Text>
                                 ),
 
-                              closeOnClickOutside: false,
-                            })
-                          }
-                        >
-                          {item.isPublished ? (
-                            <IconNotes size={16} />
-                          ) : (
-                            <IconNotesOff size={16} />
-                          )}
-                        </ActionIcon>
-                      </Tooltip>
-                      <Tooltip label="Edit">
-                        <Link href={`notice/edit/${item.id}`}>
-                          <ActionIcon variant="outline" color="yellow">
-                            <IconPencil size={16} />
+                                labels: {
+                                  confirm: "Confirm",
+                                  cancel: "Cancel",
+                                },
+                                onCancel: () => {},
+                                onConfirm: async () =>
+                                  await updateNoticeStatus(
+                                    !item.isPublished,
+                                    item.id
+                                  ),
+
+                                closeOnClickOutside: false,
+                              })
+                            }
+                          >
+                            {item.isPublished ? (
+                              <IconNotes size={16} />
+                            ) : (
+                              <IconNotesOff size={16} />
+                            )}
                           </ActionIcon>
-                        </Link>
-                      </Tooltip>
-                      <Tooltip label="Delete">
-                        <ActionIcon
-                          variant="outline"
-                          color="red"
-                          onClick={() =>
-                            deleteNoticeMutation.mutate({
-                              noticeId: item.id,
-                            })
-                          }
-                        >
-                          <IconTrashX size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    </Group>
-                  ) : (
-                    <></>
-                  )}
-                </td>
-              </tr>
-            ))}
+                        </Tooltip>
+                        <Tooltip label="Edit">
+                          <Link href={`notice/edit/${item.id}`}>
+                            <ActionIcon variant="outline" color="yellow">
+                              <IconPencil size={16} />
+                            </ActionIcon>
+                          </Link>
+                        </Tooltip>
+                        <Tooltip label="Delete">
+                          <ActionIcon
+                            variant="outline"
+                            disabled={deleteNoticeMutation.isLoading}
+                            color="red"
+                            onClick={() =>
+                              deleteNoticeMutation.mutate({
+                                noticeId: item.id,
+                              })
+                            }
+                          >
+                            {deleteNoticeMutation.isLoading ? (
+                              <IconDots size={16} />
+                            ) : (
+                              <IconTrashX size={16} />
+                            )}
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
+                    ) : (
+                      <></>
+                    )}
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </Table>
         <Center my={10}>
