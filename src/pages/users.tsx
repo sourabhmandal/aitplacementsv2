@@ -18,21 +18,22 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import {
-  openSpotlight,
-  registerSpotlightActions,
   SpotlightAction,
   SpotlightProvider,
+  openSpotlight,
+  registerSpotlightActions,
 } from "@mantine/spotlight";
 import { Role } from "@prisma/client";
 import { IconSearch, IconUserCircle } from "@tabler/icons";
-import { debounce, DebouncedFunc } from "lodash";
+import { DebouncedFunc, debounce } from "lodash";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { UserInfo } from "../../components/userinfo";
-import Userinfolist from "../../components/userinfolist";
+import { UserInfo } from "../components/userinfo";
+import Userinfolist from "../components/userinfolist";
 import { InviteUserInput } from "../schema/admin.schema";
 import { ROLES } from "../schema/constants";
 import { trpc } from "../utils/trpc";
@@ -56,41 +57,27 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   const [totalPages, settotalPages] = useState(1);
   const trpcContext = trpc.useContext();
 
-  const adminListQuery = trpc.useQuery([
-    "user.get-user-list",
-    { role: "ADMIN", pageNos: pageNos },
-  ]);
+  const adminListQuery = trpc.user.getUserList.useQuery({
+    role: "ADMIN",
+    pageNos: pageNos,
+  });
 
-  const studentListQuery = trpc.useQuery([
-    "user.get-user-list",
-    { role: "STUDENT", pageNos: pageNos },
-  ]);
+  const studentListQuery = trpc.user.getUserList.useQuery({
+    role: "STUDENT",
+    pageNos: pageNos,
+  });
 
-  const searchUserByEmail = trpc.useMutation("user.search-user-by-email");
-  const inviteUserMutation = trpc.useMutation("user.invite-user", {
-    onSuccess: (data) => {
-      trpcContext.invalidateQueries("user.get-user-list");
-      return showNotification({
-        title: "Invitation email sent",
-        message: `${data.email} invited to the platform`,
-      });
-    },
+  const searchUserByEmail = trpc.user.searchUserByEmail.useMutation({
     onError: (error) => {
-      trpcContext.invalidateQueries("user.get-user-list");
-      return showNotification({
-        title: error.data?.code,
+      showNotification({
         message: error.message,
+        title: error.data?.code,
       });
     },
   });
 
   useEffect(() => {
-    trpcContext.invalidateQueries("user.get-user-list");
-  }, [inviteUserMutation.isSuccess]);
-
-  useEffect(() => {
     if (studentListQuery?.isSuccess) {
-      // setnoticeList(studentListQuery?.data?.notice!);
       let pages = Math.ceil(studentListQuery?.data?.count! / 10);
       if (pages == 0) pages += 1;
       settotalPages(pages);
@@ -144,98 +131,120 @@ const UserPage: NextPage<IUserProps> = ({ userrole }) => {
   );
 
   return (
-    <Container>
-      <Title order={3}>People in the Platform</Title>
-      <SpotlightProvider
-        actions={searchedNotice}
-        searchIcon={<IconSearch size={18} />}
-        searchPlaceholder="Search..."
-        shortcut="mod + ctrl + F"
-        nothingFoundMessage="Nothing found..."
-        onQueryChange={(query) => handleTextSearch(query)}
-        highlightQuery
-        limit={100}
-      >
-        <Group position="center">
-          <UnstyledButton
-            sx={{
-              border: 1,
-              borderRadius: "0.5em",
-              borderStyle: "solid",
-              borderColor: "#ddd",
-              marginTop: 15,
-              marginBottom: 15,
-              width: "100%",
-            }}
-            onClick={() => openSpotlight()}
-          >
-            <Group p={10}>
-              <IconSearch size={16} style={{ color: "#ddd" }} />
-              <Text color="dimmed" size="sm">
-                Search
-              </Text>
-            </Group>
-          </UnstyledButton>
-        </Group>
-      </SpotlightProvider>
-      <Divider mt="sm" mb="xl" />
-      {userrole == "ADMIN" ? (
-        <>
-          <Button
-            onClick={() => setopenInviteUserModal(true)}
-            fullWidth
-            my="xl"
-          >
-            ADD MORE USERS
-          </Button>
-          <InviteUserModal
-            openInviteUserModal={openInviteUserModal}
-            setopenInviteUserModal={setopenInviteUserModal}
-          />
-
-          <Divider my="lg" variant="dashed" />
-        </>
-      ) : (
-        <></>
-      )}
-      <SimpleGrid spacing="xl" cols={2}>
-        {adminListQuery?.data?.users.map((item) => (
-          <UserInfo
-            key={item.id}
-            id={item.id}
-            name={item.name}
-            title={item.role}
-            email={item.email}
-            userstatus={item.userStatus}
-            sessionUserRole={userrole}
-          />
-        ))}
-      </SimpleGrid>
-      <Space h="lg" />
-      <Userinfolist students={studentListQuery?.data} userrole={userrole} />
-
-      <Center my="md">
-        <Pagination
-          total={totalPages}
-          color="orange"
-          page={pageNos}
-          onChange={setpageNos}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-      </Center>
-    </Container>
+      </Head>
+      <Container>
+        <Title order={3}>People in the Platform</Title>
+        <SpotlightProvider
+          actions={searchedNotice}
+          searchIcon={<IconSearch size={18} />}
+          searchPlaceholder="Search..."
+          shortcut="mod + ctrl + F"
+          nothingFoundMessage="Nothing found..."
+          onQueryChange={(query) => handleTextSearch(query)}
+          highlightQuery
+          limit={100}
+        >
+          <Group position="center">
+            <UnstyledButton
+              sx={{
+                border: 1,
+                borderRadius: "0.5em",
+                borderStyle: "solid",
+                borderColor: "#ddd",
+                marginTop: 15,
+                marginBottom: 15,
+                width: "100%",
+              }}
+              onClick={() => openSpotlight()}
+            >
+              <Group p={10}>
+                <IconSearch size={16} style={{ color: "#ddd" }} />
+                <Text color="dimmed" size="sm">
+                  Search
+                </Text>
+              </Group>
+            </UnstyledButton>
+          </Group>
+        </SpotlightProvider>
+        <Divider mt="sm" mb="xl" />
+        {userrole == "ADMIN" ? (
+          <>
+            <Button
+              onClick={() => setopenInviteUserModal(true)}
+              fullWidth
+              my="xl"
+            >
+              ADD MORE USERS
+            </Button>
+            <InviteUserModal
+              openInviteUserModal={openInviteUserModal}
+              setopenInviteUserModal={setopenInviteUserModal}
+            />
+
+            <Divider my="lg" variant="dashed" />
+          </>
+        ) : (
+          <></>
+        )}
+        <SimpleGrid spacing="xl" cols={2}>
+          {adminListQuery?.data?.users.map((item) => (
+            <UserInfo
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              title={item.role}
+              email={item.email}
+              userstatus={item.userStatus}
+              sessionUserRole={userrole}
+            />
+          ))}
+        </SimpleGrid>
+        <Space h="lg" />
+        <Userinfolist students={studentListQuery?.data} userrole={userrole} />
+
+        <Center my="md">
+          <Pagination
+            total={totalPages}
+            color="orange"
+            page={pageNos}
+            onChange={setpageNos}
+          />
+        </Center>
+      </Container>
+    </>
   );
 };
 
 export default UserPage;
 
 function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
-  const inviteUserMutation = trpc.useMutation("user.invite-user");
-
   const trpcContext = trpc.useContext();
 
-  useEffect(() => {
-    trpcContext.invalidateQueries("user.get-user-list");
-  }, [inviteUserMutation.isSuccess]);
+  const inviteUserMutation = trpc.user.inviteUser.useMutation({
+    onSuccess: (data) => {
+      trpcContext.user.getUserList.invalidate();
+      setopenInviteUserModal(false);
+      return showNotification({
+        title: "Invitation email sent",
+        message: `${data.email} invited to the platform`,
+      });
+    },
+    onError: (error) => {
+      trpcContext.user.getUserList.invalidate();
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
 
   const form = useForm<InviteUserInput>({
     initialValues: {
@@ -254,7 +263,6 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
     // call query to invite user
     inviteUserMutation.mutate(data);
     form.setFieldValue("email", "");
-    setopenInviteUserModal(false);
   };
 
   return (

@@ -1,20 +1,22 @@
-import { Carousel } from "@mantine/carousel";
+import { Carousel, Embla } from "@mantine/carousel";
 import { createStyles } from "@mantine/core";
-import Autoplay from "embla-carousel-autoplay";
 import type { NextPage } from "next";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import Ait1Image1 from "../../assets/ait1.jpg";
 import Ait1Image2 from "../../assets/ait2.jpg";
 import Ait1Image3 from "../../assets/ait3.png";
 
 const Home: NextPage = () => {
-  const autoplay = useRef(Autoplay({ delay: 2000 }));
-  const carouselStyle = useCarouselStyle();
   const router = useRouter();
   const { status } = useSession();
+  const [embla, setEmbla] = useState<Embla | null>(null);
+
+  const carouselStyle = useCarouselStyle();
 
   useEffect(() => {
     if (status == "authenticated") router.push("/dashboard");
@@ -22,27 +24,65 @@ const Home: NextPage = () => {
     return () => {};
   }, [status, router]);
 
+  const handleScroll = useCallback(() => {
+    console.log("callback");
+    if (!embla) return;
+  }, [embla]);
+
+  useEffect(() => {
+    console.log("use effect");
+    if (embla) {
+      embla.on("scroll", handleScroll);
+      handleScroll();
+    }
+  }, [embla, handleScroll]);
+
   return (
-    <Carousel
-      withIndicators
-      height={800}
-      loop
-      draggable
-      plugins={[autoplay.current]}
-      onMouseEnter={autoplay.current.stop}
-      onMouseLeave={autoplay.current.reset}
-      classNames={carouselStyle.classes}
-    >
-      <Carousel.Slide>
-        <Image src={Ait1Image1} layout="fill" objectFit="cover" alt="ait" />
-      </Carousel.Slide>
-      <Carousel.Slide>
-        <Image src={Ait1Image2} layout="fill" objectFit="cover" alt="ait" />
-      </Carousel.Slide>
-      <Carousel.Slide>
-        <Image src={Ait1Image3} layout="fill" objectFit="cover" alt="ait" />
-      </Carousel.Slide>
-    </Carousel>
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Carousel
+        dragFree
+        slideSize="100%"
+        slideGap="sm"
+        height={1000}
+        getEmblaApi={setEmbla}
+        initialSlide={0}
+        loop={true}
+        classNames={carouselStyle.classes}
+      >
+        <Carousel.Slide style={{ overflow: "hidden" }}>
+          <Image
+            src={Ait1Image1}
+            alt="ait-placements-1"
+            fill
+            objectFit="cover"
+          />
+        </Carousel.Slide>
+        <Carousel.Slide>
+          <Image
+            src={Ait1Image2}
+            alt="ait-placements-1"
+            fill
+            objectFit="cover"
+          />
+        </Carousel.Slide>
+        <Carousel.Slide>
+          <Image
+            src={Ait1Image3}
+            alt="ait-placements-1"
+            fill
+            objectFit="cover"
+          />
+        </Carousel.Slide>
+      </Carousel>
+    </>
   );
 };
 

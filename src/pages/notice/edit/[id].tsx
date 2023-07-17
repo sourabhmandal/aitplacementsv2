@@ -5,69 +5,104 @@ import {
   Card,
   Center,
   Container,
-  createStyles,
   Group,
   MultiSelect,
   SegmentedControl,
   SimpleGrid,
+  Space,
   Text,
   TextInput,
   useMantineTheme,
 } from "@mantine/core";
-
 import { Dropzone, FileWithPath, MIME_TYPES } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { IconFileUpload, IconNotes, IconNotesOff, IconX } from "@tabler/icons";
+import Highlight from "@tiptap/extension-highlight";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
+import TextAlign from "@tiptap/extension-text-align";
+import Underline from "@tiptap/extension-underline";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
   GetServerSidePropsContext,
   GetServerSidePropsResult,
   NextPage,
 } from "next";
 import { Session, unstable_getServerSession } from "next-auth";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import RichTextEditor from "../../../../components/RichText";
+import RichTextNoticeEditor from "../../../components/RichText";
+import { MultiSelectItem, defaultTagsList } from "../../../schema/constants";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
 import { authOptions } from "../../api/auth/[...nextauth]";
 
-const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
-  const [defaultTags, setDefaultTags] = useState<MultiSelectItem[]>([
-    { value: "COMP", label: "COMP" },
-    { value: "IT", label: "IT" },
-    { value: "ENTC", label: "ENTC" },
-    { value: "MECH", label: "MECH" },
-  ]);
+const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
+  const [defaultTags, setDefaultTags] =
+    useState<MultiSelectItem[]>(defaultTagsList);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const router = useRouter();
   const theme = useMantineTheme();
   const trpcContext = trpc.useContext();
-  const noticeDetailQuery = trpc.useQuery(["notice.notice-detail", { id }]);
-  const updateNoticeMutation = trpc.useMutation("notice.update-notice");
+  const noticeDetailQuery = trpc.notice.noticeDetail.useQuery({ id });
+  const updateNoticeMutation = trpc.notice.updateNotice.useMutation({
+    onError: (error) => {
+      showNotification({
+        message: error.message,
+        title: error.data?.code,
+      });
+    },
+  });
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Link,
+      Superscript,
+      Subscript,
+      Highlight,
+      Placeholder.configure({ placeholder: "Create a notice body here" }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+    ],
+    content: "",
+    onUpdate({ editor }) {
+      form.setFieldValue("body", editor.getHTML());
+    },
+  });
+
   const [savedTags, setsavedTags] = useState<string[]>([]);
 
-  const rteStyles = useRteStyles();
-  const createPresignedUrlMutation = trpc.useMutation(
-    "attachment.create-presigned-url"
-  );
+  const createPresignedUrlMutation =
+    trpc.attachment.createPresignedUrl.useMutation({
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    });
 
   useEffect(() => {
     if (noticeDetailQuery.isSuccess && noticeDetailQuery.data) {
       form.setValues({
-        title: noticeDetailQuery.data.title,
-        id: noticeDetailQuery.data.id,
-        tags: noticeDetailQuery.data.tags,
-        isPublished: noticeDetailQuery.data.isPublished,
+        title: noticeDetailQuery?.data?.title,
+        id: noticeDetailQuery?.data?.id,
+        tags: noticeDetailQuery?.data?.tags,
+        isPublished: noticeDetailQuery?.data?.isPublished,
         adminEmail: useremail,
-        attachments: noticeDetailQuery.data.attachments.map((f) => ({
+        attachments: noticeDetailQuery?.data?.attachments.map((f) => ({
           fileid: createAWSFilePath(id, f.name),
           filename: f.name,
           filetype: f.type,
         })),
 
-        body: noticeDetailQuery.data.body,
+        body: noticeDetailQuery?.data?.body,
       });
     }
   }, [
@@ -96,11 +131,17 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   });
 
   useEffect(() => {
-    setsavedTags(noticeDetailQuery.data?.tags!);
-  }, [noticeDetailQuery.data?.tags]);
+    setsavedTags(noticeDetailQuery?.data?.tags!);
+  }, [noticeDetailQuery?.data?.tags]);
 
   useEffect(() => {
-    form.setFieldValue("tags", savedTags);
+    if (savedTags !== undefined) {
+      form.setFieldValue("tags", savedTags);
+
+      defaultTags.concat(
+        savedTags.map((e): MultiSelectItem => ({ label: e, value: e }))
+      );
+    }
   }, [savedTags]);
 
   const uploadFile = async (targetFile: FileWithPath) => {
@@ -141,8 +182,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
   const savePost = async (formdata: CreateNoticeInput) => {
     await acceptedFileList.map((file) => uploadFile(file));
 
-    //const data =;
-
     formdata.attachments = [
       ...formdata.attachments,
       ...acceptedFileList.map((f) => ({
@@ -155,15 +194,20 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
     // add unique ids list as attachments
     await updateNoticeMutation.mutate(formdata);
 
-    trpcContext.invalidateQueries("notice.published-notice-list");
-    trpcContext.invalidateQueries("notice.my-notices");
-
+    trpcContext.notice.publishedNoticeList.invalidate();
+    trpcContext.notice.myNotices.invalidate();
     router.push("/dashboard");
   };
 
-  const deleteNoticeByFileId = trpc.useMutation(
-    "attachment.delete-attachment-by-fileid"
-  );
+  const deleteNoticeByFileId =
+    trpc.attachment.deleteAttachmentByFileid.useMutation({
+      onError: (error) => {
+        showNotification({
+          message: error.message,
+          title: error.data?.code,
+        });
+      },
+    });
 
   const PreviewsLocalFiles = acceptedFileList.map((file, index) => {
     return (
@@ -242,7 +286,7 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
                   showNotification({
                     message: `${context.filename} deleted`,
                   });
-                  trpcContext.invalidateQueries("notice.notice-detail");
+                  trpcContext.notice.noticeDetail.invalidate();
                 },
               }
             );
@@ -254,151 +298,161 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id, useremail }) => {
     );
   });
 
+  useEffect(() => {
+    editor?.commands?.setContent(noticeDetailQuery?.data?.body ?? "");
+  }, [noticeDetailQuery]);
+
   return (
-    <Container>
-      <form
-        onSubmit={form.onSubmit((data: CreateNoticeInput) => savePost(data))}
-      >
-        <TextInput
-          required
-          label="Notice Title"
-          mb={10}
-          placeholder="Set a notice title"
-          onChange={(e) => {
-            form.setFieldValue("title", e.target.value);
-          }}
-          value={form.values.title}
-          error={form.errors.title && "Invalid title"}
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-
-        <MultiSelect
-          creatable
-          searchable
-          data={defaultTags}
-          value={savedTags}
-          label="Tags"
-          placeholder="Add tags for this post"
-          mb={40}
-          getCreateLabel={(query) => `+ Create ${query}`}
-          onCreate={(query: string) => {
-            setDefaultTags((current: any) => [...current, query]);
-            let item: MultiSelectItem = {
-              value: query,
-              label: query,
-            };
-            return item;
-          }}
-          onChange={(values: string[]) => {
-            console.log(form.values.tags, values, savedTags);
-            setsavedTags([...values]);
-            return values;
-          }}
-          maxDropdownHeight={160}
-        />
-        <RichTextEditor
-          placeholder="Write your notice body here"
-          controls={[
-            ["bold", "italic", "underline", "blockquote", "link"],
-            ["unorderedList", "orderedList"],
-            ["h1", "h2", "h3"],
-            ["alignLeft", "alignCenter", "alignRight"],
-          ]}
-          key="jkhdkjh"
-          value={form.values.body}
-          onChange={(data) => {
-            form.setFieldValue("body", data);
-          }}
-          classNames={rteStyles.classes}
-        />
-        <Dropzone
-          multiple={false}
-          useFsAccessApi={false}
-          onDrop={(files) => {
-            setacceptedFileList((prev) => [...prev, ...files]);
-          }}
-          onReject={() =>
-            showNotification({
-              message: `file type not accepted`,
-              title: "Unsupported file",
-              color: "red",
-            })
-          }
-          maxSize={20 * 1024 ** 2} // 20 mb
-          accept={[
-            MIME_TYPES.csv,
-            MIME_TYPES.doc,
-            MIME_TYPES.docx,
-            MIME_TYPES.gif,
-            MIME_TYPES.jpeg,
-            MIME_TYPES.mp4,
-            MIME_TYPES.pdf,
-            MIME_TYPES.png,
-            MIME_TYPES.ppt,
-            MIME_TYPES.pptx,
-            MIME_TYPES.svg,
-            MIME_TYPES.webp,
-            MIME_TYPES.xls,
-            MIME_TYPES.xlsx,
-            MIME_TYPES.zip,
-          ]}
-        >
-          <Group
-            position="center"
-            spacing="xl"
-            style={{ minHeight: 120, pointerEvents: "none" }}
+      </Head>
+      <Space h="md" />
+      {noticeDetailQuery.isFetched ? (
+        <Container>
+          <form
+            onSubmit={form.onSubmit((data: CreateNoticeInput) =>
+              savePost(data)
+            )}
           >
-            <div>
-              <Text size="xl" inline>
-                Drag files here or click to select files
-              </Text>
-              <Text size="sm" color="dimmed" inline mt={7}>
-                Attach as many files as you like, each file should not exceed
-                20mb
-              </Text>
-            </div>
-          </Group>
-        </Dropzone>
-        <SimpleGrid cols={3} mt={8}>
-          {PreviewsLocalFiles}
-          {PreviewsRemoteFiles}
-        </SimpleGrid>
+            <TextInput
+              required
+              label="Notice Title"
+              mb={10}
+              placeholder="Set a notice title"
+              onChange={(e) => {
+                form.setFieldValue("title", e.target.value);
+              }}
+              value={form.values.title}
+              error={form.errors.title && "Invalid title"}
+            />
 
-        <SegmentedControl
-          fullWidth
-          size="md"
-          my="xl"
-          style={{ background: theme.fn.lighten(theme.fn.primaryColor(), 0.7) }}
-          value={form.values.isPublished ? "publish" : "draft"}
-          onChange={(data) =>
-            form.setFieldValue("isPublished", data == "publish")
-          }
-          radius="md"
-          data={[
-            {
-              value: "draft",
-              label: (
-                <Center>
-                  <IconNotesOff size={18} />
-                  <Box ml={10}>Draft</Box>
-                </Center>
-              ),
-            },
-            {
-              label: (
-                <Center>
-                  <IconNotes size={18} />
-                  <Box ml={10}>Publish</Box>
-                </Center>
-              ),
-              value: "publish",
-            },
-          ]}
-        />
-        <Button type="submit" mt="md" fullWidth>
-          Save Notice to Database
-        </Button>
-      </form>
-    </Container>
+            <MultiSelect
+              creatable
+              searchable
+              data={defaultTags}
+              value={savedTags}
+              label="Tags"
+              placeholder="Add tags for this post"
+              mb={40}
+              getCreateLabel={(query) => `+ Create ${query}`}
+              onCreate={(query: string) => {
+                setDefaultTags((current: any) => [...current, query]);
+                let item: any = {
+                  value: query,
+                  label: query,
+                };
+                return item;
+              }}
+              onChange={(values: string[]) => {
+                console.log(form.values.tags, values, savedTags);
+                setsavedTags([...values]);
+                return values;
+              }}
+              maxDropdownHeight={160}
+            />
+            <RichTextNoticeEditor key="jkhdkjh" editor={editor} />
+            <Dropzone
+              multiple={false}
+              useFsAccessApi={false}
+              onDrop={(files) => {
+                setacceptedFileList((prev) => [...prev, ...files]);
+              }}
+              onReject={() =>
+                showNotification({
+                  message: `file type not accepted`,
+                  title: "Unsupported file",
+                  color: "red",
+                })
+              }
+              maxSize={20 * 1024 ** 2} // 20 mb
+              accept={[
+                MIME_TYPES.csv,
+                MIME_TYPES.doc,
+                MIME_TYPES.docx,
+                MIME_TYPES.gif,
+                MIME_TYPES.jpeg,
+                MIME_TYPES.mp4,
+                MIME_TYPES.pdf,
+                MIME_TYPES.png,
+                MIME_TYPES.ppt,
+                MIME_TYPES.pptx,
+                MIME_TYPES.svg,
+                MIME_TYPES.webp,
+                MIME_TYPES.xls,
+                MIME_TYPES.xlsx,
+                MIME_TYPES.zip,
+              ]}
+            >
+              <Group
+                position="center"
+                spacing="xl"
+                style={{ minHeight: 120, pointerEvents: "none" }}
+              >
+                <div>
+                  <Text size="xl" inline>
+                    Drag files here or click to select files
+                  </Text>
+                  <Text size="sm" color="dimmed" inline mt={7}>
+                    Attach as many files as you like, each file should not
+                    exceed 20mb
+                  </Text>
+                </div>
+              </Group>
+            </Dropzone>
+            <SimpleGrid cols={3} mt={8}>
+              {PreviewsLocalFiles}
+              {PreviewsRemoteFiles}
+            </SimpleGrid>
+
+            <SegmentedControl
+              fullWidth
+              size="md"
+              my="xl"
+              style={{
+                background: theme.fn.lighten(theme.fn.primaryColor(), 0.7),
+              }}
+              value={form.values.isPublished ? "publish" : "draft"}
+              onChange={(data) =>
+                form.setFieldValue("isPublished", data == "publish")
+              }
+              radius="md"
+              data={[
+                {
+                  value: "draft",
+                  label: (
+                    <Center>
+                      <IconNotesOff size={18} />
+                      <Box ml={10}>Draft</Box>
+                    </Center>
+                  ),
+                },
+                {
+                  label: (
+                    <Center>
+                      <IconNotes size={18} />
+                      <Box ml={10}>Publish</Box>
+                    </Center>
+                  ),
+                  value: "publish",
+                },
+              ]}
+            />
+            <Button type="submit" mt="md" fullWidth>
+              Save Notice to Database
+            </Button>
+          </form>
+        </Container>
+      ) : (
+        <></>
+      )}
+      <Space h="md" />
+    </>
   );
 };
 
@@ -408,9 +462,10 @@ export const getServerSideProps = async (
   context: GetServerSidePropsContext<{ id: string }>
 ): Promise<GetServerSidePropsResult<IPropsCreateNotice>> => {
   const id = context.params?.id as string;
+  const { req, res } = context;
   let session: Session | null = await unstable_getServerSession(
-    context.req,
-    context.res,
+    req,
+    res,
     authOptions
   );
 
@@ -423,11 +478,10 @@ export const getServerSideProps = async (
     };
   }
 
-  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
   return {
     props: {
-      useremail: session.user.email,
       id: id,
+      useremail: session.user.email,
     },
   };
 };
@@ -436,9 +490,3 @@ interface IPropsCreateNotice {
   id: string;
   useremail: string;
 }
-
-const useRteStyles = createStyles(() => ({
-  root: {
-    minHeight: 150,
-  },
-}));

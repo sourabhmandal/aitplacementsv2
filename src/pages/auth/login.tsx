@@ -11,6 +11,7 @@ import { NextPage } from "next";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+
 const Login: NextPage = (props: PaperProps) => {
   const router = useRouter();
   const [buttonLoading, setButtonLoading] = useState<boolean>(false);
@@ -26,42 +27,52 @@ const Login: NextPage = (props: PaperProps) => {
   }, [status, router]);
 
   return (
-    <Container
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        margin: "auto",
-        minHeight: "100vh",
-      }}
-    >
-      <Paper radius="md" p="xl" withBorder {...props} sx={{ minWidth: 500 }}>
-        <Text size="lg" weight={700}>
-          Welcome Back
-        </Text>
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Container
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "auto",
+          minHeight: "100vh",
+        }}
+      >
+        <Paper radius="md" p="xl" withBorder {...props} sx={{ minWidth: 500 }}>
+          <Text size="lg" weight={700}>
+            Welcome Back
+          </Text>
 
-        <Button
-          color="blue"
-          my="xl"
-          fullWidth
-          onClick={async () => {
-            setButtonLoading(true);
-            await signIn("azure-ad", {
-              redirect: true,
-              callbackUrl: "/auth/login",
-            });
-            setButtonLoading(false);
-          }}
-          leftIcon={buttonLoading ? <></> : <IconLogin />}
-        >
-          {buttonLoading ? (
-            <Loader size={"sm"} color="teal" />
-          ) : (
-            "LOGIN WITH MICROSOFT"
-          )}
-        </Button>
-      </Paper>
-    </Container>
+          <Button
+            color="blue"
+            my="xl"
+            fullWidth
+            onClick={async () => {
+              setButtonLoading(true);
+              await signIn("azure-ad", {
+                redirect: true,
+                callbackUrl: "/auth/login",
+              });
+              setButtonLoading(false);
+            }}
+            leftIcon={buttonLoading ? <></> : <IconLogin />}
+          >
+            {buttonLoading ? (
+              <Loader size={"sm"} color="teal" />
+            ) : (
+              "LOGIN WITH MICROSOFT"
+            )}
+          </Button>
+        </Paper>
+      </Container>
+    </>
   );
 };
 

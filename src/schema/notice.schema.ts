@@ -37,7 +37,7 @@ const noticeMetadata = z.object({
   admin: z.string().optional(),
   tags: z.array(z.string()).optional(),
   isPublished: z.boolean().optional(),
-  updatedAt: z.date(),
+  updatedAt: z.string(),
 });
 export type NoticeMetadata = z.TypeOf<typeof noticeMetadata>;
 

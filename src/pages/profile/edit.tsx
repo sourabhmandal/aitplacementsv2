@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Badge,
   Button,
   Center,
@@ -18,13 +17,14 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
+import Avatar from "boring-avatars";
 import { GetServerSidePropsResult, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { branchList, yearList } from "../../constants";
-import { BRANCHES } from "../../schema/constants";
+import { BRANCHES, YEAR, branchList, yearList } from "../../schema/constants";
 import { UpdateUserInput } from "../../schema/user.schema";
 import { trpc } from "../../utils/trpc";
 import { authOptions } from "../api/auth/[...nextauth]";
@@ -36,7 +36,7 @@ interface IPropsOnboard {
 }
 
 const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
-  const userDetailsQuery = trpc.useQuery(["user.get-user-profile-details"], {
+  const userDetailsQuery = trpc.user.getUserProfileDetails.useQuery(undefined, {
     onError: (err) => {
       showNotification({
         title: "Error Occured",
@@ -49,7 +49,7 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
   const trpcContext = trpc.useContext();
   const clientSession = useSession();
   const router = useRouter();
-  const updateUserMutation = trpc.useMutation("user.update-user-profile", {
+  const updateUserMutation = trpc.user.updateUserProfile.useMutation({
     onSuccess(data, variables, context) {
       showNotification({
         title: "User data updated",
@@ -113,143 +113,168 @@ const Profile: NextPage<IPropsOnboard> = ({ useremail, userrole }) => {
       reqData = {
         name: data.name,
         year: data.year,
-        branch: data.branch as AvailableBranch,
+        branch: data.branch as BRANCHES,
         regNo: data.regNo,
         phoneNo: data.phoneNo,
       };
     }
     updateUserMutation?.mutate(reqData);
-    trpcContext.invalidateQueries("user.get-user-profile-details");
+    trpcContext.user.getUserProfileDetails.invalidate();
   };
 
   if (userDetailsQuery.status == "loading")
     return (
-      <Center>
-        <Loader />
-      </Center>
+      <>
+        <Head>
+          <title>AIT Placements</title>
+          <link rel="shortcut icon" href="/favicon.ico" />
+          <meta
+            name="viewport"
+            content="minimum-scale=1, initial-scale=1, width=device-width"
+          />
+        </Head>
+        <Center>
+          <Loader />
+        </Center>
+      </>
     );
 
   return (
-    <Container>
-      <form
-        onSubmit={onSubmit((data: UpdateUserInput) => handleFormSubmit(data))}
-      >
-        <Group position="apart" noWrap>
-          <Title my="md" order={3}>
-            Your profile
-          </Title>
-          <Badge size="lg">{userDetailsQuery.data?.userStatus}</Badge>
-        </Group>
-
-        <Divider mb="lg" />
-        <Avatar src={"https://picsum.photos/200"} size={200} radius="md" />
-        <Divider my="lg" />
-        <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
-          <Title>Basic Details</Title>
-
-          <TextInput
-            label={"Email"}
-            defaultValue={userDetailsQuery.data?.email}
-            my="lg"
-            disabled
-          />
-
-          <TextInput
-            label={"Name"}
-            value={values.name}
-            my="lg"
-            onChange={(event) =>
-              setFieldValue("name", event.currentTarget.value)
-            }
-            error={errors.name}
-          />
-
-          <NumberInput
-            label="Phone Number"
-            placeholder="93797-39879"
-            value={parseInt(values.phoneNo!)}
-            icon={
-              <Text size={13.7} ml={8} mt={0.3}>
-                +91
-              </Text>
-            }
-            maxLength={11}
-            parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-            formatter={(value) =>
-              !Number.isNaN(parseInt(value!))
-                ? `${value}`.replace(/\B(?=(\d{5})+(?!\d))/g, " ")
-                : ""
-            }
-            hideControls
-            onChange={(event: number) =>
-              setFieldValue("phoneNo", event.toString())
-            }
-            error={errors.phoneNo}
-          />
-
-          <TextInput
-            label={"Platform Role"}
-            my="lg"
-            defaultValue={userDetailsQuery.data?.role}
-            disabled
-          />
-        </Paper>
-        <Space h="sm" />
-        {userrole == "STUDENT" && userDetailsQuery.data?.studentDetails ? (
+    <>
+      <Head>
+        <title>AIT Placements</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <Container>
+        <form
+          onSubmit={onSubmit((data: UpdateUserInput) => handleFormSubmit(data))}
+        >
+          <Group position="apart" noWrap>
+            <Title my="md" order={3}>
+              Your profile
+            </Title>
+            <Badge size="lg">{userDetailsQuery.data?.userStatus}</Badge>
+          </Group>
+          <Divider mb="lg" />
+          <Avatar
+            size={120}
+            name={useremail?.toString()}
+            variant="beam"
+            square
+            colors={["#FC284F", "#FF824A", "#FEA887", "#F6E7F7", "#D1D0D7"]}
+          />{" "}
+          <Divider my="lg" />
           <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
-            <Title>Aditional Details</Title>
-            <NumberInput
-              required
-              maxLength={5}
-              hideControls
-              label="Registration Number"
-              placeholder="18255"
-              parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
-              value={values.regNo}
-              onChange={(event: number) => setFieldValue("regno", event)}
-              error={errors.regNo}
+            <Title>Basic Details</Title>
+
+            <TextInput
+              label={"Email"}
+              defaultValue={userDetailsQuery.data?.email}
               my="lg"
-            />
-            <Select
-              label="Year"
-              placeholder="Current year"
-              value={values.year}
-              onChange={(val: AvailableYear) => setFieldValue("year", val)}
-              data={yearList}
-              required
-              my="lg"
+              disabled
             />
 
-            <Select
-              label="Branch"
-              placeholder="Current Branch"
-              value={values.branch}
-              onChange={(val: AvailableBranch) => setFieldValue("branch", val)}
-              data={branchList}
-              required
+            <TextInput
+              label={"Name"}
+              value={values.name}
               my="lg"
+              onChange={(event) =>
+                setFieldValue("name", event.currentTarget.value)
+              }
+              error={errors.name}
+            />
+
+            <NumberInput
+              label="Phone Number"
+              placeholder="93797-39879"
+              value={parseInt(values.phoneNo!)}
+              icon={
+                <Text size={13.7} ml={8} mt={0.3}>
+                  +91
+                </Text>
+              }
+              maxLength={11}
+              parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
+              formatter={(value) =>
+                !Number.isNaN(parseInt(value!))
+                  ? `${value}`.replace(/\B(?=(\d{5})+(?!\d))/g, " ")
+                  : ""
+              }
+              hideControls
+              onChange={(event: number) =>
+                setFieldValue("phoneNo", event.toString())
+              }
+              error={errors.phoneNo}
+            />
+
+            <TextInput
+              label={"Platform Role"}
+              my="lg"
+              defaultValue={userDetailsQuery.data?.role}
+              disabled
             />
           </Paper>
-        ) : (
-          <></>
-        )}
-        <Center my="xl">
-          <Button
-            type="submit"
-            my="xl"
-            fullWidth
-            color={"orange"}
-            disabled={updateUserMutation?.isLoading}
-          >
-            {updateUserMutation?.isLoading ? (
-              <Loader size={"sm"} color="yellow" />
-            ) : (
-              "Update Profile"
-            )}
-          </Button>
-        </Center>
-      </form>
-    </Container>
+          <Space h="sm" />
+          {userrole == "STUDENT" && userDetailsQuery.data?.studentDetails ? (
+            <Paper radius="md" p="xl" withBorder sx={{ minWidth: 500 }}>
+              <Title>Aditional Details</Title>
+              <NumberInput
+                required
+                maxLength={5}
+                hideControls
+                label="Registration Number"
+                placeholder="18255"
+                parser={(value) => value?.replace(/[, a-zA-Z]+/g, "")}
+                value={values.regNo}
+                onChange={(event: number) => setFieldValue("regno", event)}
+                error={errors.regNo}
+                my="lg"
+              />
+              <Select
+                label="Year"
+                placeholder="Current year"
+                value={values.year}
+                onChange={(val: YEAR) => setFieldValue("year", val)}
+                data={yearList}
+                required
+                my="lg"
+              />
+
+              <Select
+                label="Branch"
+                placeholder="Current Branch"
+                value={values.branch}
+                onChange={(val: BRANCHES) => setFieldValue("branch", val)}
+                data={branchList}
+                required
+                my="lg"
+              />
+            </Paper>
+          ) : (
+            <></>
+          )}
+          <Center my="xl">
+            <Button
+              type="submit"
+              my="xl"
+              fullWidth
+              color={"orange"}
+              disabled={updateUserMutation?.isLoading}
+            >
+              {updateUserMutation?.isLoading ? (
+                <Loader size={"sm"} color="yellow" />
+              ) : (
+                "Update Profile"
+              )}
+            </Button>
+          </Center>
+        </form>
+      </Container>
+    </>
   );
 };
 
