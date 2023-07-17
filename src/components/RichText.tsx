@@ -54,6 +54,6 @@ export default RichTextNoticeEditor;
 
 const useRteStyles = createStyles(() => ({
   content: {
-    height: 300,
+    minHeight: 300,
   },
 }));
