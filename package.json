@@ -13,8 +13,7 @@
     "lint": "next lint",
     "pfmt": "prisma format",
     "pmigdev": "prisma migrate dev",
-    "pgen": "prisma generate --schema ./prisma/schema.prisma",
-    "build:digitalocean": "npm install --production=false && npm run build && rm -rf node_modules && npm install --production --frozen-lockfile"
+    "pgen": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
