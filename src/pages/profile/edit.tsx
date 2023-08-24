@@ -19,12 +19,12 @@ import { showNotification } from "@mantine/notifications";
 import { Role } from "@prisma/client";
 import Avatar from "boring-avatars";
 import { GetServerSidePropsResult, NextPage } from "next";
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { BRANCHES, branchList, YEAR, yearList } from "../../schema/constants";
+import { BRANCHES, YEAR, branchList, yearList } from "../../schema/constants";
 import { UpdateUserInput } from "../../schema/user.schema";
 import { trpc } from "../../utils/trpc";
 import { authOptions } from "../api/auth/[...nextauth]";
@@ -283,11 +283,7 @@ export default Profile;
 export const getServerSideProps = async (
   context: any
 ): Promise<GetServerSidePropsResult<IPropsOnboard>> => {
-  let session = await unstable_getServerSession(
-    context.req,
-    context.res,
-    authOptions
-  );
+  let session = await getServerSession(context.req, context.res, authOptions);
   if (!session) {
     return {
       redirect: {

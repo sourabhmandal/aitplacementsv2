@@ -1,6 +1,6 @@
 import { inferAsyncReturnType } from "@trpc/server";
 import { CreateNextContextOptions } from "@trpc/server/adapters/next";
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { authOptions } from "../pages/api/auth/[...nextauth]";
 import { prisma } from "../utils/prisma";
 
@@ -22,11 +22,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   );
 
   // only admin is allowed to invite users
-  const session = await unstable_getServerSession(
-    opts.req,
-    opts.res,
-    authOptions
-  );
+  const session = await getServerSession(opts.req, opts.res, authOptions);
 
   // accept options
   if (opts.req.method === "OPTIONS") {

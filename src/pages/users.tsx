@@ -18,16 +18,16 @@ import {
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import {
-  openSpotlight,
-  registerSpotlightActions,
   SpotlightAction,
   SpotlightProvider,
+  openSpotlight,
+  registerSpotlightActions,
 } from "@mantine/spotlight";
 import { Role } from "@prisma/client";
 import { IconSearch, IconUserCircle } from "@tabler/icons";
-import { debounce, DebouncedFunc } from "lodash";
+import { DebouncedFunc, debounce } from "lodash";
 import { GetServerSidePropsResult, NextPage } from "next";
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -306,11 +306,7 @@ function InviteUserModal({ openInviteUserModal, setopenInviteUserModal }: any) {
 export const getServerSideProps = async (
   context: any
 ): Promise<GetServerSidePropsResult<IUserProps>> => {
-  let session = await unstable_getServerSession(
-    context.req,
-    context.res,
-    authOptions
-  );
+  let session = await getServerSession(context.req, context.res, authOptions);
   if (!session) {
     return {
       redirect: {
@@ -327,7 +323,7 @@ export const getServerSideProps = async (
         permanent: false,
       },
     };
-    
+
   return {
     props: {
       userrole: session.user.role,
