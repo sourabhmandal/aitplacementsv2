@@ -7,7 +7,7 @@ export const showCommingSoon = () =>
     color: "lime",
   });
 
-export const NEXTAUTH_URL = process.env.NEXT_PUBLIC_VERCEL_URL;
+export const NEXTAUTH_URL = process.env.BASE_URL;
 export const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
 export const SECRET_PASSPHRASE = process.env.SECRET_PASSPHRASE;
 export const DATABASE_URL = process.env.DATABASE_URL;

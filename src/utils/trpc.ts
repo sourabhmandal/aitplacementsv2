@@ -7,14 +7,16 @@ export function getBaseUrl() {
     // browser should use relative path
     return "";
 
-  if (process.env.VERCEL_URL)
+  const baseUrl = process.env.BASE_URL;
+
+  if (baseUrl?.startsWith("localhost")) {
     // reference for vercel.com
-    return `https://${process.env.VERCEL_URL}`;
-
-  if (process.env.RENDER_INTERNAL_HOSTNAME)
-    // reference for render.com
-    return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
-
+    console.log(`http://${process.env.BASE_URL}`);
+    return `https://${process.env.BASE_URL}`;
+  } else {
+    console.log(`https://${process.env.BASE_URL}`);
+    return `https://${process.env.BASE_URL}`;
+  }
   // assume localhost
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }

@@ -11,10 +11,10 @@ import {
 } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import {
-  openSpotlight,
-  registerSpotlightActions,
   SpotlightAction,
   SpotlightProvider,
+  openSpotlight,
+  registerSpotlightActions,
 } from "@mantine/spotlight";
 
 import { Role, UserStatus } from "@prisma/client";
@@ -24,18 +24,18 @@ import {
   IconNotebook,
   IconSearch,
 } from "@tabler/icons";
-import { debounce, DebouncedFunc } from "lodash";
+import { DebouncedFunc, debounce } from "lodash";
 
 import { GetServerSidePropsResult, NextPage } from "next";
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import NoticeDetailModal from "../components/NoticeDetailModal";
 import MyNotice from "../components/dashboard/MyNotice";
 import PublishedNotices from "../components/dashboard/PublishedNotices";
-import NoticeDetailModal from "../components/NoticeDetailModal";
 import { trpc } from "../utils/trpc";
 import { authOptions } from "./api/auth/[...nextauth]";
 
@@ -254,7 +254,7 @@ export default Dashboard;
 export const getServerSideProps = async (
   context: any
 ): Promise<GetServerSidePropsResult<IPropsDashboard>> => {
-  let session = await unstable_getServerSession(
+  let session = await getServerSession(
     context.req,
     context.res,
     authOptions
