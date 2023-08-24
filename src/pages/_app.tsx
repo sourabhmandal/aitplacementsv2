@@ -2,14 +2,12 @@ import { ColorScheme, MantineProvider } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 import { NotificationsProvider } from "@mantine/notifications";
-import { Analytics } from "@vercel/analytics/react";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import AppContainer from "../components/AppContainer";
 import { trpc } from "../utils/trpc";
-
 
 function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const [theme, setTheme] = useState<ColorScheme>(useColorScheme());
@@ -52,7 +50,6 @@ function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
             <NotificationsProvider limit={3}>
               <AppContainer theme={theme} setTheme={setTheme}>
                 <Component {...pageProps} />
-                <Analytics />
               </AppContainer>
             </NotificationsProvider>
           </ModalsProvider>
