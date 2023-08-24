@@ -14,7 +14,7 @@
     "pfmt": "prisma format",
     "pmigdev": "prisma migrate dev",
     "pgen": "prisma generate --schema ./prisma/schema.prisma",
-    "vercel-build": "prisma generate && next build"
+    "build:digitalocean": "npm install --production=false && npm run build && rm -rf node_modules && npm install --production --frozen-lockfile"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
