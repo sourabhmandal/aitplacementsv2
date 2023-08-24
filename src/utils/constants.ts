@@ -21,13 +21,6 @@ export const AZURE_AD_CLIENT_ID = process.env.AZURE_AD_CLIENT_ID;
 export const AZURE_AD_CLIENT_SECRET = process.env.AZURE_AD_CLIENT_SECRET;
 export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID;
 
-export let HOSTED_VERCEL_URL =
-  process.env.NEXT_PUBLIC_VERCEL_ENV == "production"
-    ? `https://v2.aitplacements.in`
-    : process.env.NEXT_PUBLIC_VERCEL_ENV == "preview"
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : `http://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-
 export function createAWSFilePath(noticeId: string, filename: string): string {
   return `${noticeId}/${filename}`;
 }
