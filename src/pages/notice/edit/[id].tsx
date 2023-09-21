@@ -32,12 +32,12 @@ import {
   GetServerSidePropsResult,
   NextPage,
 } from "next";
-import { Session, unstable_getServerSession } from "next-auth";
+import { Session, getServerSession } from "next-auth";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextNoticeEditor from "../../../components/RichText";
-import { defaultTagsList, MultiSelectItem } from "../../../schema/constants";
+import { MultiSelectItem, defaultTagsList } from "../../../schema/constants";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
@@ -463,11 +463,7 @@ export const getServerSideProps = async (
 ): Promise<GetServerSidePropsResult<IPropsCreateNotice>> => {
   const id = context.params?.id as string;
   const { req, res } = context;
-  let session: Session | null = await unstable_getServerSession(
-    req,
-    res,
-    authOptions
-  );
+  let session: Session | null = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return {

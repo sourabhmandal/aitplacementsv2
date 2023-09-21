@@ -14,13 +14,13 @@ import { showNotification } from "@mantine/notifications";
 import { Role, UserStatus } from "@prisma/client";
 import Avatar from "boring-avatars";
 import { GetServerSidePropsResult, NextPage } from "next";
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import MyNotice from "../../components/dashboard/MyNotice";
 import NoticeDetailModal from "../../components/NoticeDetailModal";
+import MyNotice from "../../components/dashboard/MyNotice";
 import { trpc } from "../../utils/trpc";
 import { authOptions } from "../api/auth/[...nextauth]";
 
@@ -175,11 +175,7 @@ export default Profile;
 export const getServerSideProps = async (
   context: any
 ): Promise<GetServerSidePropsResult<IPropsOnboard>> => {
-  let session = await unstable_getServerSession(
-    context.req,
-    context.res,
-    authOptions
-  );
+  let session = await getServerSession(context.req, context.res, authOptions);
   if (!session) {
     return {
       redirect: {

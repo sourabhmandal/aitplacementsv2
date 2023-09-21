@@ -13,8 +13,7 @@
     "lint": "next lint",
     "pfmt": "prisma format",
     "pmigdev": "prisma migrate dev",
-    "pgen": "prisma generate --schema ./prisma/schema.prisma",
-    "vercel-build": "prisma generate && next build"
+    "pgen": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
@@ -41,6 +40,7 @@
     "@tiptap/extension-superscript": "^2.0.0-beta.209",
     "@tiptap/extension-text-align": "^2.0.0-beta.209",
     "@tiptap/extension-underline": "^2.0.0-beta.209",
+    "@tiptap/pm": "^2.1.7",
     "@tiptap/prosemirror-tables": "^1.1.4",
     "@tiptap/react": "^2.0.0-beta.209",
     "@tiptap/starter-kit": "^2.0.0-beta.209",
@@ -48,7 +48,6 @@
     "@trpc/next": "^10.9.0",
     "@trpc/react-query": "^10.9.0",
     "@trpc/server": "^10.9.0",
-    "@vercel/analytics": "^0.1.8",
     "aws-sdk": "^2.1298.0",
     "boring-avatars": "^1.7.0",
     "embla-carousel-react": "^7.0.6",
