@@ -1,34 +1,17 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# AIT Placement portal
+Helping students of the Army Institute of Technology to get timely updates about jobs available via college campus.
 
-## Getting Started
+### Dashboard
+![image](https://github.com/sourabhmandal/aitplacementsv2/assets/39632788/dcdf5c79-06a7-4f7d-b43b-43630e862480)
 
-First, run the development server:
+### Notices
+![image](https://github.com/sourabhmandal/aitplacementsv2/assets/39632788/c603da71-bb32-4ba9-baa7-8a75aac4e7bb)
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+### User profile
+![image](https://github.com/sourabhmandal/aitplacementsv2/assets/39632788/91ef5a7b-3221-4d80-ada3-4e8fb7198bd7)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### All user's directory
+![image](https://github.com/sourabhmandal/aitplacementsv2/assets/39632788/e24fde0b-c39f-4a0b-9a76-ae1a8803cf8e)
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### Dark mode
+![image](https://github.com/sourabhmandal/aitplacementsv2/assets/39632788/b7c0f979-4816-4209-a8b9-a2dbf9a95da8)
