@@ -528,7 +528,6 @@ export const noticeRouter = router({
             .replace(/ +(?= )/g, "") // remove multiple whitespace
             .trim(); // remove starting and trailing spaces
           searchProcessedString += "*"
-          //.replaceAll(" ", " | "); // add or
           const dbNoticeSearch = await ctx?.prisma.notice.findMany({
             where: {
               title: {
