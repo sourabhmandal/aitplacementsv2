@@ -523,19 +523,29 @@ export const noticeRouter = router({
       try {
         // only admin is allowed to invite users
         if (ctx.session?.user.userStatus == "ACTIVE") {
-          const searchProcessedString = input.searchText
+          let searchProcessedString = input.searchText
             .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
             .replace(/ +(?= )/g, "") // remove multiple whitespace
             .trim(); // remove starting and trailing spaces
+          searchProcessedString += "*"
           //.replaceAll(" ", " | "); // add or
           const dbNoticeSearch = await ctx?.prisma.notice.findMany({
             where: {
               title: {
-                contains: searchProcessedString,
-                mode: "insensitive",
+                search: searchProcessedString,
               },
+              body: {
+                search: searchProcessedString,
+              }
             },
-          });
+            orderBy: {
+              _relevance: {
+                fields: ['title'],
+                search: searchProcessedString,
+                sort: 'asc'
+              },
+          }
+        });
 
           const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
             (notice) => {

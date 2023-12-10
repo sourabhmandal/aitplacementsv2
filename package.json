@@ -12,8 +12,8 @@
     "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "pfmt": "prisma format",
-    "pmigdev": "prisma migrate dev",
-    "pgen": "prisma generate --schema ./prisma/schema.prisma"
+    "pmig": "prisma db push",
+    "pgenclient": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",

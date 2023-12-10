@@ -443,20 +443,29 @@ export const userRouter = router({
       try {
         // only admin is allowed to invite users
         if (ctx.session?.user.userStatus == "ACTIVE") {
-          const searchProcessedString = input.searchText
+          let searchProcessedString = input.searchText
             .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
             .replaceAll(/\s/g, "") // remove multiple whitespace
             .trim(); // remove starting and trailing spaces
-          //.replaceAll(" ", " | "); // add or
+            searchProcessedString += "*"
 
           const dbUserSearch = await ctx?.prisma.user.findMany({
             where: {
               email: {
-                contains: searchProcessedString,
-                mode: "insensitive",
+                search: searchProcessedString,
+              },
+              name: {
+                search: searchProcessedString,
               },
             },
-          });
+            orderBy: {
+              _relevance: {
+                fields: ['email'],
+                search: searchProcessedString,
+                sort: 'asc'
+              },
+          }
+        });
 
           response.users = dbUserSearch?.map((user) => {
             return {
