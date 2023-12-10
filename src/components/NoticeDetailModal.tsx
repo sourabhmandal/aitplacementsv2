@@ -156,21 +156,6 @@ function NoticeDetailModal({
       withCloseButton
     >
       <>
-        {noticeDetailQuery?.data?.tags.length! > 0 ? (
-          <Skeleton visible={noticeDetailQuery?.isLoading!}>
-            <Divider variant="dotted" />
-            <Space h="xs" />
-            {noticeDetailQuery?.data?.tags.map((item: any, idx: number) => (
-              <Badge key={idx} color="orange">
-                {item}
-              </Badge>
-            ))}
-            <Space h="xs" />
-          </Skeleton>
-        ) : (
-          <></>
-        )}
-
         {PreviewsAttachments?.length! > 0 ? (
           <Skeleton visible={noticeDetailQuery?.isLoading!}>
             <SimpleGrid cols={3} mt={8}>

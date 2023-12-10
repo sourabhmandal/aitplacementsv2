@@ -69,11 +69,6 @@ function PublishedNotices({
                   <Text size="sm" weight="bolder">
                     {item.title}
                   </Text>
-                  {item.tags?.map((item, idx) => (
-                    <Badge key={idx} variant="outline" color={"orange"} mr={4}>
-                      {item}
-                    </Badge>
-                  ))}
                 </td>
 
                 <td>

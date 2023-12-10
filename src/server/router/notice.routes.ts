@@ -32,7 +32,7 @@ export const noticeRouter = router({
     .input(createNoticeInput)
     .output(createNoticeOutput)
     .mutation(async ({ ctx, input }) => {
-      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+      const { adminEmail, attachments, body, isPublished, title, id } =
         input;
 
       let response: CreateNoticeOutput = {
@@ -60,7 +60,6 @@ export const noticeRouter = router({
                 body: body,
                 title: title,
                 isPublished: isPublished,
-                tags: tags,
                 attachments: {
                   create: attachments,
                 },
@@ -103,7 +102,7 @@ export const noticeRouter = router({
     .input(createNoticeInput)
     .output(createNoticeOutput)
     .mutation(async ({ ctx, input }) => {
-      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+      const { adminEmail, attachments, body, isPublished, title, id } =
         input;
       let response: CreateNoticeOutput = {
         adminEmail: "",
@@ -156,7 +155,6 @@ export const noticeRouter = router({
                 body: body,
                 title: title,
                 isPublished: isPublished,
-                tags: tags,
                 admin: {
                   connect: {
                     email: adminEmail,
@@ -201,7 +199,6 @@ export const noticeRouter = router({
 
       let response = {
         id: "",
-        tags: new Array<string>(0),
         isPublished: true,
         title: "",
         body: "",
@@ -255,7 +252,6 @@ export const noticeRouter = router({
             response = {
               id: dbRespNotice.id,
               title: dbRespNotice.title,
-              tags: dbRespNotice.tags,
               body: dbRespNotice.body,
               isPublished: dbRespNotice.isPublished,
               attachments: atthUrls,
@@ -312,7 +308,6 @@ export const noticeRouter = router({
               id: data.id,
               title: data.title,
               admin: data.adminEmailFk,
-              tags: data.tags,
               updatedAt: data.updatedAt.toDateString(),
             };
           });
@@ -551,7 +546,6 @@ export const noticeRouter = router({
               return {
                 admin: notice.adminEmailFk,
                 id: notice.id,
-                tags: notice.tags,
                 title: notice.title,
                 updatedAt: notice.updatedAt.toDateString(),
               };

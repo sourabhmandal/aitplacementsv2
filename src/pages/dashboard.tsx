@@ -96,7 +96,6 @@ const Dashboard: NextPage<IPropsDashboard> = ({
               setnoticeId(el.id);
               setOpenNoticeDialog(true);
             },
-            keywords: el.tags,
           };
         }
       );
