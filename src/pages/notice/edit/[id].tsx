@@ -37,15 +37,12 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import RichTextNoticeEditor from "../../../components/RichText";
-import { MultiSelectItem, defaultTagsList } from "../../../schema/constants";
 import { CreateNoticeInput } from "../../../schema/notice.schema";
 import { createAWSFilePath } from "../../../utils/constants";
 import { trpc } from "../../../utils/trpc";
 import { authOptions } from "../../api/auth/[...nextauth]";
 
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
-  const [defaultTags, setDefaultTags] =
-    useState<MultiSelectItem[]>(defaultTagsList);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const router = useRouter();
   const theme = useMantineTheme();
@@ -76,7 +73,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
     },
   });
 
-  const [savedTags, setsavedTags] = useState<string[]>([]);
 
   const createPresignedUrlMutation =
     trpc.attachment.createPresignedUrl.useMutation({
@@ -93,7 +89,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
       form.setValues({
         title: noticeDetailQuery?.data?.title,
         id: noticeDetailQuery?.data?.id,
-        tags: noticeDetailQuery?.data?.tags,
         isPublished: noticeDetailQuery?.data?.isPublished,
         adminEmail: useremail,
         attachments: noticeDetailQuery?.data?.attachments.map((f) => ({
@@ -114,7 +109,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
   const form = useForm<CreateNoticeInput>({
     initialValues: {
       id: "",
-      tags: [""],
       adminEmail: useremail,
       title: "",
       body: "",
@@ -129,20 +123,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
       body: (val: string) => (val == "" ? "Notice body cannot be empty" : null),
     },
   });
-
-  useEffect(() => {
-    setsavedTags(noticeDetailQuery?.data?.tags!);
-  }, [noticeDetailQuery?.data?.tags]);
-
-  useEffect(() => {
-    if (savedTags !== undefined) {
-      form.setFieldValue("tags", savedTags);
-
-      defaultTags.concat(
-        savedTags.map((e): MultiSelectItem => ({ label: e, value: e }))
-      );
-    }
-  }, [savedTags]);
 
   const uploadFile = async (targetFile: FileWithPath) => {
     const filepath = `${form.values.id}/${targetFile.name}`;
@@ -330,31 +310,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ useremail, id }) => {
               }}
               value={form.values.title}
               error={form.errors.title && "Invalid title"}
-            />
-
-            <MultiSelect
-              creatable
-              searchable
-              data={defaultTags}
-              value={savedTags}
-              label="Tags"
-              placeholder="Add tags for this post"
-              mb={40}
-              getCreateLabel={(query) => `+ Create ${query}`}
-              onCreate={(query: string) => {
-                setDefaultTags((current: any) => [...current, query]);
-                let item: any = {
-                  value: query,
-                  label: query,
-                };
-                return item;
-              }}
-              onChange={(values: string[]) => {
-                console.log(form.values.tags, values, savedTags);
-                setsavedTags([...values]);
-                return values;
-              }}
-              maxDropdownHeight={160}
             />
             <RichTextNoticeEditor key="jkhdkjh" editor={editor} />
             <Dropzone

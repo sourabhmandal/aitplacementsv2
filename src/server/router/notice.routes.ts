@@ -32,7 +32,7 @@ export const noticeRouter = router({
     .input(createNoticeInput)
     .output(createNoticeOutput)
     .mutation(async ({ ctx, input }) => {
-      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+      const { adminEmail, attachments, body, isPublished, title, id } =
         input;
 
       let response: CreateNoticeOutput = {
@@ -60,7 +60,6 @@ export const noticeRouter = router({
                 body: body,
                 title: title,
                 isPublished: isPublished,
-                tags: tags,
                 attachments: {
                   create: attachments,
                 },
@@ -103,7 +102,7 @@ export const noticeRouter = router({
     .input(createNoticeInput)
     .output(createNoticeOutput)
     .mutation(async ({ ctx, input }) => {
-      const { adminEmail, attachments, body, isPublished, tags, title, id } =
+      const { adminEmail, attachments, body, isPublished, title, id } =
         input;
       let response: CreateNoticeOutput = {
         adminEmail: "",
@@ -156,7 +155,6 @@ export const noticeRouter = router({
                 body: body,
                 title: title,
                 isPublished: isPublished,
-                tags: tags,
                 admin: {
                   connect: {
                     email: adminEmail,
@@ -201,7 +199,6 @@ export const noticeRouter = router({
 
       let response = {
         id: "",
-        tags: new Array<string>(0),
         isPublished: true,
         title: "",
         body: "",
@@ -255,7 +252,6 @@ export const noticeRouter = router({
             response = {
               id: dbRespNotice.id,
               title: dbRespNotice.title,
-              tags: dbRespNotice.tags,
               body: dbRespNotice.body,
               isPublished: dbRespNotice.isPublished,
               attachments: atthUrls,
@@ -312,7 +308,6 @@ export const noticeRouter = router({
               id: data.id,
               title: data.title,
               admin: data.adminEmailFk,
-              tags: data.tags,
               updatedAt: data.updatedAt.toDateString(),
             };
           });
@@ -523,26 +518,34 @@ export const noticeRouter = router({
       try {
         // only admin is allowed to invite users
         if (ctx.session?.user.userStatus == "ACTIVE") {
-          const searchProcessedString = input.searchText
+          let searchProcessedString = input.searchText
             .replace(/[^a-zA-Z0-9 ]/g, "") // remove special charachters
             .replace(/ +(?= )/g, "") // remove multiple whitespace
             .trim(); // remove starting and trailing spaces
-          //.replaceAll(" ", " | "); // add or
+          searchProcessedString += "*"
           const dbNoticeSearch = await ctx?.prisma.notice.findMany({
             where: {
               title: {
-                contains: searchProcessedString,
-                mode: "insensitive",
+                search: searchProcessedString,
               },
+              body: {
+                search: searchProcessedString,
+              }
             },
-          });
+            orderBy: {
+              _relevance: {
+                fields: ['title'],
+                search: searchProcessedString,
+                sort: 'asc'
+              },
+          }
+        });
 
           const metaNoticeData: NoticeMetadata[] = dbNoticeSearch?.map(
             (notice) => {
               return {
                 admin: notice.adminEmailFk,
                 id: notice.id,
-                tags: notice.tags,
                 title: notice.title,
                 updatedAt: notice.updatedAt.toDateString(),
               };

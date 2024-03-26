@@ -33,13 +33,11 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { v4 } from "uuid";
 import RichTextNoticeEditor from "../../components/RichText";
-import { defaultTagsList, MultiSelectItem } from "../../schema/constants";
 import { CreateNoticeInput } from "../../schema/notice.schema";
 import { createAWSFilePath } from "../../utils/constants";
 import { trpc } from "../../utils/trpc";
 
 const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
-  const [tags, setTags] = useState<MultiSelectItem[]>(defaultTagsList);
   const [acceptedFileList, setacceptedFileList] = useState<FileWithPath[]>([]);
   const { data } = useSession();
   const router = useRouter();
@@ -48,7 +46,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
   const form = useForm<CreateNoticeInput>({
     initialValues: {
       id: id,
-      tags: [],
       adminEmail: data?.user?.email!,
       isPublished: false,
       title: "",
@@ -219,24 +216,6 @@ const CreateNotice: NextPage<IPropsCreateNotice> = ({ id }) => {
             }}
             value={form.values.title}
             error={form.errors.title && "Invalid title"}
-          />
-
-          <MultiSelect
-            creatable
-            searchable
-            data={tags}
-            label="Tags"
-            placeholder="Add tags for this post"
-            mb={40}
-            getCreateLabel={(query) => `+ Create ${query}`}
-            onCreate={(query: string) => {
-              setTags((current: any) => [...current, query]);
-              return query;
-            }}
-            onChange={(values: string[]) => {
-              return values;
-            }}
-            maxDropdownHeight={160}
           />
 
           <RichTextNoticeEditor editor={editor} key="jkhdkjh" />

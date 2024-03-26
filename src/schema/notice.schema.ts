@@ -3,7 +3,6 @@ import z from "zod";
 export const createNoticeInput = z.object({
   id: z.string().uuid(),
   adminEmail: z.string().email(),
-  tags: z.array(z.string()),
   isPublished: z.boolean(),
   title: z
     .string()
@@ -35,7 +34,6 @@ const noticeMetadata = z.object({
   id: z.string(),
   title: z.string(),
   admin: z.string().optional(),
-  tags: z.array(z.string()).optional(),
   isPublished: z.boolean().optional(),
   updatedAt: z.string(),
 });
@@ -49,7 +47,6 @@ export type GetNoticeListOutput = z.TypeOf<typeof getNoticeListOutput>;
 
 export const updateNoticeInput = z.object({
   id: z.string(),
-  tags: z.array(z.string()),
   isPublished: z.boolean(),
   title: z.string(),
   body: z.string(),
@@ -61,7 +58,6 @@ export const updateNoticeOutput = z.array(
   z.object({
     title: z.string(),
     admin: z.string(),
-    tags: z.array(z.string()),
     updatedAt: z.string(),
   })
 );
@@ -74,7 +70,6 @@ export type GetNoticeDetailInput = z.TypeOf<typeof getNoticeDetailInput>;
 
 export const getNoticeDetailOutput = z.object({
   id: z.string(),
-  tags: z.array(z.string()),
   isPublished: z.boolean(),
   title: z.string(),
   body: z.string(),
